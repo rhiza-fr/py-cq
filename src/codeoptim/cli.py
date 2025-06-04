@@ -7,7 +7,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from codeoptim.config import DEFAULT_STORAGE_FILE
-from codeoptim.execution_engine import run_tool
+from codeoptim.execution_engine import run_tool, run_tools
 from codeoptim.localtypes import CombinedToolResults
 from codeoptim.metric_aggregator import aggregate_metrics
 from codeoptim.storage import save_result
