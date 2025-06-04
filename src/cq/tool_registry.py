@@ -12,7 +12,9 @@ from cq.parsers.pytest_parser import PytestParser
 
 tool_registry = {
     "compilation": ToolConfig(
-        name="compile", command="python -m py_compile {context_path}", parser_class=CompileParser
+        name="compile", 
+        command="python -m compileall -q {context_path} -x '.*venv.*|.*\.tox.*|.*\.git.*'",
+        parser_class=CompileParser
     ),
     "pytest": ToolConfig(
         name="pytest", command="pytest -v {context_path}", parser_class=PytestParser
