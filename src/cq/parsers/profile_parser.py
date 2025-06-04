@@ -1,7 +1,7 @@
 import json
 import pstats
 
-from codeoptim.localtypes import AbstractParser, RawResult, ToolResult
+from cq.localtypes import AbstractParser, RawResult, ToolResult
 
 
 class ProfileParser(AbstractParser):

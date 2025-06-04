@@ -1,7 +1,7 @@
 import json
 
-from codeoptim.localtypes import AbstractParser, RawResult, ToolResult
-from codeoptim.parsers.common import inv_normalize
+from cq.localtypes import AbstractParser, RawResult, ToolResult
+from cq.parsers.common import inv_normalize
 
 
 class HalsteadParser(AbstractParser):

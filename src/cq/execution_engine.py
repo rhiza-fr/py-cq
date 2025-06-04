@@ -1,16 +1,14 @@
 import logging
 import subprocess
 import time
-from pathlib import Path
-
-from cachier import cachier
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import List
 
-from codeoptim.localtypes import RawResult, ToolConfig, ToolResult
+from cachier import cachier
+from cq.localtypes import RawResult, ToolConfig, ToolResult
 
-log = logging.getLogger("codeoptim")
+log = logging.getLogger("cq")
 
 
 def get_hash(args, kwargs):

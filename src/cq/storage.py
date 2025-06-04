@@ -1,6 +1,6 @@
 import json
 
-from codeoptim.localtypes import CombinedToolResults
+from cq.localtypes import CombinedToolResults
 
 
 def save_result(combined_tool_results: CombinedToolResults, file_name: str):

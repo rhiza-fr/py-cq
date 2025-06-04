@@ -3,22 +3,21 @@ import logging
 from pathlib import Path
 
 import typer
+from cq.config import DEFAULT_STORAGE_FILE
+from cq.execution_engine import run_tool, run_tools
+from cq.localtypes import CombinedToolResults
+from cq.metric_aggregator import aggregate_metrics
+from cq.storage import save_result
+from cq.tool_registry import tool_registry
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
-
-from codeoptim.config import DEFAULT_STORAGE_FILE
-from codeoptim.execution_engine import run_tool, run_tools
-from codeoptim.localtypes import CombinedToolResults
-from codeoptim.metric_aggregator import aggregate_metrics
-from codeoptim.storage import save_result
-from codeoptim.tool_registry import tool_registry
 
 logging.basicConfig(
     level="INFO", format="%(message)s", datefmt="[%X]", handlers=[RichHandler(markup=True)]
 )
 
-log = logging.getLogger("codeoptim")
+log = logging.getLogger("cq")
 
 app = typer.Typer()
 console = Console()

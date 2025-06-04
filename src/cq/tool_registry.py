@@ -1,13 +1,13 @@
-from codeoptim.localtypes import ToolConfig
-from codeoptim.parsers.compile_parser import CompileParser
-from codeoptim.parsers.complexity_parser import ComplexityParser
-from codeoptim.parsers.coverage_parser import CoverageParser
-from codeoptim.parsers.halstead_parser import HalsteadParser
-from codeoptim.parsers.maintainability_parser import MaintainabilityParser
-from codeoptim.parsers.pydocstyle_parser import PydocstyleParser
-from codeoptim.parsers.pytest_parser import PytestParser
+from cq.localtypes import ToolConfig
+from cq.parsers.compile_parser import CompileParser
+from cq.parsers.complexity_parser import ComplexityParser
+from cq.parsers.coverage_parser import CoverageParser
+from cq.parsers.halstead_parser import HalsteadParser
+from cq.parsers.maintainability_parser import MaintainabilityParser
+from cq.parsers.pydocstyle_parser import PydocstyleParser
+from cq.parsers.pytest_parser import PytestParser
 
-# from codeoptim.parsers.profile_parser import ProfileParser
+# from cq.parsers.profile_parser import ProfileParser
 
 
 tool_registry = {

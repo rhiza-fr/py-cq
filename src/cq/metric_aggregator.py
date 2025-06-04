@@ -1,4 +1,4 @@
-from codeoptim.localtypes import CombinedToolResults, ToolResult
+from cq.localtypes import CombinedToolResults, ToolResult
 
 
 def aggregate_metrics(path: str, metrics: list[ToolResult]) -> CombinedToolResults:
