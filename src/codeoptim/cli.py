@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -36,6 +37,17 @@ def run(
     parallel: bool = typer.Option(False, "--parallel", help="Run tools in parallel"),
 ):
     """Runs analysis on a project or file."""
+    path_obj = Path(path)
+    if not path_obj.exists():
+        raise typer.BadParameter(f"Path does not exist: {path}")
+    
+    if path_obj.is_file():
+        if path_obj.suffix != ".py":
+            raise typer.BadParameter(f"File must be a Python file (.py): {path}")
+    elif path_obj.is_dir():
+        if not (path_obj / "pyproject.toml").exists():
+            raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
+    
     log.setLevel(log_level)
     if clear_cache:
         run_tool.clear_cache()  # type: ignore # Use this to remove the tool cache
