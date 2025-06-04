@@ -36,7 +36,17 @@ def run(
     as_score: bool = False,
     parallel: bool = typer.Option(False, "--parallel", help="Run tools in parallel"),
 ):
-    """Runs analysis on a project or file."""
+    """Runs analysis on a project or file.
+
+    Args:
+        path: Path to Python file or project directory (must contain pyproject.toml)
+        log_level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        out_file: File path to save results (defaults to analysis_results.json)
+        clear_cache: Whether to clear cached tool results before running
+        as_json: Output results as JSON instead of saving to file
+        as_score: Output only the final score instead of full results
+        parallel: Run analysis tools in parallel for faster execution
+    """
     path_obj = Path(path)
     if not path_obj.exists():
         raise typer.BadParameter(f"Path does not exist: {path}")
