@@ -28,13 +28,37 @@ console = Console()
 
 @app.command()
 def run(
-    path: str,
-    log_level: str = "INFO",
-    out_file: str = DEFAULT_STORAGE_FILE,
-    clear_cache: bool = False,
-    as_json: bool = False,
-    as_score: bool = False,
-    parallel: bool = typer.Option(False, "--parallel", help="Run tools in parallel"),
+    path: str = typer.Argument(..., help="Path to Python file or project directory"),
+    log_level: str = typer.Option(
+        "INFO",
+        "--log-level",
+        help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    ),
+    out_file: str = typer.Option(
+        DEFAULT_STORAGE_FILE,
+        "--out-file",
+        help="File path to save results (defaults to analysis_results.json)",
+    ),
+    clear_cache: bool = typer.Option(
+        False,
+        "--clear-cache",
+        help="Clear cached tool results before running",
+    ),
+    as_json: bool = typer.Option(
+        False,
+        "--json",
+        help="Output results as JSON instead of saving to file",
+    ),
+    as_score: bool = typer.Option(
+        False,
+        "--score",
+        help="Output only the final score instead of full results",
+    ),
+    parallel: bool = typer.Option(
+        False,
+        "--parallel",
+        help="Run analysis tools in parallel for faster execution",
+    ),
 ):
     """Runs analysis on a project or file.
 
