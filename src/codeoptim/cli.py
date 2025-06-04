@@ -1,6 +1,5 @@
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import typer
 from rich.console import Console
@@ -40,34 +39,10 @@ def run(
     log.setLevel(log_level)
     if clear_cache:
         run_tool.clear_cache()  # type: ignore # Use this to remove the tool cache
-    tool_results = []
 
-    if parallel:
-        with ThreadPoolExecutor(max_workers=min(4, len(tool_registry))) as executor:
-            # Submit all tools for parallel execution
-            future_to_tool = {
-                executor.submit(run_tool, tool_config, path): tool_config
-                for tool_config in tool_registry.values()
-            }
-            
-            # Process results as they complete
-            for future in as_completed(future_to_tool):
-                tool_config = future_to_tool[future]
-                try:
-                    raw_result = future.result()
-                    parser = tool_config.parser_class()
-                    tr = parser.parse(raw_result)
-                    tool_results.append(tr)
-                    log.debug(json.dumps(tr.to_dict(), indent=2))
-                except Exception as exc:
-                    log.error(f"{tool_config.name} generated an exception: {exc}")
-    else:
-        for tool_config in tool_registry.values():
-            raw_result = run_tool(tool_config, path)
-            parser = tool_config.parser_class()
-            tr = parser.parse(raw_result)
-            tool_results.append(tr)
-            log.debug(json.dumps(tr.to_dict(), indent=2))
+    tool_results = run_tools(tool_registry.values(), path, parallel)
+    for tr in tool_results:
+        log.debug(json.dumps(tr.to_dict(), indent=2))
 
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)
     if as_score:
