@@ -24,27 +24,46 @@ class CompileParser(AbstractParser):
         # Compiling '.\\src\\cq\\parsers\\common.py'...
         # Compiling '.\\src\\cq\\parsers\\complexity_parser.p
 
-        print(raw_result)
-        success = True
+        total_attempts = 0
+        successful_compiles = 0
         failed_files: dict[str, str] = {}
+        current_error = None
         
-        # this error parsing is wrong. See the comment above
-        # Successfull compilation is marked with "Compiling"
-        # Skipped directories are marked "Listing" and can be ignored
-        # Failed compilation is marked *** File "filename", line linenumber
-        # .... then more error help until the end or the next Compiling or Listing or errror
-        
+        # Process stdout first for successful compilations
+        if raw_result.stdout:
+            for line in raw_result.stdout.splitlines():
+                if line.startswith("Compiling "):
+                    total_attempts += 1
+                    successful_compiles += 1
+                elif line.startswith("***   File "):
+                    # This indicates a compilation error
+                    total_attempts += 1
+                    successful_compiles -= 1  # undo previous increment
+                    file_path = line.split('"')[1]
+                    current_error = {"file": file_path, "error": line}
+                elif current_error and line.strip():
+                    # Append additional error context
+                    current_error["error"] += "\n" + line
+                elif line.startswith("Listing "):
+                    # Skip directory listings
+                    continue
+                elif current_error and not line.strip():
+                    # Empty line ends the error block
+                    failed_files[current_error["file"]] = current_error["error"]
+                    current_error = None
+
+        # Process stderr for any additional errors
         if raw_result.stderr:
-            # Parse compileall error output
             for line in raw_result.stderr.splitlines():
                 if "Error compiling" in line:
-                    success = False
+                    total_attempts += 1
                     parts = line.split("Error compiling ")
                     if len(parts) > 1:
                         file_path = parts[1].strip("'").strip()
                         failed_files[file_path] = line
 
-        score = 1.0 if success else 0.0
+        # Calculate score as ratio of successful compiles to total attempts
+        score = successful_compiles / total_attempts if total_attempts > 0 else 1.0
         tr = ToolResult(raw=raw_result, metrics={"compile": score})
         
         if raw_result.stdout:
