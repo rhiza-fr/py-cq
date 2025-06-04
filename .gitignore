@@ -1,0 +1,14 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.*_cache/
+# Virtual environments
+.venv
+profile.prof
+analysis_results.json
+.coverage
+.aider*
