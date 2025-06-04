@@ -24,3 +24,6 @@ build-backend = "hatchling.build"
 dev-dependencies = [
     "ruff>=0.11.12",
 ]
+
+[project.scripts]
+    cq = "cq.main:main"
