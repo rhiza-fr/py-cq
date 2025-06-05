@@ -39,22 +39,21 @@ class CompileParser(AbstractParser):
                     # Parse error details from the error block
                     error_lines = current_error["error"].splitlines()
                     error_info = {
-                        "file": current_error["file"].replace("\\", "/"),
-                        "error": error_lines[0].replace("\\", "/"),
                         "details": "\n".join(error_lines[1:]).replace("\\", "/")
                     }
                     
                     # Extract line number if present
-                    if "line " in error_info["error"]:
-                        error_info["line"] = int(error_info["error"].split("line ")[1].split(",")[0])
+                    if "line " in error_lines[0]:
+                        error_info["line"] = int(error_lines[0].split("line ")[1].split(",")[0])
                     
                     # Extract error type if present
-                    if ":" in error_info["error"]:
-                        error_type = error_info["error"].split(":")[-1].strip()
+                    if ":" in error_lines[0]:
+                        error_type = error_lines[0].split(":")[-1].strip()
                         if error_type:
                             error_info["type"] = error_type
                     
-                    failed_files[error_info["file"]] = error_info
+                    file_path = current_error["file"].replace("\\", "/")
+                    failed_files[file_path] = error_info
                     current_error = None
 
         # Calculate score as ratio of successful compiles to total attempts
