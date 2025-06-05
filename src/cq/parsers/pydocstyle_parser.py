@@ -1,5 +1,5 @@
 from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import inv_normalize
+from cq.parsers.common import score_logistic_variant
 
 
 class PydocstyleParser(AbstractParser):
@@ -18,13 +18,12 @@ class PydocstyleParser(AbstractParser):
         #         D103: Missing docstring in public function
 
         tr = ToolResult(raw=raw_result)
-        if raw_result.stderr:  # normal for pydocstyle to return exit code 1, with stdout
-            score = 0.0
-            tr.details["stderr"] = raw_result.stderr
-        else:
-            MAX_DOCSTRING_ERRORS = 10
-            lines = raw_result.stdout.splitlines()
-            score = inv_normalize(len(lines) / 2, MAX_DOCSTRING_ERRORS)
+        MAX_DOCSTRING_ERRORS = 100
+        lines = raw_result.stdout.splitlines()
+        errors = len(lines) / 2
+        score = score_logistic_variant(errors, scale_factor=60)  # 5 per file would make sense
+        # score = score_logistic_variant(len(lines) / 2, MAX_DOCSTRING_ERRORS)
+        print("Docstring", len(lines) / 2, score)
         tr.metrics = {"docstyle": score}
         tr.details["parseme"] = raw_result.stdout  # TODO parse this
         tr.details["return_code"] = raw_result.return_code

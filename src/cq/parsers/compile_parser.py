@@ -1,4 +1,5 @@
 from cq.localtypes import AbstractParser, RawResult, ToolResult
+from cq.parsers.common import score_logistic_variant
 
 
 class CompileParser(AbstractParser):
@@ -41,7 +42,9 @@ class CompileParser(AbstractParser):
                     current_error = None
 
         # Calculate score as ratio of successful compiles to total attempts
-        score = (compilations - len(failed_files)) / compilations if compilations > 0 else 0.0
+        failure_ratio = len(failed_files) / compilations if compilations > 0 else 0.0
+        score = score_logistic_variant(failure_ratio, scale_factor=0.25)
+        # score = (compilations - len(failed_files)) / compilations if compilations > 0 else 0.0
 
         # I know raw should raw but meh!!!
         # for sanities sake remove all the Listing lines ... wtf? python/windows

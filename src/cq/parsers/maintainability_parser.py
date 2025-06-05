@@ -1,6 +1,7 @@
 import json
 
 from cq.localtypes import AbstractParser, RawResult, ToolResult
+from cq.parsers.common import score_logistic_variant
 
 
 class MaintainabilityParser(AbstractParser):
@@ -21,7 +22,7 @@ class MaintainabilityParser(AbstractParser):
                     "error": values["error"],
                 }
             if "mi" in values:
-                file_score = values["mi"] / 100.0  # Normalize to 0-1 range
+                file_score = score_logistic_variant(100 - values["mi"], 85)
                 score += file_score
                 num_items += 1
                 tr.details[file.replace("\\", "/")] = {"mi": file_score, "rank": values["rank"]}

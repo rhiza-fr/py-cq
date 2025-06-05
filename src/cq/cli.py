@@ -112,12 +112,12 @@ def format_as_table(data: CombinedToolResults):
         for name, value in tr.metrics.items():
             status = ""
             if value < config.error_threshold:
-                status = "[bold red]❌ Error[/]" 
+                status = "[bold red]❌ Error[/]"
             elif value < config.warning_threshold:
                 status = "[yellow]⚠️ Warning[/]"
             else:
                 status = "[green]✓ OK[/]"
             table.add_row(tool_name, name, f"{value:0.3f}", status)
-    
+
     table.add_row("", "[bold]Score[/]", f"[bold]{data.score:0.3f}[/]", "")
     return table

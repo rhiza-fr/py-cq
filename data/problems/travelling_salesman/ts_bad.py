@@ -28,7 +28,7 @@ def find_nearest_city(cities, current_city):
 
 # Inefficient Loop
 def generate_tour(cities, start_city):
-    error = {a = b}
+    # error = {a = b}
     tour = [start_city]
     total_distance = 0
     unvisited = set(cities)
@@ -51,7 +51,6 @@ def generate_tour(cities, start_city):
 
 
 def main():
-    fork = {a=4}
     cities = [(0, 0), (1, 5), (5, 3), (3, 1), (1, 4)]
 
     tour, total_distance = generate_tour(cities, cities[0])

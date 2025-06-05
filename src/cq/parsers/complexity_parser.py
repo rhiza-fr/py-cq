@@ -1,7 +1,7 @@
 import json
 
 from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import inv_normalize
+from cq.parsers.common import score_logistic_variant
 
 
 class ComplexityParser(AbstractParser):
@@ -15,7 +15,7 @@ class ComplexityParser(AbstractParser):
         data = json.loads(raw_result.stdout)
         score = 0
         num_items = 0
-        max_complexity = 60
+        max_complexity = 30
         for file, functions in data.items():
             file_name = file.replace("\\", "/")
             if file_name not in tr.details:
@@ -32,7 +32,7 @@ class ComplexityParser(AbstractParser):
                 num_items += 1
                 if file_name not in tr.details:
                     tr.details[file_name] = {}
-                function_score = inv_normalize(
+                function_score = score_logistic_variant(
                     function.get("complexity", max_complexity), max_complexity
                 )
                 score += function_score

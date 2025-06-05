@@ -1,7 +1,7 @@
 import json
 
 from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import inv_normalize
+from cq.parsers.common import score_logistic_variant
 
 
 class HalsteadParser(AbstractParser):
@@ -11,10 +11,10 @@ class HalsteadParser(AbstractParser):
         #  {"total": {"h1": 6, "h2": 18, "N1": 13, "N2": 22, "vocabulary": 24, "length": 35, "calculated_length": 90.56842503028855, "volume": 160.4736875252405, "difficulty": 3.6666666666666665, "effort": 588.4035209258818, "time": 32.68908449588233, "bugs": 0.05349122917508017},
         #   "functions": {"calc_dist": {"h1": 3, "h2": 9, "N1": 5, "N2": 10, "vocabulary": 12, "length": 15, "calculated_length": 33.28421251514428, "volume": 53.77443751081735, "difficulty": 1.6666666666666667, "effort": 89.62406251802892, "time": 4.9791145843349405, "bugs": 0.017924812503605784}, "find_nearest_city": {"h1": 1, "h2": 2, "N1": 1, "N2": 2, "vocabulary": 3, "length": 3, "calculated_length": 2.0, "volume": 4.754887502163469, "difficulty": 0.5, "effort": 2.3774437510817346, "time": 0.1320802083934297, "bugs": 0.0015849625007211565}, "generate_tour": {"h1": 2, "h2": 5, "N1": 6, "N2": 8, "vocabulary": 7, "length": 14, "calculated_length": 13.60964047443681, "volume": 39.302968908806456, "difficulty": 1.6, "effort": 62.884750254090335, "time": 3.493597236338352, "bugs": 0.01310098963626882}, "main": {"h1": 0, "h2": 0, "N1": 0, "N2": 0, "vocabulary": 0, "length": 0, "calculated_length": 0, "volume": 0, "difficulty": 0, "effort": 0, "time": 0.0, "bugs": 0.0}}}
         tr = ToolResult(raw=raw_result)
-        MAX_FILE_BUGS = 2
-        MAX_FILE_VOLUME = 8000
-        MAX_FUNCTION_BUGS = 1
-        MAX_FUNCTION_VOLUME = 1000
+        MAX_FILE_BUGS = 1
+        MAX_FILE_VOLUME = 2000
+        MAX_FUNCTION_BUGS = 0.2
+        MAX_FUNCTION_VOLUME = 300
 
         min_file_nb = 1.0
         min_file_sm = 1.0
@@ -67,7 +67,7 @@ class HalsteadParser(AbstractParser):
         """
         Extracts the bugs and smallness from the given data.
         """
-        no_bugs_score = inv_normalize(values.get("bugs", max_bugs), max_bugs)
-        smallness_score = inv_normalize(values.get("volume", max_volume), max_volume)
+        no_bugs_score = score_logistic_variant(values.get("bugs", max_bugs), max_bugs)
+        smallness_score = score_logistic_variant(values.get("volume", max_volume), max_volume)
 
         return no_bugs_score, smallness_score
