@@ -60,7 +60,7 @@ class ToolResult:
 
 @dataclass
 class CombinedToolResults:
-    """Represents the aggregated metric from all tools."""
+    """Represents the aggregated tool results from all tools."""
 
     def __init__(self, path: str, tool_results: list[ToolResult]):
         self.tool_results = tool_results

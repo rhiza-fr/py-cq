@@ -51,7 +51,7 @@ def generate_tour(cities, start_city):
 
 
 def main():
-    # fork = {a=4}
+    fork = {a=4}
     cities = [(0, 0), (1, 5), (5, 3), (3, 1), (1, 4)]
 
     tour, total_distance = generate_tour(cities, cities[0])
