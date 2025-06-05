@@ -1,71 +1,28 @@
+import yaml
+from pathlib import Path
+from importlib import import_module
 from cq.localtypes import ToolConfig
-from cq.parsers.compile_parser import CompileParser
-from cq.parsers.complexity_parser import ComplexityParser
-from cq.parsers.coverage_parser import CoverageParser
-from cq.parsers.halstead_parser import HalsteadParser
-from cq.parsers.maintainability_parser import MaintainabilityParser
-from cq.parsers.pydocstyle_parser import PydocstyleParser
-from cq.parsers.pytest_parser import PytestParser
 
-# from cq.parsers.profile_parser import ProfileParser
+def load_tool_configs():
+    """Load tool configurations from YAML file and build registry"""
+    config_path = Path(__file__).parent.parent / "config" / "tools.yaml"
+    with open(config_path) as f:
+        config = yaml.safe_load(f)
+    
+    registry = {}
+    for tool_id, tool_data in config["tools"].items():
+        # Dynamically import parser class
+        module = import_module(f"cq.parsers.{tool_data['parser'].lower()}_parser")
+        parser_class = getattr(module, tool_data["parser"])
+        
+        registry[tool_id] = ToolConfig(
+            name=tool_data["name"],
+            command=tool_data["command"],
+            parser_class=parser_class,
+            priority=tool_data["priority"],
+            warning_threshold=tool_data["warning_threshold"],
+            error_threshold=tool_data["error_threshold"],
+        )
+    return registry
 
-
-tool_registry = {
-    "compilation": ToolConfig(
-        name="compile",
-        command=r"python -m compileall -r 10 -j 8 -f {context_path} -x .*venv",
-        parser_class=CompileParser,
-        priority=1,
-        warning_threshold=0.9999,
-        error_threshold=0.9999,  # all non compilation is an error
-    ),
-    "pytest": ToolConfig(
-        name="pytest",
-        command="pytest -v {context_path}",
-        parser_class=PytestParser,
-        priority=2,
-        warning_threshold=0.7,
-        error_threshold=0.5,
-    ),
-    "coverage": ToolConfig(
-        name="coverage",
-        command="coverage run -m pytest {context_path} && coverage report",
-        parser_class=CoverageParser,
-        priority=2,
-        warning_threshold=0.9,
-        error_threshold=0.5,
-    ),
-    "pydocstyle": ToolConfig(
-        name="pydocstyle",
-        command="pydocstyle --convention=google {context_path}",
-        parser_class=PydocstyleParser,
-        priority=5,
-        warning_threshold=0.8,
-        error_threshold=0.3,
-    ),
-    "maintainability": ToolConfig(
-        name="radon mi",
-        command="radon mi -s --json {context_path}",
-        parser_class=MaintainabilityParser,
-        priority=3,
-        warning_threshold=0.6,
-        error_threshold=0.4,
-    ),
-    "complexity": ToolConfig(
-        name="radon cc",
-        command="radon cc --json {context_path}",
-        parser_class=ComplexityParser,
-        priority=3,
-        warning_threshold=0.6,
-        error_threshold=0.4,
-    ),
-    "halstead": ToolConfig(
-        name="radon hal",
-        command="radon hal -f --json {context_path}",
-        parser_class=HalsteadParser,
-        priority=4,
-        warning_threshold=0.5,
-        error_threshold=0.3,
-    ),
-    # "profile": ToolConfig(name="cProfile", command="python -m cProfile -o profile.prof {context_path}", parser_class=ProfileParser),
-}
+tool_registry = load_tool_configs()
