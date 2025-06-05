@@ -38,19 +38,21 @@ class CompileParser(AbstractParser):
                     # Empty line ends the error block
                     # Parse error details from the error block
                     error_lines = current_error["error"].splitlines()
-                    error_info = {
-                        "details": "\n".join(error_lines[1:]).replace("\\", "/")
-                    }
+                    error_info = {}
                     
                     # Extract line number if present
                     if "line " in error_lines[0]:
                         error_info["line"] = int(error_lines[0].split("line ")[1].split(",")[0])
                     
-                    # Extract error type if present
+                    # Extract error type and help message
                     if ":" in error_lines[0]:
-                        error_type = error_lines[0].split(":")[-1].strip()
-                        if error_type:
-                            error_info["type"] = error_type
+                        error_parts = error_lines[0].split(":")
+                        error_info["type"] = error_parts[-2].strip().split()[-1]  # Gets "SyntaxError"
+                        error_info["help"] = error_parts[-1].strip()  # Gets help message
+                    
+                    # Get source code context if available
+                    if len(error_lines) > 1:
+                        error_info["src"] = error_lines[1].strip()
                     
                     file_path = current_error["file"].replace("\\", "/")
                     failed_files[file_path] = error_info
