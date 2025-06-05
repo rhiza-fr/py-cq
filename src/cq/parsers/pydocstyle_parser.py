@@ -18,10 +18,10 @@ class PydocstyleParser(AbstractParser):
         #         D103: Missing docstring in public function
 
         tr = ToolResult(raw=raw_result)
-        MAX_DOCSTRING_ERRORS = 100
+        MAX_DOCSTRING_ERRORS = 60
         lines = raw_result.stdout.splitlines()
         errors = len(lines) / 2
-        score = score_logistic_variant(errors, scale_factor=60)  # 5 per file would make sense
+        score = score_logistic_variant(errors, scale_factor=MAX_DOCSTRING_ERRORS)  # 5 per file would make sense
         # score = score_logistic_variant(len(lines) / 2, MAX_DOCSTRING_ERRORS)
         print("Docstring", len(lines) / 2, score)
         tr.metrics = {"docstyle": score}
