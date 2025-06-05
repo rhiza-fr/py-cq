@@ -12,6 +12,9 @@ class ToolConfig:
     command: str  # The command to execute (can include placeholders)
     parser_class: Callable  # Name of the parser class to use
     context_path: str = ""  # Path to project or file
+    priority: int = 5  # 1=critical (compilation), 5=low (style)
+    warning_threshold: float = 0.7  # Yellow warning if below this
+    error_threshold: float = 0.5  # Red error if below this
 
 
 @dataclass
