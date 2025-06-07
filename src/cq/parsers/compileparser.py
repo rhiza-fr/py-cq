@@ -38,21 +38,26 @@ class CompileParser(AbstractParser):
                     # Empty line ends the error block
                     # Parse error details from the error block
                     error_lines = current_error["error"].splitlines()
+                    print(error_lines)
                     error_info = {}
                     
                     # Extract line number if present
                     if "line " in error_lines[0]:
                         error_info["line"] = int(error_lines[0].split("line ")[1].split(",")[0])
                     
-                    # Extract error type and help message
-                    if ":" in error_lines[0]:
-                        error_parts = error_lines[0].split(":")
-                        error_info["type"] = error_parts[-2].strip().split()[-1]  # Gets "SyntaxError"
-                        error_info["help"] = error_parts[-1].strip()  # Gets help message
-                    
                     # Get source code context if available
                     if len(error_lines) > 1:
                         error_info["src"] = error_lines[1].strip()
+                    
+                    if len(error_lines) > 3:
+                        if "Error:" in error_lines[3]:
+                            error_parts = error_lines[3].split(":")
+                            error_info["type"] = error_parts[0].strip().split()[-1]  # Gets "SyntaxError"
+                            error_info["help"] =",".join(error_parts[1:]).strip()  # Gets help message
+                    else:
+                        error_info["type"] = "Unknown"
+                        error_info["help"] = "\n".join(error_lines[2:]).strip()
+
                     
                     file_path = current_error["file"].replace("\\", "/")
                     failed_files[file_path] = error_info
@@ -77,5 +82,12 @@ class CompileParser(AbstractParser):
         if failed_files:
             tr.details["failed_files"] = failed_files
 
-        tr.details["return_code"] = raw_result.return_code
         return tr
+    
+
+    def provide_help(self, tr: ToolResult) -> str:
+        ret = []
+        failures =  tr.details.get("failed_files", {})
+        for failure, details in failures.items():
+            ret.append(f"Failed to compile {failure}:\n{details}")
+        return "\n".join(ret)

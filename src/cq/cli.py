@@ -3,15 +3,17 @@ import logging
 from pathlib import Path
 
 import typer
+from rich.console import Console
+from rich.logging import RichHandler
+from rich.table import Table
+
 from cq.config import DEFAULT_STORAGE_FILE
 from cq.execution_engine import run_tool, run_tools
+from cq.help_engine import provide_help
 from cq.localtypes import CombinedToolResults
 from cq.metric_aggregator import aggregate_metrics
 from cq.storage import save_result
 from cq.tool_registry import tool_registry
-from rich.console import Console
-from rich.logging import RichHandler
-from rich.table import Table
 
 logging.basicConfig(
     level="INFO", format="%(message)s", datefmt="[%X]", handlers=[RichHandler(markup=True)]
@@ -97,6 +99,7 @@ def run(
     else:
         save_result(combined_tool_results=combined_metrics, file_name=out_file)
         console.print(format_as_table(combined_metrics))
+        console.print(provide_help(tool_registry, combined_metrics))
 
 
 def format_as_table(data: CombinedToolResults):
@@ -114,7 +117,7 @@ def format_as_table(data: CombinedToolResults):
             if value < config.error_threshold:
                 status = "[bold red]❌ Error[/]"
             elif value < config.warning_threshold:
-                status = "[yellow]⚠️ Warning[/]"
+                status = "[yellow]⚠️  Warning[/]"
             else:
                 status = "[green]✓ OK[/]"
             table.add_row(tool_name, name, f"{value:0.3f}", status)

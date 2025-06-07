@@ -93,3 +93,5 @@ class AbstractParser(ABC):
     @abstractmethod
     def parse(self, raw_result: RawResult) -> ToolResult:
         pass
+    def provide_help(self,tr: ToolResult) -> str:
+        return ""
