@@ -16,7 +16,7 @@ class CompileParser(AbstractParser):
         # Compiling '.\\src\\cq\\metric_aggregator.py'...
 
         compilations = 0
-        failed_files: dict[str, str] = {}
+        failed_files: dict[str, dict] = {}
         current_error = None
 
         # Process stdout first for successful compilations
