@@ -9,6 +9,7 @@ def provide_help(tool_configs, crt: CombinedToolResults) -> str:
         if tr.raw.tool_name == "compile":
             parser = tool_configs["compilation"].parser_class()
             return parser.provide_help(tr)
+    return "No help available."
 
 
 

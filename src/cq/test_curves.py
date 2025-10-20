@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-# --- Smoothing Functions (from previous response) ---
 def score_exponential_decay(errors, scale_factor=43.29):
     if errors < 0:
         errors = 0

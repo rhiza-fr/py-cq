@@ -48,7 +48,7 @@ cq run path/to/code --log-level DEBUG
 
 The tool provides:
 - Individual metric scores for each analysis tool
-- Color-coded status indicators ( OK,   Warning, L Error)
+- Color-coded status indicators (OK, ï¿½ Warning, L Error)
 - Overall quality score
 - Actionable help suggestions based on the analysis results
 

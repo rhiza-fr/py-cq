@@ -1,1 +1,1 @@
-DEFAULT_STORAGE_FILE = "analysis_results.json"
+DEFAULT_STORAGE_FILE = ".cq.json"
