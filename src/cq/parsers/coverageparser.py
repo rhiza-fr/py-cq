@@ -20,7 +20,7 @@ class CoverageParser(AbstractParser):
         The coverage percentage is converted to a fraction (e.g. 90\u202f% → 0.9) and
         stored in ``metrics['coverage']`` for the overall ``TOTAL`` line, while
         the per-file values are placed in ``details`` with the file path
-        normalised to use forward slashes.  The tool’s return code is added to
+        normalised to use forward slashes.  The tool's return code is added to
         ``details`` under the key ``'return_code'``.
 
         Args:
@@ -28,7 +28,7 @@ class CoverageParser(AbstractParser):
 
         Returns:
             ToolResult: A structured result containing the overall coverage
-            metric, per-file coverage percentages, and the tool’s return code.
+            metric, per-file coverage percentages, and the tool's return code.
 
         Example:
             >>> parser = CoverageParser()

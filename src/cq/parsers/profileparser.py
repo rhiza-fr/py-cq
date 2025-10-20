@@ -6,12 +6,13 @@ It provides helper methods to format function signatures, convert a
 `pstats.Stats` instance into a JSON-serialisable dictionary, and serialize
 that dictionary to JSON.  The parser removes file-path prefixes,
 sorts functions by cumulative time, and filters results to the
-functions defined in the user’s source code.  It is intended for use
+functions defined in the user's source code.  It is intended for use
 within a profiling-tooling pipeline that expects `AbstractParser`
 instances.'''
 
 import json
 import pstats
+
 from cq.localtypes import AbstractParser, RawResult, ToolResult
 
 
@@ -23,7 +24,7 @@ class ProfileParser(AbstractParser):
     or JSON strings. It provides helper methods for formatting function signatures
     and for extracting the top\u202fN most-called functions. The class implements the
     ``parse`` method from :class:`AbstractParser`, enabling seamless use within
-    the tool’s pipeline."""
+    the tool's pipeline."""
 
     def parse(self, raw_result: RawResult) -> ToolResult:
         """Parses profiling data from ``profile.prof`` and wraps it in a
@@ -78,7 +79,7 @@ class ProfileParser(AbstractParser):
 
         The resulting dictionary contains a summary of the total calls and total
         cumulative time as well as a list of function entries.  Each function entry
-        stores the function’s qualified name, file name, line number, and various
+        stores the function's qualified name, file name, line number, and various
         performance counters such as primitive calls, total calls, exclusive time,
         and inclusive cumulative time.  Additionally, the entry lists callers and
         callees with detailed statistics about the interactions between functions.

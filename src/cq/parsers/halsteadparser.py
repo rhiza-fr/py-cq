@@ -6,6 +6,7 @@ converts the JSON output from Halstead metric tools into a
 maximum thresholds, and aggregates file- and function-level metrics."""
 
 import json
+
 from cq.localtypes import AbstractParser, RawResult, ToolResult
 from cq.parsers.common import score_logistic_variant
 
@@ -20,7 +21,7 @@ class HalsteadParser(AbstractParser):
     The helper `extract_bugs_and_volume` performs the core calculation of
     bug-free and smallness scores.
 
-    The parser also records the tool’s return code and any errors in the
+    The parser also records the tool's return code and any errors in the
     result details."""
 
     def parse(self, raw_result: RawResult) -> ToolResult:
@@ -37,7 +38,7 @@ class HalsteadParser(AbstractParser):
         After processing all entries, aggregate metrics
         (``file_bug_free``, ``file_smallness``,
         ``functions_bug_free``, ``functions_smallness``) are calculated
-        from the minimum values observed. The tool’s return code is also
+        from the minimum values observed. The tool's return code is also
         recorded in the ``ToolResult`` details.
 
         Args:
