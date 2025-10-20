@@ -1,11 +1,58 @@
-import json
+"""Utilities for parsing Halstead-based metrics.
 
+This module implements :class:`HalsteadParser`, an ``AbstractParser`` that
+converts the JSON output from Halstead metric tools into a
+``ToolResult``.  It extracts bug estimates and program volume, applies
+maximum thresholds, and aggregates file- and function-level metrics."""
+
+import json
 from cq.localtypes import AbstractParser, RawResult, ToolResult
 from cq.parsers.common import score_logistic_variant
 
 
 class HalsteadParser(AbstractParser):
+    """Parses Halstead metric output and converts it into a `ToolResult`.
+
+    Implements the `AbstractParser` interface for tools that emit
+    Halstead-based JSON.  The `parse` method consumes a `RawResult`,
+    extracts per-file and per-function metrics, applies the configured
+    maximum bug and volume thresholds, and aggregates the results.
+    The helper `extract_bugs_and_volume` performs the core calculation of
+    bug-free and smallness scores.
+
+    The parser also records the tool’s return code and any errors in the
+    result details."""
+
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """Parses Halstead tool JSON output and returns a ToolResult.
+
+        The method reads ``raw_result.stdout``—a JSON string containing
+        per-file and per-function Halstead metrics. For each file it
+        populates a ``ToolResult`` detail entry with bug-free and
+        smallness scores. If a file contains an ``error`` key, the
+        associated metrics are set to zero and the error message is
+        stored. File-level and function-level thresholds are applied
+        when computing metrics via :meth:`extract_bugs_and_volume`.
+
+        After processing all entries, aggregate metrics
+        (``file_bug_free``, ``file_smallness``,
+        ``functions_bug_free``, ``functions_smallness``) are calculated
+        from the minimum values observed. The tool’s return code is also
+        recorded in the ``ToolResult`` details.
+
+        Args:
+            raw_result (RawResult): The raw output from a Halstead
+                analysis tool. Its ``stdout`` attribute must contain a
+                JSON string with the expected structure.
+
+        Returns:
+            ToolResult: A populated ``ToolResult`` instance with
+                detailed per-file and per-function metrics, aggregate
+                metrics, and the tool's return code.
+
+        Raises:
+            json.JSONDecodeError: If the ``stdout`` cannot be parsed as
+                JSON."""
         # radon hal -f --json .\data\problems\travelling_salesman\ts_bad.py
         # {".\\data\\problems\\travelling_salesman\\ts_bad.py":
         #  {"total": {"h1": 6, "h2": 18, "N1": 13, "N2": 22, "vocabulary": 24, "length": 35, "calculated_length": 90.56842503028855, "volume": 160.4736875252405, "difficulty": 3.6666666666666665, "effort": 588.4035209258818, "time": 32.68908449588233, "bugs": 0.05349122917508017},
@@ -15,17 +62,19 @@ class HalsteadParser(AbstractParser):
         MAX_FILE_VOLUME = 2000
         MAX_FUNCTION_BUGS = 0.2
         MAX_FUNCTION_VOLUME = 300
-
         min_file_nb = 1.0
         min_file_sm = 1.0
         min_function_nb = 1.0
         min_function_sm = 1.0
-
         data = json.loads(raw_result.stdout)
         for file, values in data.items():
             file_name = file.replace("\\", "/")
             if file_name not in tr.details:
-                tr.details[file_name] = {"bug_free": 0.0, "smallness": 0.0, "functions": {}}
+                tr.details[file_name] = {
+                    "bug_free": 0.0,
+                    "smallness": 0.0,
+                    "functions": {},
+                }
             if "error" in values:
                 min_file_nb = 0.0
                 min_file_sm = 0.0
@@ -51,7 +100,6 @@ class HalsteadParser(AbstractParser):
                         "no_bugs": nb,
                         "smallness": sm,
                     }
-
         tr.metrics = {
             "file_bug_free": min_file_nb,
             "file_smallness": min_file_sm,
@@ -64,10 +112,9 @@ class HalsteadParser(AbstractParser):
     def extract_bugs_and_volume(
         self, values: dict, max_bugs: float, max_volume: float
     ) -> tuple[float, float]:
-        """
-        Extracts the bugs and smallness from the given data.
-        """
+        """Calculates bug-free and smallness scores from Halstead metrics using logistic scoring."""
         no_bugs_score = score_logistic_variant(values.get("bugs", max_bugs), max_bugs)
-        smallness_score = score_logistic_variant(values.get("volume", max_volume), max_volume)
-
-        return no_bugs_score, smallness_score
+        smallness_score = score_logistic_variant(
+            values.get("volume", max_volume), max_volume
+        )
+        return (no_bugs_score, smallness_score)

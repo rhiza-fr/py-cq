@@ -1,10 +1,51 @@
-import re
+"""Parses pytest test run output into a standardized :class:`ToolResult`.
 
+This module provides :class:`PytestParser`, a concrete implementation of
+:class:`AbstractParser` that consumes a :class:`RawResult` produced by a pytest
+invocation and returns a :class:`ToolResult` instance.  The parser extracts
+per-test statuses, calculates the overall pass rate, and attaches the
+process return code so downstream components can uniformly consume results
+from multiple test tools.  It is part of the test-collection framework and
+enables consistent handling of pytest output across the system."""
+
+import re
 from cq.localtypes import AbstractParser, RawResult, ToolResult
 
 
 class PytestParser(AbstractParser):
+    """Parses raw pytest output into a structured `ToolResult`.
+
+    Transforms the low-level output from a pytest run into a `ToolResult` that includes pass-rate metrics and detailed per-file test information, enabling downstream components to consume test metrics in a consistent, typed format. Inherits from `AbstractParser` to integrate with the existing parsing framework."""
+
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """Parse pytest raw output into a structured ToolResult.
+
+        This method transforms the textual output of a pytest run into a
+        :class:`ToolResult` object containing two pieces of information:
+
+        * ``metrics['tests']`` - the fraction of tests that passed (``0`` when no
+          tests were executed).
+        * ``details`` - a mapping from each test file to the names of the
+          tests defined in that file and their status (`PASSED`, `FAILED`, etc.).
+          The dictionary also includes the process ``return_code`` for
+          downstream consumers.
+
+        The method splits ``raw_result.stdout`` into lines, checks for the
+        ``'no tests ran'`` sentinel, then uses a regular expression to locate
+        ``<file>::<test_name> <status>`` patterns.  It counts the total number of
+        tests and the number of passed tests to compute the pass-rate metric.
+
+        Args:
+            raw_result (RawResult): Raw output produced by a pytest run,
+                containing ``stdout`` and ``return_code``.
+
+        Returns:
+            ToolResult: A structured result that includes a ``tests`` metric
+            and a ``details`` dictionary as described above.
+
+        Raises:
+            None.  The method never raises an exception; it gracefully handles
+            malformed input by treating it as no tests were run."""
         # Simplified parsing - replace with actual logic
         lines = raw_result.stdout.splitlines()
         tr = ToolResult(raw=raw_result)
@@ -16,7 +57,7 @@ class PytestParser(AbstractParser):
             passed_tests = 0
             for line in lines:
                 # data/problems/travelling_salesman/ts_good.py::test_calc_dist PASSED
-                tests_match = re.search(r"(.*\.py)::(\w+) (\w+)", raw_result.stdout)
+                tests_match = re.search("(.*\\.py)::(\\w+) (\\w+)", raw_result.stdout)
                 if tests_match:
                     test_file = tests_match.group(1)
                     test_name = tests_match.group(2)

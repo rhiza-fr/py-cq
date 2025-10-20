@@ -1,0 +1,2089 @@
+[
+  {
+    "task_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "parent_id": "0",
+    "status": "DONE",
+    "task_type": "DOC",
+    "target": "D:\\ai\\cq\\src\\cq",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.077541+00:00",
+      "enhance": true,
+      "started_at": "2025-10-20T12:49:44.079775+00:00",
+      "completed_at": "2025-10-20T12:58:16.712480+00:00",
+      "return_code": 0,
+      "return_message": "end"
+    }
+  },
+  {
+    "task_id": "79ab0da4-50b7-48e9-a8ab-8528ee3378c6",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\__init__.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.244748+00:00",
+      "started_at": "2025-10-20T12:49:44.478356+00:00",
+      "completed_at": "2025-10-20T12:49:47.353733+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "22ac511a-b824-4f49-8d0d-13073b693b70",
+    "parent_id": "79ab0da4-50b7-48e9-a8ab-8528ee3378c6",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\__init__.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:47.245512+00:00",
+      "started_at": "2025-10-20T12:49:47.247079+00:00",
+      "completed_at": "2025-10-20T12:49:47.344271+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "c55651cd-0502-4af3-bb0b-1848b7f99055",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\__init__.py|hello",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.245656+00:00",
+      "started_at": "2025-10-20T12:49:47.355274+00:00",
+      "completed_at": "2025-10-20T12:49:49.930450+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "3148c437-5ce6-47a4-a421-e999fb9de25b",
+    "parent_id": "c55651cd-0502-4af3-bb0b-1848b7f99055",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\__init__.py|hello",
+    "context": {
+      "created_at": "2025-10-20T12:49:49.813403+00:00",
+      "started_at": "2025-10-20T12:49:49.815381+00:00",
+      "completed_at": "2025-10-20T12:49:49.920858+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "5184ff2a-94c9-4886-83af-cefe9a612887",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\cli.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.246694+00:00",
+      "started_at": "2025-10-20T12:49:49.940141+00:00",
+      "completed_at": "2025-10-20T12:49:54.783486+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "8ddc7de1-35dc-4cbe-87cd-a7881d42a863",
+    "parent_id": "5184ff2a-94c9-4886-83af-cefe9a612887",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\cli.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:54.662533+00:00",
+      "started_at": "2025-10-20T12:49:54.663635+00:00",
+      "completed_at": "2025-10-20T12:49:54.773360+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "6b0aa1b5-72f5-4ab2-aeb8-ac076d52812e",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\cli.py|run",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.252504+00:00",
+      "started_at": "2025-10-20T12:49:54.786422+00:00",
+      "completed_at": "2025-10-20T12:50:07.452827+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "073bfd15-b17c-4eea-9840-71718485d030",
+    "parent_id": "6b0aa1b5-72f5-4ab2-aeb8-ac076d52812e",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\cli.py|run",
+    "context": {
+      "created_at": "2025-10-20T12:50:07.337106+00:00",
+      "started_at": "2025-10-20T12:50:07.338149+00:00",
+      "completed_at": "2025-10-20T12:50:07.442178+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "0cdf3fc8-449b-4350-b5ea-a81c674c7815",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\cli.py|format_as_table",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.253532+00:00",
+      "started_at": "2025-10-20T12:50:07.463863+00:00",
+      "completed_at": "2025-10-20T12:50:14.772082+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "2cacc321-eb5b-4e37-a99a-7897f66abb1b",
+    "parent_id": "0cdf3fc8-449b-4350-b5ea-a81c674c7815",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\cli.py|format_as_table",
+    "context": {
+      "created_at": "2025-10-20T12:50:14.650641+00:00",
+      "started_at": "2025-10-20T12:50:14.652137+00:00",
+      "completed_at": "2025-10-20T12:50:14.762455+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "d8302494-85ae-4b19-bbf1-68dea0a561b7",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\config.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.260550+00:00",
+      "started_at": "2025-10-20T12:50:14.782216+00:00",
+      "completed_at": "2025-10-20T12:50:21.605223+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "26ee1c5e-dbe6-4b0c-86a4-8ecf5847548d",
+    "parent_id": "d8302494-85ae-4b19-bbf1-68dea0a561b7",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\config.py",
+    "context": {
+      "created_at": "2025-10-20T12:50:21.481743+00:00",
+      "started_at": "2025-10-20T12:50:21.483849+00:00",
+      "completed_at": "2025-10-20T12:50:21.595187+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "be2e5ff7-ad2b-4ce9-823e-996c9276d117",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\context_hash.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.266719+00:00",
+      "started_at": "2025-10-20T12:50:21.614546+00:00",
+      "completed_at": "2025-10-20T12:50:30.723284+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "0b69de75-1b84-4b5e-ad2a-25b8ea33d341",
+    "parent_id": "be2e5ff7-ad2b-4ce9-823e-996c9276d117",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\context_hash.py",
+    "context": {
+      "created_at": "2025-10-20T12:50:30.605175+00:00",
+      "started_at": "2025-10-20T12:50:30.606743+00:00",
+      "completed_at": "2025-10-20T12:50:30.713125+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "add69d01-55b9-493c-a994-af95061d0595",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\context_hash.py|get_sigs",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.271864+00:00",
+      "started_at": "2025-10-20T12:50:30.733444+00:00",
+      "completed_at": "2025-10-20T12:50:40.161860+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "65cc8792-4ef5-4d79-8e14-9521d831cfba",
+    "parent_id": "add69d01-55b9-493c-a994-af95061d0595",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\context_hash.py|get_sigs",
+    "context": {
+      "created_at": "2025-10-20T12:50:40.033914+00:00",
+      "started_at": "2025-10-20T12:50:40.044566+00:00",
+      "completed_at": "2025-10-20T12:50:40.152006+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "bb27dd8d-770b-4cc4-8e9c-5952956d5d77",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\context_hash.py|get_context_hash",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.277573+00:00",
+      "started_at": "2025-10-20T12:50:40.170882+00:00",
+      "completed_at": "2025-10-20T12:50:56.838857+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "cc4f7fe6-0d43-4a44-8dfb-76ca093edec9",
+    "parent_id": "bb27dd8d-770b-4cc4-8e9c-5952956d5d77",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\context_hash.py|get_context_hash",
+    "context": {
+      "created_at": "2025-10-20T12:50:56.711856+00:00",
+      "started_at": "2025-10-20T12:50:56.722052+00:00",
+      "completed_at": "2025-10-20T12:50:56.830570+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "bcb96fd9-8045-46a4-9845-8a2954554dba",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.282891+00:00",
+      "started_at": "2025-10-20T12:50:56.841286+00:00",
+      "completed_at": "2025-10-20T12:51:00.376023+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "d3934bef-c38c-411b-b9a7-cf032a2cde24",
+    "parent_id": "bcb96fd9-8045-46a4-9845-8a2954554dba",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py",
+    "context": {
+      "created_at": "2025-10-20T12:51:00.260634+00:00",
+      "started_at": "2025-10-20T12:51:00.270554+00:00",
+      "completed_at": "2025-10-20T12:51:00.373946+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "208ec0f7-fe79-4b54-9f30-8adbfdcd3a0c",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py|get_hash",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.288314+00:00",
+      "started_at": "2025-10-20T12:51:00.385798+00:00",
+      "completed_at": "2025-10-20T12:51:05.401535+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "b1a63945-63d9-411f-be58-3e2f520f8593",
+    "parent_id": "208ec0f7-fe79-4b54-9f30-8adbfdcd3a0c",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py|get_hash",
+    "context": {
+      "created_at": "2025-10-20T12:51:05.297514+00:00",
+      "started_at": "2025-10-20T12:51:05.299073+00:00",
+      "completed_at": "2025-10-20T12:51:05.398964+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "542a1f5d-526d-4b9e-9ce7-ff3c67ffa453",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py|run_tool",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.294096+00:00",
+      "started_at": "2025-10-20T12:51:05.403600+00:00",
+      "completed_at": "2025-10-20T12:51:14.862676+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "a3d35eab-036d-481e-9c77-22ac26c90165",
+    "parent_id": "542a1f5d-526d-4b9e-9ce7-ff3c67ffa453",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py|run_tool",
+    "context": {
+      "created_at": "2025-10-20T12:51:14.740859+00:00",
+      "started_at": "2025-10-20T12:51:14.741898+00:00",
+      "completed_at": "2025-10-20T12:51:14.853835+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "3632e671-c598-4cf7-a0d3-82a4fe67f5c1",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py|run_tools",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.300835+00:00",
+      "started_at": "2025-10-20T12:51:14.865468+00:00",
+      "completed_at": "2025-10-20T12:51:29.725417+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "dbe2f7bb-51b2-4d8d-af6f-d3f3467c3fe7",
+    "parent_id": "3632e671-c598-4cf7-a0d3-82a4fe67f5c1",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\execution_engine.py|run_tools",
+    "context": {
+      "created_at": "2025-10-20T12:51:29.611915+00:00",
+      "started_at": "2025-10-20T12:51:29.613082+00:00",
+      "completed_at": "2025-10-20T12:51:29.723340+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "09033470-b034-4290-b6d3-32c242fa8689",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\help_engine.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.306988+00:00",
+      "started_at": "2025-10-20T12:51:29.727501+00:00",
+      "completed_at": "2025-10-20T12:51:34.428508+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "b1d627a1-4a13-4c0b-b979-cf45149ecb1d",
+    "parent_id": "09033470-b034-4290-b6d3-32c242fa8689",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\help_engine.py",
+    "context": {
+      "created_at": "2025-10-20T12:51:34.275897+00:00",
+      "started_at": "2025-10-20T12:51:34.287915+00:00",
+      "completed_at": "2025-10-20T12:51:34.417081+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "3e771d2f-df3f-435e-af48-a7d1999bbf7f",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\help_engine.py|provide_help",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.307536+00:00",
+      "started_at": "2025-10-20T12:51:34.440421+00:00",
+      "completed_at": "2025-10-20T12:51:40.753533+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "133adf33-c7df-45be-9b42-2b407e912eb4",
+    "parent_id": "3e771d2f-df3f-435e-af48-a7d1999bbf7f",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\help_engine.py|provide_help",
+    "context": {
+      "created_at": "2025-10-20T12:51:40.629222+00:00",
+      "started_at": "2025-10-20T12:51:40.631259+00:00",
+      "completed_at": "2025-10-20T12:51:40.745435+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "babdaba8-59c0-469b-acbd-6e9475a5fd03",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.308572+00:00",
+      "started_at": "2025-10-20T12:51:40.756132+00:00",
+      "completed_at": "2025-10-20T12:51:46.334927+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "fb4c3ebd-6aea-4151-a890-5bbd0e3ecd33",
+    "parent_id": "babdaba8-59c0-469b-acbd-6e9475a5fd03",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py",
+    "context": {
+      "created_at": "2025-10-20T12:51:46.202436+00:00",
+      "started_at": "2025-10-20T12:51:46.212417+00:00",
+      "completed_at": "2025-10-20T12:51:46.325335+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "fb00f15e-07d6-4380-89d7-1ee480af5be7",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolConfig",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.309606+00:00",
+      "started_at": "2025-10-20T12:51:46.344871+00:00",
+      "completed_at": "2025-10-20T12:51:49.826537+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "15869c6b-54e3-46be-a781-43379b42e498",
+    "parent_id": "fb00f15e-07d6-4380-89d7-1ee480af5be7",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolConfig",
+    "context": {
+      "created_at": "2025-10-20T12:51:49.698075+00:00",
+      "started_at": "2025-10-20T12:51:49.707655+00:00",
+      "completed_at": "2025-10-20T12:51:49.817466+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "85bb1f96-5947-4362-90a0-16d8007ebfa8",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|RawResult",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.310123+00:00",
+      "started_at": "2025-10-20T12:51:49.835890+00:00",
+      "completed_at": "2025-10-20T12:51:53.234015+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "771cb358-a251-47db-978c-18746bb1da17",
+    "parent_id": "85bb1f96-5947-4362-90a0-16d8007ebfa8",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|RawResult",
+    "context": {
+      "created_at": "2025-10-20T12:51:53.102634+00:00",
+      "started_at": "2025-10-20T12:51:53.112978+00:00",
+      "completed_at": "2025-10-20T12:51:53.224157+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "9dbfa20f-f42c-4f50-9223-ffac589e88a4",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|RawResult|to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.311160+00:00",
+      "started_at": "2025-10-20T12:51:53.235728+00:00",
+      "completed_at": "2025-10-20T12:51:58.058975+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "6fd03c3a-6552-46fa-8645-9e6e7c6b878d",
+    "parent_id": "9dbfa20f-f42c-4f50-9223-ffac589e88a4",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|RawResult|to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:51:57.936106+00:00",
+      "started_at": "2025-10-20T12:51:57.945348+00:00",
+      "completed_at": "2025-10-20T12:51:58.049388+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "c6283592-0b7e-42f8-8b78-cb5aff48e976",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolResult",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.318351+00:00",
+      "started_at": "2025-10-20T12:51:58.068767+00:00",
+      "completed_at": "2025-10-20T12:52:04.333561+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "baaa40de-a6ff-40fa-afc6-35657c42a7cc",
+    "parent_id": "c6283592-0b7e-42f8-8b78-cb5aff48e976",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolResult",
+    "context": {
+      "created_at": "2025-10-20T12:52:04.221013+00:00",
+      "started_at": "2025-10-20T12:52:04.228210+00:00",
+      "completed_at": "2025-10-20T12:52:04.331298+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "aeddcbc7-ef62-4896-ae28-54247c98331c",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolResult|__post_init__",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.319389+00:00",
+      "started_at": "2025-10-20T12:52:04.343433+00:00",
+      "completed_at": "2025-10-20T12:52:07.161295+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "e76be5b4-6cac-4e13-b8cb-aa2413d2339c",
+    "parent_id": "aeddcbc7-ef62-4896-ae28-54247c98331c",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolResult|__post_init__",
+    "context": {
+      "created_at": "2025-10-20T12:52:07.034733+00:00",
+      "started_at": "2025-10-20T12:52:07.041932+00:00",
+      "completed_at": "2025-10-20T12:52:07.152109+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "b0bd4f00-1e14-4b70-a001-9c1a7a5cafd5",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolResult|to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.319905+00:00",
+      "started_at": "2025-10-20T12:52:07.171756+00:00",
+      "completed_at": "2025-10-20T12:52:10.526978+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "6d3d6eaa-3e9a-40b4-963c-82615a557292",
+    "parent_id": "b0bd4f00-1e14-4b70-a001-9c1a7a5cafd5",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|ToolResult|to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:52:10.386922+00:00",
+      "started_at": "2025-10-20T12:52:10.397396+00:00",
+      "completed_at": "2025-10-20T12:52:10.514372+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "fa71179f-4080-4c94-a868-1aac25e0cd90",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|CombinedToolResults",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.320938+00:00",
+      "started_at": "2025-10-20T12:52:10.540056+00:00",
+      "completed_at": "2025-10-20T12:52:12.954895+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "87ad0f66-463d-4ca5-8625-d7c4477f998c",
+    "parent_id": "fa71179f-4080-4c94-a868-1aac25e0cd90",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|CombinedToolResults",
+    "context": {
+      "created_at": "2025-10-20T12:52:12.843501+00:00",
+      "started_at": "2025-10-20T12:52:12.845061+00:00",
+      "completed_at": "2025-10-20T12:52:12.944429+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "f71a32f7-39d7-4f88-8701-1255e789b766",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|CombinedToolResults|__init__",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.321975+00:00",
+      "started_at": "2025-10-20T12:52:12.957493+00:00",
+      "completed_at": "2025-10-20T12:52:19.982603+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "9c25f8f6-bc57-48a3-b61f-23eb37586ee0",
+    "parent_id": "f71a32f7-39d7-4f88-8701-1255e789b766",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|CombinedToolResults|__init__",
+    "context": {
+      "created_at": "2025-10-20T12:52:19.862689+00:00",
+      "started_at": "2025-10-20T12:52:19.869850+00:00",
+      "completed_at": "2025-10-20T12:52:19.972814+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "7cbf96e7-84a4-426b-b096-0741517effe5",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|CombinedToolResults|to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.322510+00:00",
+      "started_at": "2025-10-20T12:52:19.985238+00:00",
+      "completed_at": "2025-10-20T12:52:26.968361+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "9aaa7bc9-0fed-42d4-9ef2-c55d8f756e90",
+    "parent_id": "7cbf96e7-84a4-426b-b096-0741517effe5",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|CombinedToolResults|to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:52:26.852730+00:00",
+      "started_at": "2025-10-20T12:52:26.854258+00:00",
+      "completed_at": "2025-10-20T12:52:26.955466+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "92c534b8-bec2-4209-87d2-cedb423f6ff1",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|AbstractParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.323622+00:00",
+      "started_at": "2025-10-20T12:52:26.979704+00:00",
+      "completed_at": "2025-10-20T12:52:30.602845+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "1c2d3bf4-087a-4f52-815b-ce7f5c919c40",
+    "parent_id": "92c534b8-bec2-4209-87d2-cedb423f6ff1",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|AbstractParser",
+    "context": {
+      "created_at": "2025-10-20T12:52:30.466041+00:00",
+      "started_at": "2025-10-20T12:52:30.477448+00:00",
+      "completed_at": "2025-10-20T12:52:30.589917+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "e94cd061-fa73-434a-b747-2ba5b8b954bf",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|AbstractParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.330280+00:00",
+      "started_at": "2025-10-20T12:52:30.611598+00:00",
+      "completed_at": "2025-10-20T12:52:33.437644+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "5ec6e133-1404-43df-8cc9-3acfd681afb8",
+    "parent_id": "e94cd061-fa73-434a-b747-2ba5b8b954bf",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|AbstractParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:52:33.325785+00:00",
+      "started_at": "2025-10-20T12:52:33.327323+00:00",
+      "completed_at": "2025-10-20T12:52:33.426788+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "5bc01c7f-6524-4b29-87c6-c7fe321b36b8",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|AbstractParser|provide_help",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.331311+00:00",
+      "started_at": "2025-10-20T12:52:33.447394+00:00",
+      "completed_at": "2025-10-20T12:52:40.870339+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "125870f9-1ece-49d3-b8c4-f24402938dab",
+    "parent_id": "5bc01c7f-6524-4b29-87c6-c7fe321b36b8",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\localtypes.py|AbstractParser|provide_help",
+    "context": {
+      "created_at": "2025-10-20T12:52:40.730451+00:00",
+      "started_at": "2025-10-20T12:52:40.742458+00:00",
+      "completed_at": "2025-10-20T12:52:40.860167+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "0e775fb0-6a1a-41e9-a510-ed3684dbba31",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\main.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.332345+00:00",
+      "started_at": "2025-10-20T12:52:40.881479+00:00",
+      "completed_at": "2025-10-20T12:52:53.662686+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "46fb5026-af8b-4764-b28a-babdbb3a9edd",
+    "parent_id": "0e775fb0-6a1a-41e9-a510-ed3684dbba31",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\main.py",
+    "context": {
+      "created_at": "2025-10-20T12:52:53.532078+00:00",
+      "started_at": "2025-10-20T12:52:53.542260+00:00",
+      "completed_at": "2025-10-20T12:52:53.652128+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "303e1063-eb4e-4328-aa7e-ded1721c6d75",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\main.py|main",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.332863+00:00",
+      "started_at": "2025-10-20T12:52:53.672586+00:00",
+      "completed_at": "2025-10-20T12:52:56.873803+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "e4a6f374-0d36-4252-9316-551165d5ad67",
+    "parent_id": "303e1063-eb4e-4328-aa7e-ded1721c6d75",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\main.py|main",
+    "context": {
+      "created_at": "2025-10-20T12:52:56.752939+00:00",
+      "started_at": "2025-10-20T12:52:56.755043+00:00",
+      "completed_at": "2025-10-20T12:52:56.864830+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "3ca10b9f-5b9c-4011-84d7-58e19e0d8665",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\metric_aggregator.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.333884+00:00",
+      "started_at": "2025-10-20T12:52:56.883054+00:00",
+      "completed_at": "2025-10-20T12:53:01.916218+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "bc8aa9a7-9385-4d58-966f-e0d633a95099",
+    "parent_id": "3ca10b9f-5b9c-4011-84d7-58e19e0d8665",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\metric_aggregator.py",
+    "context": {
+      "created_at": "2025-10-20T12:53:01.794679+00:00",
+      "started_at": "2025-10-20T12:53:01.796504+00:00",
+      "completed_at": "2025-10-20T12:53:01.905726+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "43edf306-e400-4d5b-bba5-d6d41fd6ea91",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\metric_aggregator.py|aggregate_metrics",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.334920+00:00",
+      "started_at": "2025-10-20T12:53:01.925745+00:00",
+      "completed_at": "2025-10-20T12:53:05.384623+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "8ed2e349-cc54-4d42-8759-d61588f2576c",
+    "parent_id": "43edf306-e400-4d5b-bba5-d6d41fd6ea91",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\metric_aggregator.py|aggregate_metrics",
+    "context": {
+      "created_at": "2025-10-20T12:53:05.259668+00:00",
+      "started_at": "2025-10-20T12:53:05.268430+00:00",
+      "completed_at": "2025-10-20T12:53:05.375309+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "e8fd0c88-72bc-4a35-9cb5-5b0c38c6e665",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\storage.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.339523+00:00",
+      "started_at": "2025-10-20T12:53:05.393166+00:00",
+      "completed_at": "2025-10-20T12:53:10.442713+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "cf65bb01-3890-4c21-ac4b-a8853acce0f6",
+    "parent_id": "e8fd0c88-72bc-4a35-9cb5-5b0c38c6e665",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\storage.py",
+    "context": {
+      "created_at": "2025-10-20T12:53:10.314873+00:00",
+      "started_at": "2025-10-20T12:53:10.324919+00:00",
+      "completed_at": "2025-10-20T12:53:10.433223+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "18717cb6-1283-48b0-bf93-6427320fbe7d",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\storage.py|save_result",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.340551+00:00",
+      "started_at": "2025-10-20T12:53:10.452627+00:00",
+      "completed_at": "2025-10-20T12:53:14.043823+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "bbe2bf61-8b6a-4542-8086-0639bb82b64c",
+    "parent_id": "18717cb6-1283-48b0-bf93-6427320fbe7d",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\storage.py|save_result",
+    "context": {
+      "created_at": "2025-10-20T12:53:13.921879+00:00",
+      "started_at": "2025-10-20T12:53:13.923972+00:00",
+      "completed_at": "2025-10-20T12:53:14.034433+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "cff9787e-e216-46d0-8c01-d92f9ff88c8c",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.345728+00:00",
+      "started_at": "2025-10-20T12:53:14.053568+00:00",
+      "completed_at": "2025-10-20T12:53:22.616820+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "db9649f9-837b-4fad-9abc-a72a90c34e25",
+    "parent_id": "cff9787e-e216-46d0-8c01-d92f9ff88c8c",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py",
+    "context": {
+      "created_at": "2025-10-20T12:53:22.485896+00:00",
+      "started_at": "2025-10-20T12:53:22.495835+00:00",
+      "completed_at": "2025-10-20T12:53:22.606317+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "98decf61-270b-4aab-ae98-33d2e3d9b4a3",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_exponential_decay",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.350919+00:00",
+      "started_at": "2025-10-20T12:53:22.626141+00:00",
+      "completed_at": "2025-10-20T12:53:28.567945+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "14a3165e-e373-442d-90b5-c69fae624ccf",
+    "parent_id": "98decf61-270b-4aab-ae98-33d2e3d9b4a3",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_exponential_decay",
+    "context": {
+      "created_at": "2025-10-20T12:53:28.443839+00:00",
+      "started_at": "2025-10-20T12:53:28.452219+00:00",
+      "completed_at": "2025-10-20T12:53:28.557790+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "33f08821-8477-4ad4-90b7-7f16ec117370",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_inverse_scaling",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.356148+00:00",
+      "started_at": "2025-10-20T12:53:28.577386+00:00",
+      "completed_at": "2025-10-20T12:53:36.542979+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "326ca0e7-e196-47a0-ba2a-37eeeb593a33",
+    "parent_id": "33f08821-8477-4ad4-90b7-7f16ec117370",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_inverse_scaling",
+    "context": {
+      "created_at": "2025-10-20T12:53:36.430274+00:00",
+      "started_at": "2025-10-20T12:53:36.432390+00:00",
+      "completed_at": "2025-10-20T12:53:36.531468+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "f5fc67fe-b373-4a63-acdd-95d43c7a1e26",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_logistic_variant",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.362366+00:00",
+      "started_at": "2025-10-20T12:53:36.545032+00:00",
+      "completed_at": "2025-10-20T12:53:59.833018+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "b9b21407-e239-4426-9acd-859e54ab7e73",
+    "parent_id": "f5fc67fe-b373-4a63-acdd-95d43c7a1e26",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_logistic_variant",
+    "context": {
+      "created_at": "2025-10-20T12:53:59.721166+00:00",
+      "started_at": "2025-10-20T12:53:59.723244+00:00",
+      "completed_at": "2025-10-20T12:53:59.824284+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "f10cc9d3-f8c3-4f85-9649-c17360c3a903",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_linear_clamped",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.368007+00:00",
+      "started_at": "2025-10-20T12:53:59.836225+00:00",
+      "completed_at": "2025-10-20T12:54:10.243701+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "7e140e42-7bcc-4e2b-80ef-169a51369095",
+    "parent_id": "f10cc9d3-f8c3-4f85-9649-c17360c3a903",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\test_curves.py|score_linear_clamped",
+    "context": {
+      "created_at": "2025-10-20T12:54:10.119432+00:00",
+      "started_at": "2025-10-20T12:54:10.130338+00:00",
+      "completed_at": "2025-10-20T12:54:10.232748+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "e674bbc3-6f8c-4c5d-97eb-8d6ba0430815",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\tool_registry.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.372640+00:00",
+      "started_at": "2025-10-20T12:54:10.254634+00:00",
+      "completed_at": "2025-10-20T12:54:16.086979+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "bba8fafb-22e4-48d0-927a-0a94b5cc4741",
+    "parent_id": "e674bbc3-6f8c-4c5d-97eb-8d6ba0430815",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\tool_registry.py",
+    "context": {
+      "created_at": "2025-10-20T12:54:15.980811+00:00",
+      "started_at": "2025-10-20T12:54:15.982576+00:00",
+      "completed_at": "2025-10-20T12:54:16.080116+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "ce32c687-72e8-45ac-a458-e4aba0709cc9",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\tool_registry.py|load_tool_configs",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.376923+00:00",
+      "started_at": "2025-10-20T12:54:16.097375+00:00",
+      "completed_at": "2025-10-20T12:54:24.070382+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "0e23eb44-75db-4ff0-9cba-3a65f37c91e0",
+    "parent_id": "ce32c687-72e8-45ac-a458-e4aba0709cc9",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\tool_registry.py|load_tool_configs",
+    "context": {
+      "created_at": "2025-10-20T12:54:23.941380+00:00",
+      "started_at": "2025-10-20T12:54:23.952205+00:00",
+      "completed_at": "2025-10-20T12:54:24.060475+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "b554f3f2-50e7-4151-8bcd-419d2f396ab2",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\__init__.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.378552+00:00",
+      "started_at": "2025-10-20T12:54:24.079142+00:00",
+      "completed_at": "2025-10-20T12:54:24.219922+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "5112dfd5-800f-4b97-b5d5-7e6a4dce47d4",
+    "parent_id": "b554f3f2-50e7-4151-8bcd-419d2f396ab2",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\__init__.py",
+    "context": {
+      "created_at": "2025-10-20T12:54:24.097022+00:00",
+      "started_at": "2025-10-20T12:54:24.106367+00:00",
+      "completed_at": "2025-10-20T12:54:24.211200+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "5768617f-4be7-40e3-85dc-05865054df75",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\common.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.388072+00:00",
+      "started_at": "2025-10-20T12:54:24.226694+00:00",
+      "completed_at": "2025-10-20T12:54:31.299184+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "31c33cec-01b4-4060-8598-d85564584e5f",
+    "parent_id": "5768617f-4be7-40e3-85dc-05865054df75",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\common.py",
+    "context": {
+      "created_at": "2025-10-20T12:54:31.185395+00:00",
+      "started_at": "2025-10-20T12:54:31.186946+00:00",
+      "completed_at": "2025-10-20T12:54:31.289516+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "afd76be4-b5a1-4860-bb3c-456c561c523b",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\common.py|inv_normalize",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.389127+00:00",
+      "started_at": "2025-10-20T12:54:31.307937+00:00",
+      "completed_at": "2025-10-20T12:54:37.160541+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "09ef2bbc-7920-484c-9d69-b575f3288f5a",
+    "parent_id": "afd76be4-b5a1-4860-bb3c-456c561c523b",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\common.py|inv_normalize",
+    "context": {
+      "created_at": "2025-10-20T12:54:37.036667+00:00",
+      "started_at": "2025-10-20T12:54:37.044165+00:00",
+      "completed_at": "2025-10-20T12:54:37.151326+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "79dea9eb-f512-4b31-97bf-c5660c969294",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\common.py|score_logistic_variant",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.395356+00:00",
+      "started_at": "2025-10-20T12:54:37.170385+00:00",
+      "completed_at": "2025-10-20T12:54:46.376227+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "a5e701eb-20b6-41d6-998e-e6fb2336fd21",
+    "parent_id": "79dea9eb-f512-4b31-97bf-c5660c969294",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\common.py|score_logistic_variant",
+    "context": {
+      "created_at": "2025-10-20T12:54:46.256725+00:00",
+      "started_at": "2025-10-20T12:54:46.264054+00:00",
+      "completed_at": "2025-10-20T12:54:46.366748+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "7f758df1-39fe-4eed-90da-8ebfd14058ed",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.401043+00:00",
+      "started_at": "2025-10-20T12:54:46.384562+00:00",
+      "completed_at": "2025-10-20T12:54:51.437958+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "3621f5d9-b58a-4d29-8379-6d7418cfb1df",
+    "parent_id": "7f758df1-39fe-4eed-90da-8ebfd14058ed",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:54:51.310275+00:00",
+      "started_at": "2025-10-20T12:54:51.311905+00:00",
+      "completed_at": "2025-10-20T12:54:51.427092+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "7a203dcf-db8e-4461-9e88-65e59a7e8fe3",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py|CompileParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.409271+00:00",
+      "started_at": "2025-10-20T12:54:51.447749+00:00",
+      "completed_at": "2025-10-20T12:54:56.242393+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "2ba85ce7-5677-4b11-be4b-537c993b56de",
+    "parent_id": "7a203dcf-db8e-4461-9e88-65e59a7e8fe3",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py|CompileParser",
+    "context": {
+      "created_at": "2025-10-20T12:54:56.104358+00:00",
+      "started_at": "2025-10-20T12:54:56.113651+00:00",
+      "completed_at": "2025-10-20T12:54:56.232821+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "c73f623c-cdc7-4469-9e1b-54d7cbc1d06d",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py|CompileParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.410356+00:00",
+      "started_at": "2025-10-20T12:54:56.252170+00:00",
+      "completed_at": "2025-10-20T12:55:07.997895+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "b17824e0-e2c2-4168-981d-7224737cf4c8",
+    "parent_id": "c73f623c-cdc7-4469-9e1b-54d7cbc1d06d",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py|CompileParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:55:07.883910+00:00",
+      "started_at": "2025-10-20T12:55:07.885630+00:00",
+      "completed_at": "2025-10-20T12:55:07.987431+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "af695ae6-2da7-4a80-b8e9-24eb0d64ae7c",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py|CompileParser|provide_help",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.411994+00:00",
+      "started_at": "2025-10-20T12:55:08.012315+00:00",
+      "completed_at": "2025-10-20T12:55:12.754056+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "4b177c8b-c25c-4e7b-a2bf-a77c9db230ce",
+    "parent_id": "af695ae6-2da7-4a80-b8e9-24eb0d64ae7c",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\compileparser.py|CompileParser|provide_help",
+    "context": {
+      "created_at": "2025-10-20T12:55:12.623178+00:00",
+      "started_at": "2025-10-20T12:55:12.631502+00:00",
+      "completed_at": "2025-10-20T12:55:12.744534+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "fcf8aa56-15cc-4dfb-b481-77ae3b8033a7",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\complexityparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.413044+00:00",
+      "started_at": "2025-10-20T12:55:12.764348+00:00",
+      "completed_at": "2025-10-20T12:55:16.603374+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "8977e12d-550b-4893-9279-5736242be412",
+    "parent_id": "fcf8aa56-15cc-4dfb-b481-77ae3b8033a7",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\complexityparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:55:16.489103+00:00",
+      "started_at": "2025-10-20T12:55:16.496274+00:00",
+      "completed_at": "2025-10-20T12:55:16.594736+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "324bc154-1545-40f9-81c6-37adc0b17a3f",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\complexityparser.py|ComplexityParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.419190+00:00",
+      "started_at": "2025-10-20T12:55:16.606124+00:00",
+      "completed_at": "2025-10-20T12:55:22.905895+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "c4ac20db-e268-40d9-857e-073fc1b6dc05",
+    "parent_id": "324bc154-1545-40f9-81c6-37adc0b17a3f",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\complexityparser.py|ComplexityParser",
+    "context": {
+      "created_at": "2025-10-20T12:55:22.781255+00:00",
+      "started_at": "2025-10-20T12:55:22.791240+00:00",
+      "completed_at": "2025-10-20T12:55:22.896416+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "4b2ae345-1d3b-429a-9ee4-c03f1c1908d0",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\complexityparser.py|ComplexityParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.426494+00:00",
+      "started_at": "2025-10-20T12:55:22.909006+00:00",
+      "completed_at": "2025-10-20T12:55:39.250486+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "4fec1de0-0df1-4d05-8aa1-a3626c30f1e4",
+    "parent_id": "4b2ae345-1d3b-429a-9ee4-c03f1c1908d0",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\complexityparser.py|ComplexityParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:55:39.117965+00:00",
+      "started_at": "2025-10-20T12:55:39.130385+00:00",
+      "completed_at": "2025-10-20T12:55:39.240373+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "53326a8a-c8b0-41b6-9c4f-986ba8810e35",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\coverageparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.428055+00:00",
+      "started_at": "2025-10-20T12:55:39.258731+00:00",
+      "completed_at": "2025-10-20T12:55:41.498438+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "8f9f690f-8af1-46e8-bd8a-29779e9f435a",
+    "parent_id": "53326a8a-c8b0-41b6-9c4f-986ba8810e35",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\coverageparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:55:41.384481+00:00",
+      "started_at": "2025-10-20T12:55:41.386224+00:00",
+      "completed_at": "2025-10-20T12:55:41.487149+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "8dffb53a-1bec-4554-983c-7d29e03bbfc5",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\coverageparser.py|CoverageParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.434261+00:00",
+      "started_at": "2025-10-20T12:55:41.508244+00:00",
+      "completed_at": "2025-10-20T12:55:49.054483+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "e0588a7a-9f25-4566-be1d-a8a7cc0ead87",
+    "parent_id": "8dffb53a-1bec-4554-983c-7d29e03bbfc5",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\coverageparser.py|CoverageParser",
+    "context": {
+      "created_at": "2025-10-20T12:55:48.937383+00:00",
+      "started_at": "2025-10-20T12:55:48.938941+00:00",
+      "completed_at": "2025-10-20T12:55:49.045604+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "56329f47-6d33-4c8a-8eeb-baca9c9eeb9c",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\coverageparser.py|CoverageParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.435306+00:00",
+      "started_at": "2025-10-20T12:55:49.062722+00:00",
+      "completed_at": "2025-10-20T12:56:01.266032+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "dd47088c-49eb-481e-b607-217153143771",
+    "parent_id": "56329f47-6d33-4c8a-8eeb-baca9c9eeb9c",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\coverageparser.py|CoverageParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:56:01.146919+00:00",
+      "started_at": "2025-10-20T12:56:01.154605+00:00",
+      "completed_at": "2025-10-20T12:56:01.256359+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "fc66ea36-3c24-4e4f-9cad-b5e3bda325da",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.439767+00:00",
+      "started_at": "2025-10-20T12:56:01.272728+00:00",
+      "completed_at": "2025-10-20T12:56:05.464414+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "8e6ad87e-8b8a-4af3-a5f9-656903c6235e",
+    "parent_id": "fc66ea36-3c24-4e4f-9cad-b5e3bda325da",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:56:05.344801+00:00",
+      "started_at": "2025-10-20T12:56:05.348451+00:00",
+      "completed_at": "2025-10-20T12:56:05.455453+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "044726f8-b289-4014-9e65-4d8022fad1b6",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py|HalsteadParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.440811+00:00",
+      "started_at": "2025-10-20T12:56:05.467120+00:00",
+      "completed_at": "2025-10-20T12:56:11.659308+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "20c12624-599c-4f91-b078-150fcda66c61",
+    "parent_id": "044726f8-b289-4014-9e65-4d8022fad1b6",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py|HalsteadParser",
+    "context": {
+      "created_at": "2025-10-20T12:56:11.534506+00:00",
+      "started_at": "2025-10-20T12:56:11.544324+00:00",
+      "completed_at": "2025-10-20T12:56:11.650036+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "9ed24fb6-e666-4295-a7dd-2b981f383d6b",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py|HalsteadParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.445971+00:00",
+      "started_at": "2025-10-20T12:56:11.668623+00:00",
+      "completed_at": "2025-10-20T12:56:23.084302+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "04c7b204-43bd-41ed-b983-d960f5ab2f80",
+    "parent_id": "9ed24fb6-e666-4295-a7dd-2b981f383d6b",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py|HalsteadParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:56:22.960528+00:00",
+      "started_at": "2025-10-20T12:56:22.968216+00:00",
+      "completed_at": "2025-10-20T12:56:23.077216+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "b246178f-c64d-49c3-a644-988bcf50969f",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py|HalsteadParser|extract_bugs_and_volume",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.447005+00:00",
+      "started_at": "2025-10-20T12:56:23.094118+00:00",
+      "completed_at": "2025-10-20T12:56:26.862237+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "9732d33c-60d5-4391-bff5-e979727799a0",
+    "parent_id": "b246178f-c64d-49c3-a644-988bcf50969f",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\halsteadparser.py|HalsteadParser|extract_bugs_and_volume",
+    "context": {
+      "created_at": "2025-10-20T12:56:26.738478+00:00",
+      "started_at": "2025-10-20T12:56:26.747819+00:00",
+      "completed_at": "2025-10-20T12:56:26.852795+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "07928c17-b995-469e-ac47-2dad549180cb",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\maintainabilityparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.448040+00:00",
+      "started_at": "2025-10-20T12:56:26.871005+00:00",
+      "completed_at": "2025-10-20T12:56:29.914837+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "b60a0315-1013-4c27-9d3b-b2886d240ec3",
+    "parent_id": "07928c17-b995-469e-ac47-2dad549180cb",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\maintainabilityparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:56:29.791929+00:00",
+      "started_at": "2025-10-20T12:56:29.793474+00:00",
+      "completed_at": "2025-10-20T12:56:29.904524+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "120312fa-176f-4e3a-aac9-5a1ad8b2eeba",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\maintainabilityparser.py|MaintainabilityParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.449073+00:00",
+      "started_at": "2025-10-20T12:56:29.923600+00:00",
+      "completed_at": "2025-10-20T12:56:39.803385+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "faaf088a-40a1-4cfe-8091-925e638cbe08",
+    "parent_id": "120312fa-176f-4e3a-aac9-5a1ad8b2eeba",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\maintainabilityparser.py|MaintainabilityParser",
+    "context": {
+      "created_at": "2025-10-20T12:56:39.681496+00:00",
+      "started_at": "2025-10-20T12:56:39.690246+00:00",
+      "completed_at": "2025-10-20T12:56:39.793949+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "fb3b4e9e-3d9a-4661-af4b-ee00bbb3a062",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\maintainabilityparser.py|MaintainabilityParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.449589+00:00",
+      "started_at": "2025-10-20T12:56:39.813209+00:00",
+      "completed_at": "2025-10-20T12:56:53.966489+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "d6fff43b-0dbe-4d8d-b6a7-0752a94aee8b",
+    "parent_id": "fb3b4e9e-3d9a-4661-af4b-ee00bbb3a062",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\maintainabilityparser.py|MaintainabilityParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:56:53.838933+00:00",
+      "started_at": "2025-10-20T12:56:53.848922+00:00",
+      "completed_at": "2025-10-20T12:56:53.955679+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "d541e7b9-9ac6-47a8-892d-7830a6dd9156",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.450616+00:00",
+      "started_at": "2025-10-20T12:56:53.973638+00:00",
+      "completed_at": "2025-10-20T12:56:57.026125+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "1f795183-d0b7-423a-8733-01564b7f5926",
+    "parent_id": "d541e7b9-9ac6-47a8-892d-7830a6dd9156",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:56:56.916113+00:00",
+      "started_at": "2025-10-20T12:56:56.918195+00:00",
+      "completed_at": "2025-10-20T12:56:57.016877+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "2414b67d-727c-42d9-8f04-48b049b59e00",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.451725+00:00",
+      "started_at": "2025-10-20T12:56:57.034424+00:00",
+      "completed_at": "2025-10-20T12:57:01.479152+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "5943611d-00f1-4845-8ec8-937af90f8d94",
+    "parent_id": "2414b67d-727c-42d9-8f04-48b049b59e00",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser",
+    "context": {
+      "created_at": "2025-10-20T12:57:01.360860+00:00",
+      "started_at": "2025-10-20T12:57:01.371289+00:00",
+      "completed_at": "2025-10-20T12:57:01.470027+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "c43ecde5-d42b-439b-88a7-6ca6c80ecea6",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.452257+00:00",
+      "started_at": "2025-10-20T12:57:01.489010+00:00",
+      "completed_at": "2025-10-20T12:57:09.261748+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "f2686281-cf65-41ce-8313-fb37077a3475",
+    "parent_id": "c43ecde5-d42b-439b-88a7-6ca6c80ecea6",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:57:09.149303+00:00",
+      "started_at": "2025-10-20T12:57:09.150844+00:00",
+      "completed_at": "2025-10-20T12:57:09.251217+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "a797a02a-12aa-4a11-92d2-d7b9a3ce9324",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|format_func_tuple",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.453577+00:00",
+      "started_at": "2025-10-20T12:57:09.271088+00:00",
+      "completed_at": "2025-10-20T12:57:12.452344+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "6791b0e3-844b-403a-9936-e01edc77a9ee",
+    "parent_id": "a797a02a-12aa-4a11-92d2-d7b9a3ce9324",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|format_func_tuple",
+    "context": {
+      "created_at": "2025-10-20T12:57:12.330979+00:00",
+      "started_at": "2025-10-20T12:57:12.338742+00:00",
+      "completed_at": "2025-10-20T12:57:12.442670+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "cfb676ca-ec97-4aac-8e12-f5379a8f8edb",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|pstats_to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.463145+00:00",
+      "started_at": "2025-10-20T12:57:12.461112+00:00",
+      "completed_at": "2025-10-20T12:57:24.310772+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "7981cde4-983e-4c5a-badc-b09ee1657686",
+    "parent_id": "cfb676ca-ec97-4aac-8e12-f5379a8f8edb",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|pstats_to_dict",
+    "context": {
+      "created_at": "2025-10-20T12:57:24.192756+00:00",
+      "started_at": "2025-10-20T12:57:24.201139+00:00",
+      "completed_at": "2025-10-20T12:57:24.307447+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "01304b9d-3e40-4260-b39e-b74584bf896b",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|pstats_to_json",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.464223+00:00",
+      "started_at": "2025-10-20T12:57:24.321664+00:00",
+      "completed_at": "2025-10-20T12:57:31.526517+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "d658613d-132a-474e-9b56-6f39b956a827",
+    "parent_id": "01304b9d-3e40-4260-b39e-b74584bf896b",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\profileparser.py|ProfileParser|pstats_to_json",
+    "context": {
+      "created_at": "2025-10-20T12:57:31.369805+00:00",
+      "started_at": "2025-10-20T12:57:31.385353+00:00",
+      "completed_at": "2025-10-20T12:57:31.517369+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "797793be-d601-47de-8f69-6bd9b80604ff",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pydocstyleparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.465260+00:00",
+      "started_at": "2025-10-20T12:57:31.535385+00:00",
+      "completed_at": "2025-10-20T12:57:39.426426+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "a4a141e1-03fd-4ea4-ad44-181610347460",
+    "parent_id": "797793be-d601-47de-8f69-6bd9b80604ff",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pydocstyleparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:57:39.286551+00:00",
+      "started_at": "2025-10-20T12:57:39.298289+00:00",
+      "completed_at": "2025-10-20T12:57:39.416626+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "58ec13be-0b90-469e-aaa1-2f0e65f346eb",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pydocstyleparser.py|PydocstyleParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.466822+00:00",
+      "started_at": "2025-10-20T12:57:39.435770+00:00",
+      "completed_at": "2025-10-20T12:57:42.954402+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "0d221672-8e25-4fde-b170-8880df193db2",
+    "parent_id": "58ec13be-0b90-469e-aaa1-2f0e65f346eb",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pydocstyleparser.py|PydocstyleParser",
+    "context": {
+      "created_at": "2025-10-20T12:57:42.815917+00:00",
+      "started_at": "2025-10-20T12:57:42.826123+00:00",
+      "completed_at": "2025-10-20T12:57:42.944435+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "636dd92b-7d9d-4f94-be9b-d029a1be7a95",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pydocstyleparser.py|PydocstyleParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.467889+00:00",
+      "started_at": "2025-10-20T12:57:42.964210+00:00",
+      "completed_at": "2025-10-20T12:57:51.473659+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "ea58fe1e-17d4-45bd-88e0-d627bcc74046",
+    "parent_id": "636dd92b-7d9d-4f94-be9b-d029a1be7a95",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pydocstyleparser.py|PydocstyleParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:57:51.322148+00:00",
+      "started_at": "2025-10-20T12:57:51.334104+00:00",
+      "completed_at": "2025-10-20T12:57:51.463937+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "63ca4e10-cbb8-49ac-9555-9185314872d8",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pytestparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.468426+00:00",
+      "started_at": "2025-10-20T12:57:51.482947+00:00",
+      "completed_at": "2025-10-20T12:57:58.295833+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "8b770bd0-6e79-429f-bee3-08b66f6eaca1",
+    "parent_id": "63ca4e10-cbb8-49ac-9555-9185314872d8",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pytestparser.py",
+    "context": {
+      "created_at": "2025-10-20T12:57:58.173080+00:00",
+      "started_at": "2025-10-20T12:57:58.175184+00:00",
+      "completed_at": "2025-10-20T12:57:58.285331+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "b617338f-7381-434f-8650-9f8be46cec2a",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pytestparser.py|PytestParser",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.470006+00:00",
+      "started_at": "2025-10-20T12:57:58.307164+00:00",
+      "completed_at": "2025-10-20T12:58:02.304495+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "030206f8-3d25-44d1-b5ff-f4a10f16067a",
+    "parent_id": "b617338f-7381-434f-8650-9f8be46cec2a",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pytestparser.py|PytestParser",
+    "context": {
+      "created_at": "2025-10-20T12:58:02.152523+00:00",
+      "started_at": "2025-10-20T12:58:02.161741+00:00",
+      "completed_at": "2025-10-20T12:58:02.295185+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  },
+  {
+    "task_id": "2f1df39c-a6b0-4121-9302-5c00cc0f2d6f",
+    "parent_id": "8b1aa88d-6053-4511-a0d5-df0fc823bbfc",
+    "status": "DONE",
+    "task_type": "ADD_DOC",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pytestparser.py|PytestParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:49:44.471045+00:00",
+      "started_at": "2025-10-20T12:58:02.314939+00:00",
+      "completed_at": "2025-10-20T12:58:16.701611+00:00",
+      "return_code": 0,
+      "return_message": "Added doc."
+    }
+  },
+  {
+    "task_id": "0539c12e-6f40-442f-bfcd-36ccb2eabce0",
+    "parent_id": "2f1df39c-a6b0-4121-9302-5c00cc0f2d6f",
+    "status": "DONE",
+    "task_type": "LINT",
+    "target": "D:\\ai\\cq\\src\\cq\\parsers\\pytestparser.py|PytestParser|parse",
+    "context": {
+      "created_at": "2025-10-20T12:58:16.574011+00:00",
+      "started_at": "2025-10-20T12:58:16.585273+00:00",
+      "completed_at": "2025-10-20T12:58:16.690731+00:00",
+      "return_code": 0,
+      "return_message": ""
+    }
+  }
+]

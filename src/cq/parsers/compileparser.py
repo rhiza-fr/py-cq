@@ -1,9 +1,54 @@
+"""This module defines the :class:`CompileParser`, a concrete subclass of
+:class:`AbstractParser`.  The parser translates raw compiler output into a
+structured :class:`ToolResult`, extracting diagnostics, computing a
+compile score, and providing concise help messages for any failures."""
+
 from cq.localtypes import AbstractParser, RawResult, ToolResult
 from cq.parsers.common import score_logistic_variant
 
 
 class CompileParser(AbstractParser):
+    """Parses raw compiler output into a structured ToolResult.
+
+    The `CompileParser` implements the `AbstractParser` interface, converting
+    `RawResult` objects into `ToolResult` instances that include diagnostics,
+    metrics, and a mapping of failed files. It also supplies a human-readable
+    help string summarizing any compilation errors for a given `ToolResult`."""
+
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """Parses compiler output into a structured ``ToolResult``.
+
+        The method scans the ``stdout`` of a ``RawResult`` object for compilation
+        events and error messages. For each file that emits an error, it extracts
+        the line number, source snippet, error type, and help text, normalizes the
+        file path, and stores this information in a dictionary keyed by file path.
+        It then computes a failure ratio (failed files ÷ total compilations) and
+        derives a compile score via ``score_logistic_variant``.  The original
+        ``stdout`` is cleaned of ``Listing`` lines and back-slash path separators
+        are replaced with forward slashes.  A ``ToolResult`` containing the raw
+        result, a compile metric, and, if any, a mapping of failed files is
+        returned.
+
+        Args:
+            raw_result (RawResult): Raw compiler output, typically containing a
+                ``stdout`` attribute.
+
+        Returns:
+            ToolResult: A structured result containing diagnostics, a compile
+                metric, and a mapping of failed files (if any).
+
+        Example:
+            >>> parser = CompileParser()
+            >>> raw = RawResult(stdout=(
+            ...     'Compiling a.c\\\\n'
+            ...     '***   File "a.c" line 10, column 5:\\\\n'
+            ...     '    error: unknown type name \\\\'foo\\\\'\\\\n'
+            ...     '\\\\n'))
+            >>> result = parser.parse(raw)
+            >>> result.metrics['compile']
+            0.5
+            >>> result.details['failed_files']['a.c']['type']
+            'error'"""
         # Listing '.\\src\\cq'...
         # Listing '.\\src\\cq\\parsers'...
         # Compiling '.\\data\\problems\\travelling_salesman\\ts_bad.py'...
@@ -12,13 +57,10 @@ class CompileParser(AbstractParser):
         #     error = {a = b}
         #              ^^^^^
         # SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
-
         # Compiling '.\\src\\cq\\metric_aggregator.py'...
-
         compilations = 0
         failed_files: dict[str, dict] = {}
         current_error = None
-
         # Process stdout first for successful compilations
         if raw_result.stdout:
             for line in raw_result.stdout.splitlines():
@@ -34,40 +76,39 @@ class CompileParser(AbstractParser):
                 elif line.startswith("Listing "):
                     # Skip directory listings
                     continue
-                elif current_error and not line.strip():
+                elif current_error and (not line.strip()):
                     # Empty line ends the error block
                     # Parse error details from the error block
                     error_lines = current_error["error"].splitlines()
                     print(error_lines)
                     error_info = {}
-                    
                     # Extract line number if present
                     if "line " in error_lines[0]:
-                        error_info["line"] = int(error_lines[0].split("line ")[1].split(",")[0])
-                    
+                        error_info["line"] = int(
+                            error_lines[0].split("line ")[1].split(",")[0]
+                        )
                     # Get source code context if available
                     if len(error_lines) > 1:
                         error_info["src"] = error_lines[1].strip()
-                    
                     if len(error_lines) > 3:
                         if "Error:" in error_lines[3]:
                             error_parts = error_lines[3].split(":")
-                            error_info["type"] = error_parts[0].strip().split()[-1]  # Gets "SyntaxError"
-                            error_info["help"] =",".join(error_parts[1:]).strip()  # Gets help message
+                            error_info["type"] = (
+                                error_parts[0].strip().split()[-1]
+                            )  # Gets "SyntaxError"
+                            error_info["help"] = ",".join(
+                                error_parts[1:]
+                            ).strip()  # Gets help message
                     else:
                         error_info["type"] = "Unknown"
                         error_info["help"] = "\n".join(error_lines[2:]).strip()
-
-                    
                     file_path = current_error["file"].replace("\\", "/")
                     failed_files[file_path] = error_info
                     current_error = None
-
         # Calculate score as ratio of successful compiles to total attempts
         failure_ratio = len(failed_files) / compilations if compilations > 0 else 0.0
         score = score_logistic_variant(failure_ratio, scale_factor=0.25)
         # score = (compilations - len(failed_files)) / compilations if compilations > 0 else 0.0
-
         # I know raw should raw but meh!!!
         # for sanities sake remove all the Listing lines ... wtf? python/windows
         raw_result.stdout = "\n".join(
@@ -78,16 +119,14 @@ class CompileParser(AbstractParser):
             ]
         )
         tr = ToolResult(raw=raw_result, metrics={"compile": score})
-
         if failed_files:
             tr.details["failed_files"] = failed_files
-
         return tr
-    
 
     def provide_help(self, tr: ToolResult) -> str:
+        """Generates a readable summary of all compilation failures recorded in a ToolResult."""
         ret = []
-        failures =  tr.details.get("failed_files", {})
+        failures = tr.details.get("failed_files", {})
         for failure, details in failures.items():
             ret.append(f"Failed to compile {failure}:\n{details}")
         return "\n".join(ret)
