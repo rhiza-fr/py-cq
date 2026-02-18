@@ -93,11 +93,8 @@ def check(
     clear_cache: bool = typer.Option(
         False, "--clear-cache", help="Clear cached tool results before running"
     ),
-    sequential: bool = typer.Option(
-        False, "--sequential", help="Run analysis tools sequentially instead of in parallel"
-    ),
     workers: int = typer.Option(
-        0, "--workers", help="Max parallel workers (default: one per tool)"
+        0, "--workers", help="Max parallel workers (default: one per tool, use 1 for sequential)"
     ),
 ):
     """Run static analysis on a Python file or project directory."""
@@ -114,7 +111,7 @@ def check(
     effective_registry = _apply_user_config(tool_registry, load_user_config(path_obj))
     if clear_cache:
         tool_cache.clear()
-    tool_results = run_tools(effective_registry.values(), path, not sequential, workers)
+    tool_results = run_tools(effective_registry.values(), path, workers)
     for tr in tool_results:
         log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)

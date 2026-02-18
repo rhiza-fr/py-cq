@@ -94,7 +94,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     return raw_result
 
 
-def run_tools(tool_configs: Collection[ToolConfig], path: str, parallel: bool = False, max_workers: int = 0) -> list[ToolResult]:
+def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int = 0) -> list[ToolResult]:
     """Run multiple tools and return their parsed results.
 
     Runs each tool specified in *tool_configs* on the file or directory at
@@ -141,22 +141,20 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, parallel: bool = 
         tr.duration_s = time.perf_counter() - t0
         return tool_config.priority, tr
 
+    if not tool_configs:
+        return []
     t_start = time.perf_counter()
     prioritized: list[tuple[int, ToolResult]] = []
-    if parallel:
-        with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
-            future_to_tool = {
-                executor.submit(_run_and_parse, tool_config): tool_config
-                for tool_config in tool_configs
-            }
-            for future in as_completed(future_to_tool):
-                tool_config = future_to_tool[future]
-                try:
-                    prioritized.append(future.result())
-                except Exception as exc:
-                    log.error(f"{tool_config.name} generated an exception: {exc}")
-    else:
-        for tool_config in tool_configs:
-            prioritized.append(_run_and_parse(tool_config))
+    with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
+        future_to_tool = {
+            executor.submit(_run_and_parse, tool_config): tool_config
+            for tool_config in tool_configs
+        }
+        for future in as_completed(future_to_tool):
+            tool_config = future_to_tool[future]
+            try:
+                prioritized.append(future.result())
+            except Exception as exc:
+                log.error(f"{tool_config.name} generated an exception: {exc}")
     log.info(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
     return [tr for _, tr in sorted(prioritized)]

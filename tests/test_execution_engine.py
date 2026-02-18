@@ -42,18 +42,18 @@ def test_find_project_root_not_found(tmp_path):
     assert result is None or (result / "pyproject.toml").exists()
 
 
-# --- run_tools sequential ---
+# --- run_tools ---
 
-def test_run_tools_sequential_returns_results():
+def test_run_tools_returns_results():
     cfg = _fake_config()
     fake_raw = RawResult(tool_name="fake", stdout="hi")
     with patch("py_cq.execution_engine.run_tool", return_value=fake_raw):
-        results = run_tools([cfg], ".", parallel=False)
+        results = run_tools([cfg], ".")
     assert len(results) == 1
     assert results[0].metrics["score"] == 1.0
 
 
-def test_run_tools_sequential_sorted_by_priority():
+def test_run_tools_sorted_by_priority():
     cfg_low = _fake_config("low", priority=10)
     cfg_high = _fake_config("high", priority=1)
     fake_raw_low = RawResult(tool_name="low", stdout="")
@@ -63,33 +63,22 @@ def test_run_tools_sequential_sorted_by_priority():
         return fake_raw_low if config.name == "low" else fake_raw_high
 
     with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
-        results = run_tools([cfg_low, cfg_high], ".", parallel=False)
+        results = run_tools([cfg_low, cfg_high], ".")
     assert results[0].raw.tool_name == "high"
     assert results[1].raw.tool_name == "low"
 
 
-# --- run_tools parallel ---
-
-def test_run_tools_parallel_returns_results():
-    cfg = _fake_config()
-    fake_raw = RawResult(tool_name="fake", stdout="hi")
-    with patch("py_cq.execution_engine.run_tool", return_value=fake_raw):
-        results = run_tools([cfg], ".", parallel=True)
-    assert len(results) == 1
-    assert results[0].metrics["score"] == 1.0
-
-
-def test_run_tools_parallel_exception_is_logged():
+def test_run_tools_exception_is_logged():
     cfg = _fake_config()
     with patch("py_cq.execution_engine.run_tool", side_effect=RuntimeError("boom")):
         with patch("py_cq.execution_engine.log") as mock_log:
-            results = run_tools([cfg], ".", parallel=True)
+            results = run_tools([cfg], ".")
     assert results == []
     mock_log.error.assert_called_once()
 
 
 def test_run_tools_empty():
-    results = run_tools([], ".", parallel=False)
+    results = run_tools([], ".")
     assert results == []
 
 
