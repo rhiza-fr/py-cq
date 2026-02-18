@@ -18,7 +18,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 from cq.config import DEFAULT_STORAGE_FILE
-from cq.execution_engine import run_tool, run_tools
+from cq.execution_engine import run_tools, _cache as tool_cache
 from cq.help_engine import provide_help
 from cq.localtypes import CombinedToolResults
 from cq.metric_aggregator import aggregate_metrics
@@ -67,6 +67,9 @@ def run(
     parallel: bool = typer.Option(
         False, "--parallel", help="Run analysis tools in parallel for faster execution"
     ),
+    as_llm: bool = typer.Option(
+        False, "--llm", help="Output the most important defect as markdown for LLM consumption"
+    ),
 ):
     """Run static analysis on a Python file or project directory."""
     path_obj = Path(path)
@@ -80,7 +83,7 @@ def run(
             raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
     log.setLevel(log_level)
     if clear_cache:
-        run_tool.clear_cache()  # type: ignore # Use this to remove the tool cache
+        tool_cache.clear()
     tool_results = run_tools(tool_registry.values(), path, parallel)
     for tr in tool_results:
         log.debug(json.dumps(tr.to_dict(), indent=2))
@@ -89,6 +92,9 @@ def run(
         console.print(combined_metrics.score)
     elif as_json:
         console.print(json.dumps(combined_metrics.to_dict(), indent=2))
+    elif as_llm:
+        from cq.llm_formatter import format_for_llm
+        console.print(format_for_llm(tool_registry, combined_metrics))
     else:
         save_result(combined_tool_results=combined_metrics, file_name=out_file)
         console.print(format_as_table(combined_metrics))

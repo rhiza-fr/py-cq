@@ -14,7 +14,7 @@ Errors count more heavily than warnings toward the score."""
 import re
 
 from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant
+from cq.parsers.common import score_logistic_variant, read_source_line
 
 _DIAG_RE = re.compile(r"^(.+):(\d+):\d+:\s+(error|warning)\[([^\]]+)\] (.+)$")
 
@@ -52,3 +52,16 @@ class TyParser(AbstractParser):
     def provide_help(self, tr: ToolResult) -> str:
         """Return the raw ty output as help text."""
         return tr.raw.stdout or ""
+
+    def format_llm_message(self, tr: ToolResult) -> str:
+        """Return the first type-check diagnostic as a defect description."""
+        if not tr.details:
+            return "ty reported issues (no details available)"
+        file, issues = next(iter(tr.details.items()))
+        issue = issues[0]
+        line = issue.get("line", "?")
+        code = issue.get("code", "")
+        message = issue.get("message", "")
+        src_line = read_source_line(file, line)
+        code_block = f"\n```python\n{src_line}\n```" if src_line else ""
+        return f"`{file}:{line}` — **{code}**: {message}{code_block}"

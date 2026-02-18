@@ -131,3 +131,13 @@ class AbstractParser(ABC):
     def provide_help(self, tr: ToolResult) -> str:
         """Returns contextual help for a ToolResult; intended to be overridden by subclasses."""
         return ""
+
+    def format_llm_message(self, tr: ToolResult) -> str:
+        """Return a single-defect description for LLM consumption.
+
+        Default implementation reports the worst metric by name and score.
+        Parsers with richer details should override this."""
+        if tr.metrics:
+            metric_name, value = next(iter(tr.metrics.items()))
+            return f"**{metric_name}** score: {value:.3f}"
+        return "No details available"

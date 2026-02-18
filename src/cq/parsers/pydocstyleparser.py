@@ -22,7 +22,7 @@ import logging
 import re
 
 from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant
+from cq.parsers.common import score_logistic_variant, read_source_line
 
 log = logging.getLogger("cq")
 
@@ -90,3 +90,16 @@ class PydocstyleParser(AbstractParser):
         tr.metrics = {"docstyle": score}
         tr.details = violations
         return tr
+
+    def format_llm_message(self, tr: ToolResult) -> str:
+        """Return the first docstring violation as a defect description."""
+        if not tr.details:
+            return "pydocstyle reported issues (no details available)"
+        file, issues = next(iter(tr.details.items()))
+        issue = issues[0]
+        line = issue.get("line", "?")
+        code = issue.get("code", "")
+        message = issue.get("message", "")
+        src_line = read_source_line(file, line)
+        code_block = f"\n```python\n{src_line}\n```" if src_line else ""
+        return f"`{file}:{line}` — **{code}**: {message}{code_block}"

@@ -69,3 +69,12 @@ class PytestParser(AbstractParser):
             tr.metrics["tests"] = passed_tests / num_tests if num_tests else 0
             tr.details = tests_found
         return tr
+
+    def format_llm_message(self, tr: ToolResult) -> str:
+        """Return the first failing test as a defect description."""
+        for file, tests in tr.details.items():
+            if isinstance(tests, dict):
+                for test_name, status in tests.items():
+                    if status == "FAILED":
+                        return f"`{file}::{test_name}` — test **FAILED**"
+        return "pytest reported failures (no details available)"

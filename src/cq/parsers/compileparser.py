@@ -134,3 +134,16 @@ class CompileParser(AbstractParser):
         for failure, details in failures.items():
             ret.append(f"Failed to compile {failure}:\n{details}")
         return "\n".join(ret)
+
+    def format_llm_message(self, tr: ToolResult) -> str:
+        """Return the first compilation failure as a defect description."""
+        failed = tr.details.get("failed_files", {})
+        if not failed:
+            return "Compilation failed (no details available)"
+        file, info = next(iter(failed.items()))
+        line = info.get("line", "?")
+        src = info.get("src", "")
+        typ = info.get("type", "Error")
+        help_msg = info.get("help", "")
+        code_block = f"\n```python\n{src}\n```" if src else ""
+        return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}"
