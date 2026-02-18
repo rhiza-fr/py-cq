@@ -7,6 +7,7 @@ from cq.parsers.ruffparser import RuffParser
 from cq.parsers.typarser import TyParser
 from cq.parsers.pydocstyleparser import PydocstyleParser
 from cq.parsers.pytestparser import PytestParser
+from cq.parsers.halsteadparser import HalsteadParser
 
 CQ = "cq run test.py --llm"
 
@@ -185,9 +186,67 @@ def test_pytest_format_llm_message_no_failures():
     assert "no details" in PytestParser().format_llm_message(tr).lower()
 
 
+def test_halstead_format_llm_message_function_bugs():
+    tr = _tr("radon hal", {
+        "src/foo.py": {
+            "bug_free": 0.9, "smallness": 0.9, "bugs": 0.05, "volume": 100,
+            "functions": {
+                "big_fn": {"no_bugs": 0.3, "smallness": 0.8, "bugs": 0.45, "volume": 200},
+                "small_fn": {"no_bugs": 0.95, "smallness": 0.95, "bugs": 0.01, "volume": 20},
+            },
+        }
+    })
+    tr.metrics = {"functions_bug_free": 0.3, "functions_smallness": 0.8, "file_bug_free": 0.9, "file_smallness": 0.9}
+    msg = HalsteadParser().format_llm_message(tr)
+    assert "src/foo.py" in msg
+    assert "big_fn" in msg
+    assert "0.450" in msg
+    assert "complexity" in msg.lower() or "bug" in msg.lower()
+
+
+def test_halstead_format_llm_message_file_volume():
+    tr = _tr("radon hal", {
+        "src/large.py": {
+            "bug_free": 0.8, "smallness": 0.2, "bugs": 0.1, "volume": 1900,
+            "functions": {},
+        }
+    })
+    tr.metrics = {"file_bug_free": 0.8, "file_smallness": 0.2, "functions_bug_free": 1.0, "functions_smallness": 1.0}
+    msg = HalsteadParser().format_llm_message(tr)
+    assert "src/large.py" in msg
+    assert "1900" in msg
+    assert "split" in msg.lower() or "large" in msg.lower()
+
+
+def test_halstead_format_llm_message_no_metrics():
+    tr = ToolResult(metrics={}, details={}, raw=RawResult())
+    assert "No Halstead" in HalsteadParser().format_llm_message(tr)
+
+
+def test_halstead_format_llm_message_no_matching_files():
+    tr = _tr("radon hal", {})
+    tr.metrics = {"file_bug_free": 0.3}
+    msg = HalsteadParser().format_llm_message(tr)
+    assert "file_bug_free" in msg
+    assert "0.300" in msg
+
+
 def test_default_fallback_metric():
     """AbstractParser default shows metric name and score."""
     tr = ToolResult(metrics={"coverage": 0.4}, raw=RawResult())
     msg = FakeParser().format_llm_message(tr)
     assert "coverage" in msg
     assert "0.400" in msg
+
+
+def test_format_for_llm_default_invocation():
+    config = ToolConfig(name="ruff", command="", parser_class=RuffParser, priority=3)
+    registry = {"ruff": config}
+    tr = ToolResult(
+        metrics={"lint": 0.5},
+        details={"src/foo.py": [{"line": 1, "code": "E501", "message": "too long"}]},
+        raw=RawResult(tool_name="ruff", command="python -m ruff check src/"),
+    )
+    combined = CombinedToolResults(path=".", tool_results=[tr])
+    result = format_for_llm(registry, combined)  # no cq_invocation → uses sys.argv
+    assert "cq" in result

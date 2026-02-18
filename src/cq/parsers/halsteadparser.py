@@ -90,6 +90,8 @@ class HalsteadParser(AbstractParser):
                 min_file_sm = min(sm, min_file_sm)
                 tr.details[file_name]["bug_free"] = nb
                 tr.details[file_name]["smallness"] = sm
+                tr.details[file_name]["bugs"] = values["total"].get("bugs", 0)
+                tr.details[file_name]["volume"] = values["total"].get("volume", 0)
             if "functions" in values:
                 for function, function_values in values["functions"].items():
                     nb, sm = self.extract_bugs_and_volume(
@@ -100,6 +102,8 @@ class HalsteadParser(AbstractParser):
                     tr.details[file_name]["functions"][function] = {
                         "no_bugs": nb,
                         "smallness": sm,
+                        "bugs": function_values.get("bugs", 0),
+                        "volume": function_values.get("volume", 0),
                     }
         tr.metrics = {
             "file_bug_free": min_file_nb,
@@ -108,6 +112,56 @@ class HalsteadParser(AbstractParser):
             "functions_smallness": min_function_sm,
         }
         return tr
+
+    def format_llm_message(self, tr: ToolResult) -> str:
+        """Return the worst Halstead offender as an actionable defect description."""
+        if not tr.metrics:
+            return "No Halstead details available"
+
+        metric_name, score = min(tr.metrics.items(), key=lambda x: x[1])
+        is_function_metric = metric_name.startswith("functions_")
+        is_bug_metric = "bug_free" in metric_name
+
+        worst_file = None
+        worst_function = None
+        worst_score = 1.0
+        worst_bugs = None
+        worst_volume = None
+
+        for file_name, file_data in tr.details.items():
+            if is_function_metric:
+                for func_name, func_data in file_data.get("functions", {}).items():
+                    s = func_data.get("no_bugs" if is_bug_metric else "smallness", 1.0)
+                    if s < worst_score:
+                        worst_score = s
+                        worst_file = file_name
+                        worst_function = func_name
+                        worst_bugs = func_data.get("bugs")
+                        worst_volume = func_data.get("volume")
+            else:
+                s = file_data.get("bug_free" if is_bug_metric else "smallness", 1.0)
+                if s < worst_score:
+                    worst_score = s
+                    worst_file = file_name
+                    worst_bugs = file_data.get("bugs")
+                    worst_volume = file_data.get("volume")
+
+        if worst_file is None:
+            return f"**{metric_name}** score: {score:.3f}"
+
+        location = f"`{worst_file}` — function `{worst_function}`" if worst_function else f"`{worst_file}`"
+        if is_bug_metric:
+            detail = f" (Halstead bug estimate: {worst_bugs:.3f})" if worst_bugs is not None else ""
+            return (
+                f"{location} has high estimated bug density{detail}\n\n"
+                f"Reduce complexity by extracting helper functions or simplifying logic."
+            )
+        else:
+            detail = f" (volume: {worst_volume:.0f})" if worst_volume is not None else ""
+            return (
+                f"{location} is too large{detail}\n\n"
+                f"Split into smaller functions or modules."
+            )
 
     def extract_bugs_and_volume(
         self, values: dict, max_bugs: float, max_volume: float

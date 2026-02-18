@@ -128,10 +128,6 @@ class AbstractParser(ABC):
         """Converts raw tool output into a structured ToolResult."""
         pass
 
-    def provide_help(self, tr: ToolResult) -> str:
-        """Returns contextual help for a ToolResult; intended to be overridden by subclasses."""
-        return ""
-
     def format_llm_message(self, tr: ToolResult) -> str:
         """Return a single-defect description for LLM consumption.
 

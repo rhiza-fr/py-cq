@@ -127,14 +127,6 @@ class CompileParser(AbstractParser):
             tr.details["failed_files"] = failed_files
         return tr
 
-    def provide_help(self, tr: ToolResult) -> str:
-        """Generates a readable summary of all compilation failures recorded in a ToolResult."""
-        ret = []
-        failures = tr.details.get("failed_files", {})
-        for failure, details in failures.items():
-            ret.append(f"Failed to compile {failure}:\n{details}")
-        return "\n".join(ret)
-
     def format_llm_message(self, tr: ToolResult) -> str:
         """Return the first compilation failure as a defect description."""
         failed = tr.details.get("failed_files", {})

@@ -1,5 +1,43 @@
 import pytest
-from cq.parsers.common import score_logistic_variant
+from cq.parsers.common import inv_normalize, read_source_line, read_source_lines, score_logistic_variant
+
+
+def test_inv_normalize():
+    assert inv_normalize(0, 100) == 1.0
+    assert inv_normalize(100, 100) == 0.0
+    assert inv_normalize(50, 100) == 0.5
+    assert inv_normalize(150, 100) == 0.0  # clamped
+
+
+def test_read_source_lines_valid(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text("line one\nline two\nline three\nline four")
+    assert read_source_lines(str(f), 2, count=2) == "line two\nline three"
+
+
+def test_read_source_lines_missing_file():
+    assert read_source_lines("/nonexistent/path.py", 1) == ""
+
+
+def test_read_source_line_valid(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text("line one\nline two\nline three")
+    assert read_source_line(str(f), 2) == "line two"
+
+
+def test_read_source_line_out_of_bounds(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text("only one line")
+    assert read_source_line(str(f), 99) == ""
+
+
+def test_read_source_line_missing_file():
+    assert read_source_line("/nonexistent/path.py", 1) == ""
+
+
+def test_score_logistic_large_base():
+    # base > 709/steepness triggers float("inf") branch
+    assert score_logistic_variant(1e300, scale_factor=1.0) == 0.0
 
 
 @pytest.mark.parametrize(

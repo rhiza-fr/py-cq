@@ -1,5 +1,12 @@
 tools:
 
+  compilation:
+    name: "compile"
+    command: "{python} -m compileall -r 10 -j 8 -f {context_path} -x .*venv"
+    parser: "CompileParser"
+    priority: 1
+    warning_threshold: 0.9999
+    error_threshold: 0.9999
 
   ruff:
     name: "ruff"
@@ -19,14 +26,6 @@ tools:
     run_in_target_env: true
     extra_deps:
       - ty
-
-  compilation:
-    name: "compile"
-    command: "{python} -m compileall -r 10 -j 8 -f {context_path} -x .*venv"
-    parser: "CompileParser"
-    priority: 1
-    warning_threshold: 0.9999
-    error_threshold: 0.9999
 
   pytest:
     name: "pytest"
@@ -49,27 +48,19 @@ tools:
       - coverage
       - pytest
 
-  pydocstyle:
-    name: "pydocstyle"
-    command: "{python} -m pydocstyle --convention=google {context_path}"
-    parser: "PydocstyleParser"
-    priority: 9
-    warning_threshold: 0.8
-    error_threshold: 0.3
+  complexity:
+    name: "radon cc"
+    command: "{python} -m radon cc --json {context_path}"
+    parser: "ComplexityParser"
+    priority: 6
+    warning_threshold: 0.6
+    error_threshold: 0.4
 
   maintainability:
     name: "radon mi"
     command: "{python} -m radon mi -s --json {context_path}"
     parser: "MaintainabilityParser"
     priority: 7
-    warning_threshold: 0.6
-    error_threshold: 0.4
-
-  complexity:
-    name: "radon cc"
-    command: "{python} -m radon cc --json {context_path}"
-    parser: "ComplexityParser"
-    priority: 6
     warning_threshold: 0.6
     error_threshold: 0.4
 
@@ -81,5 +72,10 @@ tools:
     warning_threshold: 0.5
     error_threshold: 0.3
 
-
-
+  pydocstyle:
+    name: "pydocstyle"
+    command: "{python} -m pydocstyle --convention=google {context_path}"
+    parser: "PydocstyleParser"
+    priority: 9
+    warning_threshold: 0.8
+    error_threshold: 0.3

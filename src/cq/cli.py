@@ -1,6 +1,6 @@
 """CLI for static analysis of Python projects.
 
-Provides a Typer command `run` that accepts a path to a Python file or project
+Provides a Typer command `check` that accepts a path to a Python file or project
 directory, executes a suite of static analysis tools, aggregates their
 results, and outputs the data either as JSON or as a human-readable Rich
 table.  The command supports configurable logging, cache clearing,
@@ -13,6 +13,7 @@ results into a Rich Table for convenient console display.
 
 import json
 import logging
+from enum import Enum
 from pathlib import Path
 import typer
 from rich.console import Console
@@ -20,7 +21,6 @@ from rich.logging import RichHandler
 from rich.table import Table
 from cq.config import DEFAULT_STORAGE_FILE
 from cq.execution_engine import run_tools, _cache as tool_cache
-from cq.help_engine import provide_help
 from cq.localtypes import CombinedToolResults
 from cq.metric_aggregator import aggregate_metrics
 from cq.storage import save_result
@@ -36,6 +36,13 @@ log = logging.getLogger("cq")
 app = typer.Typer()
 
 
+class OutputMode(str, Enum):
+    TABLE = "table"
+    SCORE = "score"
+    JSON = "json"
+    LLM = "llm"
+
+
 @app.callback()
 def callback():
     """CQ - Code Quality Analysis Tool."""
@@ -44,32 +51,26 @@ console = Console()
 
 
 @app.command()
-def run(
-    path: str = typer.Argument(..., help="Path to Python file or project directory"),
+def check(
+    path: str = typer.Argument(".", help="Path to Python file or project directory"),
+    output: OutputMode = typer.Option(
+        OutputMode.TABLE, "--output", "-o", help="Output mode: table (default), score, json, llm"
+    ),
     log_level: str = typer.Option(
-        "INFO",
+        "CRITICAL",
         "--log-level",
         help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     ),
     out_file: str = typer.Option(
         DEFAULT_STORAGE_FILE,
         "--out-file",
-        help="File path to save results (defaults to analysis_results.json)",
+        help="File path to save results in table mode (defaults to analysis_results.json)",
     ),
     clear_cache: bool = typer.Option(
         False, "--clear-cache", help="Clear cached tool results before running"
     ),
-    as_json: bool = typer.Option(
-        False, "--json", help="Output results as JSON instead of saving to file"
-    ),
-    as_score: bool = typer.Option(
-        False, "--score", help="Output only the final score instead of full results"
-    ),
-    parallel: bool = typer.Option(
-        False, "--parallel", help="Run analysis tools in parallel for faster execution"
-    ),
-    as_llm: bool = typer.Option(
-        False, "--llm", help="Output the most important defect as markdown for LLM consumption"
+    sequential: bool = typer.Option(
+        False, "--sequential", help="Run analysis tools sequentially instead of in parallel"
     ),
 ):
     """Run static analysis on a Python file or project directory."""
@@ -82,24 +83,24 @@ def run(
     elif path_obj.is_dir():
         if not (path_obj / "pyproject.toml").exists():
             raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
-    log.setLevel("CRITICAL" if as_llm else log_level)
+    log.setLevel(log_level)
     if clear_cache:
         tool_cache.clear()
-    tool_results = run_tools(tool_registry.values(), path, parallel)
+    tool_results = run_tools(tool_registry.values(), path, not sequential)
     for tr in tool_results:
         log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)
-    if as_score:
+    if output == OutputMode.SCORE:
         console.print(combined_metrics.score)
-    elif as_json:
+    elif output == OutputMode.JSON:
         console.print(json.dumps(combined_metrics.to_dict(), indent=2))
-    elif as_llm:
+    elif output == OutputMode.LLM:
+        log.setLevel("CRITICAL")
         from cq.llm_formatter import format_for_llm
         console.print(format_for_llm(tool_registry, combined_metrics))
     else:
         save_result(combined_tool_results=combined_metrics, file_name=out_file)
         console.print(format_as_table(combined_metrics))
-        console.print(provide_help(tool_registry, combined_metrics))
 
 
 def format_as_table(data: CombinedToolResults):

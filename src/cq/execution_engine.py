@@ -131,7 +131,7 @@ def run_tools(tool_configs, path: str, parallel: bool = False) -> list[ToolResul
         ...     ToolConfig(name='scan', parser_class=ScanParser),
         ... ]
         >>> results = run_tools(configs, '/path/to/project', parallel=True)"""
-    tool_results = []
+    prioritized: list[tuple[int, ToolResult]] = []
     if parallel:
         with ThreadPoolExecutor(max_workers=min(4, len(tool_configs))) as executor:
             future_to_tool = {
@@ -144,7 +144,7 @@ def run_tools(tool_configs, path: str, parallel: bool = False) -> list[ToolResul
                     raw_result = future.result()
                     parser = tool_config.parser_class()
                     tr = parser.parse(raw_result)
-                    tool_results.append(tr)
+                    prioritized.append((tool_config.priority, tr))
                 except Exception as exc:
                     log.error(f"{tool_config.name} generated an exception: {exc}")
     else:
@@ -152,5 +152,5 @@ def run_tools(tool_configs, path: str, parallel: bool = False) -> list[ToolResul
             raw_result = run_tool(tool_config, path)
             parser = tool_config.parser_class()
             tr = parser.parse(raw_result)
-            tool_results.append(tr)
-    return tool_results
+            prioritized.append((tool_config.priority, tr))
+    return [tr for _, tr in sorted(prioritized)]
