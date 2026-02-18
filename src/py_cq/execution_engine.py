@@ -94,7 +94,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     return raw_result
 
 
-def run_tools(tool_configs: Collection[ToolConfig], path: str, parallel: bool = False) -> list[ToolResult]:
+def run_tools(tool_configs: Collection[ToolConfig], path: str, parallel: bool = False, max_workers: int = 0) -> list[ToolResult]:
     """Run multiple tools and return their parsed results.
 
     Runs each tool specified in *tool_configs* on the file or directory at
@@ -134,26 +134,29 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, parallel: bool = 
         ...     ToolConfig(name='scan', parser_class=ScanParser),
         ... ]
         >>> results = run_tools(configs, '/path/to/project', parallel=True)"""
+    def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
+        t0 = time.perf_counter()
+        raw_result = run_tool(tool_config, path)
+        tr = tool_config.parser_class().parse(raw_result)
+        tr.duration_s = time.perf_counter() - t0
+        return tool_config.priority, tr
+
+    t_start = time.perf_counter()
     prioritized: list[tuple[int, ToolResult]] = []
     if parallel:
-        with ThreadPoolExecutor(max_workers=min(4, len(tool_configs))) as executor:
+        with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
             future_to_tool = {
-                executor.submit(run_tool, tool_config, path): tool_config
+                executor.submit(_run_and_parse, tool_config): tool_config
                 for tool_config in tool_configs
             }
             for future in as_completed(future_to_tool):
                 tool_config = future_to_tool[future]
                 try:
-                    raw_result = future.result()
-                    parser = tool_config.parser_class()
-                    tr = parser.parse(raw_result)
-                    prioritized.append((tool_config.priority, tr))
+                    prioritized.append(future.result())
                 except Exception as exc:
                     log.error(f"{tool_config.name} generated an exception: {exc}")
     else:
         for tool_config in tool_configs:
-            raw_result = run_tool(tool_config, path)
-            parser = tool_config.parser_class()
-            tr = parser.parse(raw_result)
-            prioritized.append((tool_config.priority, tr))
+            prioritized.append(_run_and_parse(tool_config))
+    log.info(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
     return [tr for _, tr in sorted(prioritized)]

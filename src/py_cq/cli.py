@@ -96,6 +96,9 @@ def check(
     sequential: bool = typer.Option(
         False, "--sequential", help="Run analysis tools sequentially instead of in parallel"
     ),
+    workers: int = typer.Option(
+        0, "--workers", help="Max parallel workers (default: one per tool)"
+    ),
 ):
     """Run static analysis on a Python file or project directory."""
     path_obj = Path(path)
@@ -111,7 +114,7 @@ def check(
     effective_registry = _apply_user_config(tool_registry, load_user_config(path_obj))
     if clear_cache:
         tool_cache.clear()
-    tool_results = run_tools(effective_registry.values(), path, not sequential)
+    tool_results = run_tools(effective_registry.values(), path, not sequential, workers)
     for tr in tool_results:
         log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)
@@ -200,13 +203,14 @@ def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig]):
     """
     table = Table(title=f"[bold green]{data.path}[/]", width=80)
     table.add_column("Tool", justify="left", no_wrap=True)
+    table.add_column("Time", justify="right", style="dim")
     table.add_column("Metric", justify="right", style="cyan", no_wrap=True)
     table.add_column("Score", style="magenta")
     table.add_column("Status")
     for tr in data.tool_results:
         tool_name = tr.raw.tool_name
         config = next((t for t in registry.values() if t.name == tool_name))
-        for name, value in tr.metrics.items():
+        for i, (name, value) in enumerate(tr.metrics.items()):
             status = ""
             if value < config.error_threshold:
                 status = "[bold red]Error[/]"
@@ -214,6 +218,7 @@ def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig]):
                 status = "[yellow]Warning[/]"
             else:
                 status = "[green]OK[/]"
-            table.add_row(tool_name, name, f"{value:0.3f}", status)
-    table.add_row("", "[bold]Score[/]", f"[bold]{data.score:0.3f}[/]", "")
+            time_str = f"{tr.duration_s:.2f}s" if i == 0 else ""
+            table.add_row(tool_name, time_str, name, f"{value:0.3f}", status)
+    table.add_row("", "", "[bold]Score[/]", f"[bold]{data.score:0.3f}[/]", "")
     return table

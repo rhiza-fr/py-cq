@@ -63,6 +63,7 @@ class ToolResult:
         default_factory=dict
     )  # Additional details about the metric
     raw: RawResult = field(default_factory=RawResult)
+    duration_s: float = 0.0
 
     def __post_init__(self):
         """Ensures that the `details` and `metrics` attributes are dictionaries, initializing them to empty dictionaries if they are not."""
@@ -77,6 +78,7 @@ class ToolResult:
             "metrics": self.metrics,
             "details": self.details,
             "raw": self.raw.to_dict(),
+            "duration_s": self.duration_s,
         }
 
 
