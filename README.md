@@ -1,6 +1,6 @@
 # CQ - Python Code Quality Analysis Tool
 
-CQ is a Python CLI tool for iterative, LLM-assisted code improvement. The primary workflow is:
+Python Code Quality Analysis Tool - feed the results from 11 CQ tools straight into an LLM. The primary workflow is:
 
 ```bash
 cq check -o llm   # get the single most critical defect as markdown
@@ -16,7 +16,7 @@ uv tool install python-code-quality
 # or
 git pull https://github.com/rhiza-fr/py-cq.git
 cd py-cq
-uv tool install . --editable
+uv tool install .
 ```
 
 ## Tools
