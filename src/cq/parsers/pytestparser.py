@@ -56,20 +56,16 @@ class PytestParser(AbstractParser):
             num_tests = 0
             passed_tests = 0
             for line in lines:
-                # data/problems/travelling_salesman/ts_good.py::test_calc_dist PASSED
-                tests_match = re.search("(.*\\.py)::(\\w+) (\\w+)", raw_result.stdout)
+                # tests/test_common.py::test_name[param] PASSED    [ 8%]
+                tests_match = re.search(r"(.*\.py)::([\w\[\].,+\- ]+) (PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)", line)
                 if tests_match:
                     test_file = tests_match.group(1)
-                    test_name = tests_match.group(2)
+                    test_name = tests_match.group(2).strip()
                     test_status = tests_match.group(3)
-                    if test_file not in tests_found:
-                        tests_found[test_file] = {}
-                        tests_found[test_file][test_name] = test_status
+                    tests_found.setdefault(test_file, {})[test_name] = test_status
                     num_tests += 1
                     if test_status == "PASSED":
                         passed_tests += 1
             tr.metrics["tests"] = passed_tests / num_tests if num_tests else 0
             tr.details = tests_found
-            # TODO count the number of errors
-            tr.details["return_code"] = raw_result.return_code
         return tr

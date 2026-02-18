@@ -62,5 +62,4 @@ class MaintainabilityParser(AbstractParser):
                     "rank": values["rank"],
                 }
         tr.metrics["maintainability"] = score / num_items if num_items > 0 else 0.0
-        tr.details["return_code"] = raw_result.return_code
         return tr

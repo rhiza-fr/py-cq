@@ -1,7 +1,11 @@
 '''"""Parses raw coverage tool output into a standardized `ToolResult` for consistent analysis across different coverage utilities.
 The module defines `CoverageParser`, a concrete implementation of `AbstractParser`, which extracts overall and per-file coverage metrics from a `RawResult` object and normalises the data format for downstream processing.'''
 
+import logging
+
 from cq.localtypes import AbstractParser, RawResult, ToolResult
+
+log = logging.getLogger("cq")
 
 
 class CoverageParser(AbstractParser):
@@ -56,12 +60,11 @@ class CoverageParser(AbstractParser):
                 try:
                     coverage_percentage = float(parts[2]) / 100.0
                 except ValueError:
-                    print(f"Error parsing coverage percentage from line: {line}")
+                    log.warning("Error parsing coverage percentage from line: %s", line)
                     coverage_percentage = 0.0
                 if file_name == "TOTAL":
                     tr.metrics["coverage"] = coverage_percentage
                 else:
                     details[file_name.replace("\\", "/")] = coverage_percentage
         tr.details = details
-        tr.details["return_code"] = raw_result.return_code
         return tr

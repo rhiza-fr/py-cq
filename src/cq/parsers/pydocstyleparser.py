@@ -18,8 +18,16 @@ lines represent one violation.  The resulting :class:`ToolResult`
 provides a ``metrics`` dictionary with a ``docstyle`` key and the
 original ``stdout`` and return code in ``details``."""
 
+import logging
+import re
+
 from cq.localtypes import AbstractParser, RawResult, ToolResult
 from cq.parsers.common import score_logistic_variant
+
+log = logging.getLogger("cq")
+
+_LOC_RE = re.compile(r"^[./\\]*(.*\.py):(\d+) (.*):$")
+_CODE_RE = re.compile(r"(D\d+): (.+)")
 
 
 class PydocstyleParser(AbstractParser):
@@ -63,13 +71,22 @@ class PydocstyleParser(AbstractParser):
         tr = ToolResult(raw=raw_result)
         MAX_DOCSTRING_ERRORS = 60
         lines = raw_result.stdout.splitlines()
-        errors = len(lines) / 2
-        score = score_logistic_variant(
-            errors, scale_factor=MAX_DOCSTRING_ERRORS
-        )  # 5 per file would make sense
-        # score = score_logistic_variant(len(lines) / 2, MAX_DOCSTRING_ERRORS)
-        print("Docstring", len(lines) / 2, score)
+        violations: dict[str, list] = {}
+        i = 0
+        while i < len(lines) - 1:
+            loc = _LOC_RE.match(lines[i].strip())
+            code = _CODE_RE.search(lines[i + 1])
+            if loc and code:
+                file_path = loc.group(1).replace("\\", "/")
+                violations.setdefault(file_path, []).append(
+                    {"line": int(loc.group(2)), "code": code.group(1), "message": code.group(2)}
+                )
+                i += 2
+            else:
+                i += 1
+        errors = sum(len(v) for v in violations.values())
+        score = score_logistic_variant(errors, scale_factor=MAX_DOCSTRING_ERRORS)
+        log.debug("Docstring errors: %s, score: %s", errors, score)
         tr.metrics = {"docstyle": score}
-        tr.details["parseme"] = raw_result.stdout  # TODO parse this
-        tr.details["return_code"] = raw_result.return_code
+        tr.details = violations
         return tr

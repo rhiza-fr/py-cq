@@ -1,31 +1,54 @@
 tools:
+
+
+  ruff:
+    name: "ruff"
+    command: "ruff check --output-format concise --no-cache {context_path}"
+    parser: "RuffParser"
+    priority: 3
+    warning_threshold: 0.95
+    error_threshold: 0.9
+
+  ty:
+    name: "ty"
+    command: "ty check --output-format concise --color never {context_path}"
+    parser: "TyParser"
+    priority: 3
+    warning_threshold: 0.9
+    error_threshold: 0.8
+
   compilation:
     name: "compile"
-    command: "python -m compileall -r 10 -j 8 -f {context_path} -x .*venv"
+    command: "{python} -m compileall -r 10 -j 8 -f {context_path} -x .*venv"
     parser: "CompileParser"
     priority: 1
     warning_threshold: 0.9999
     error_threshold: 0.9999
-    
+
   pytest:
     name: "pytest"
-    command: "pytest -v {context_path}"
+    command: "{python} -m pytest -v {context_path}"
     parser: "PytestParser"
     priority: 2
     warning_threshold: 0.7
     error_threshold: 0.5
+    run_in_target_env: true
 
   coverage:
     name: "coverage"
-    command: "coverage run -m pytest {context_path} && coverage report"
+    command: "{python} -m coverage run -m pytest {context_path} && {python} -m coverage report"
     parser: "CoverageParser"
     priority: 2
     warning_threshold: 0.9
     error_threshold: 0.5
+    run_in_target_env: true
+    extra_deps:
+      - coverage
+      - pytest
 
   pydocstyle:
     name: "pydocstyle"
-    command: "pydocstyle --convention=google {context_path}"
+    command: "{python} -m pydocstyle --convention=google {context_path}"
     parser: "PydocstyleParser"
     priority: 5
     warning_threshold: 0.8
@@ -33,7 +56,7 @@ tools:
 
   maintainability:
     name: "radon mi"
-    command: "radon mi -s --json {context_path}"
+    command: "{python} -m radon mi -s --json {context_path}"
     parser: "MaintainabilityParser"
     priority: 3
     warning_threshold: 0.6
@@ -41,7 +64,7 @@ tools:
 
   complexity:
     name: "radon cc"
-    command: "radon cc --json {context_path}"
+    command: "{python} -m radon cc --json {context_path}"
     parser: "ComplexityParser"
     priority: 3
     warning_threshold: 0.6
@@ -49,8 +72,11 @@ tools:
 
   halstead:
     name: "radon hal"
-    command: "radon hal -f --json {context_path}"
+    command: "{python} -m radon hal -f --json {context_path}"
     parser: "HalsteadParser"
     priority: 4
     warning_threshold: 0.5
     error_threshold: 0.3
+
+
+

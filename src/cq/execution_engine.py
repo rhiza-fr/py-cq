@@ -15,8 +15,11 @@ where tool invocations may be expensive and should be avoided
 when a cached result already exists."""
 
 import logging
+import shutil
 import subprocess
+import sys
 import time
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from cachier import cachier
 from cq.context_hash import get_context_hash
@@ -30,7 +33,7 @@ def get_hash(args, kwargs):
     p = kwargs["context_path"]
     t = get_context_hash(p)
     c = kwargs["tool_config"].command
-    hash = f"{c.format(context_path=p)}:{t}"
+    hash = f"{c.format(context_path=p, python='python')}:{t}"
     return hash
 
 
@@ -53,10 +56,18 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         >>> result = run_tool(my_tool_config, "/tmp/context")
         >>> result.return_code
         0"""
-    # get_hash(tool_config.command, context_path=context_path)
-    command = tool_config.command.format(context_path=context_path)
+    python = sys.executable
+    path = context_path
+    if tool_config.run_in_target_env and Path(context_path).is_dir():
+        uv = shutil.which("uv")
+        if uv:
+            abs_dir = str(Path(context_path).resolve())
+            with_flags = " ".join(f"--with {dep}" for dep in tool_config.extra_deps)
+            python = f'"{uv}" run --directory "{abs_dir}" {with_flags}'.rstrip()
+            path = "."
+    command = tool_config.command.format(context_path=path, python=python)
     log.info(f"Running: {command}")
-    result = subprocess.run(command, capture_output=True, text=True)
+    result = subprocess.run(command, capture_output=True, text=True, shell=True)
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     return RawResult(
         tool_name=tool_config.name,

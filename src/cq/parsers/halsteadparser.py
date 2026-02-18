@@ -107,7 +107,6 @@ class HalsteadParser(AbstractParser):
             "functions_bug_free": min_function_nb,
             "functions_smallness": min_function_sm,
         }
-        tr.details["return_code"] = raw_result.return_code
         return tr
 
     def extract_bugs_and_volume(

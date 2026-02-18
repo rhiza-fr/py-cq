@@ -95,5 +95,4 @@ class ComplexityParser(AbstractParser):
                     "rank": function.get("rank", "F"),
                 }
         tr.metrics["simplicity"] = score / num_items if num_items > 0 else 0.0
-        tr.details["return_code"] = raw_result.return_code
         return tr

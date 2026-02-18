@@ -3,8 +3,12 @@
 structured :class:`ToolResult`, extracting diagnostics, computing a
 compile score, and providing concise help messages for any failures."""
 
+import logging
+
 from cq.localtypes import AbstractParser, RawResult, ToolResult
 from cq.parsers.common import score_logistic_variant
+
+log = logging.getLogger("cq")
 
 
 class CompileParser(AbstractParser):
@@ -80,7 +84,7 @@ class CompileParser(AbstractParser):
                     # Empty line ends the error block
                     # Parse error details from the error block
                     error_lines = current_error["error"].splitlines()
-                    print(error_lines)
+                    log.debug("Compile error lines: %s", error_lines)
                     error_info = {}
                     # Extract line number if present
                     if "line " in error_lines[0]:

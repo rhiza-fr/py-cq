@@ -38,6 +38,8 @@ def load_tool_configs():
             priority=tool_data["priority"],
             warning_threshold=tool_data["warning_threshold"],
             error_threshold=tool_data["error_threshold"],
+            run_in_target_env=tool_data.get("run_in_target_env", False),
+            extra_deps=tool_data.get("extra_deps", []),
         )
     return registry
 

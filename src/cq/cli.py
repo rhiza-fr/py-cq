@@ -33,6 +33,11 @@ logging.basicConfig(
 )
 log = logging.getLogger("cq")
 app = typer.Typer()
+
+
+@app.callback()
+def callback():
+    """CQ - Code Quality Analysis Tool."""
 console = Console()
 # TODO make this work on projects
 
@@ -63,33 +68,7 @@ def run(
         False, "--parallel", help="Run analysis tools in parallel for faster execution"
     ),
 ):
-    """Runs analysis on a Python project or file.
-
-    The command accepts a path to a single Python file or a project directory that
-    contains a `pyproject.toml`. It validates the path, optionally clears cached
-    results, runs all registered analysis tools (optionally in parallel),
-    aggregates the collected metrics, and outputs the results.
-
-    Args:
-        path (str): Path to a Python file or a project directory. The directory
-            must contain a `pyproject.toml` file.
-        log_level (str): Logging level to use (DEBUG, INFO, WARNING, ERROR,
-            CRITICAL). Defaults to ``INFO``.
-        out_file (str): File path where the combined results will be written in
-            JSON format. Defaults to ``analysis_results.json``.
-        clear_cache (bool): If ``True``, clears cached tool results before running.
-            Defaults to ``False``.
-        as_json (bool): If ``True``, prints the combined results as JSON to stdout
-            instead of writing a file. Defaults to ``False``.
-        as_score (bool): If ``True``, prints only the overall score of the
-            analysis. Defaults to ``False``.
-        parallel (bool): If ``True``, runs the individual analysis tools
-            concurrently to speed up execution. Defaults to ``False``.
-
-    Raises:
-        typer.BadParameter: If the provided path does not exist, if a file is
-            provided that is not a Python file, or if a directory does not
-            contain a `pyproject.toml`."""
+    """Run static analysis on a Python file or project directory."""
     path_obj = Path(path)
     if not path_obj.exists():
         raise typer.BadParameter(f"Path does not exist: {path}")
@@ -143,11 +122,11 @@ def format_as_table(data: CombinedToolResults):
         for name, value in tr.metrics.items():
             status = ""
             if value < config.error_threshold:
-                status = "[bold red]❌ Error[/]"
+                status = "[bold red]Error[/]"
             elif value < config.warning_threshold:
-                status = "[yellow]⚠️  Warning[/]"
+                status = "[yellow]Warning[/]"
             else:
-                status = "[green]✓ OK[/]"
+                status = "[green]OK[/]"
             table.add_row(tool_name, name, f"{value:0.3f}", status)
     table.add_row("", "[bold]Score[/]", f"[bold]{data.score:0.3f}[/]", "")
     return table
