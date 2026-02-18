@@ -4,7 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CQ is a Python CLI tool that analyzes code quality by running multiple static analysis tools (pytest, coverage, pydocstyle, radon metrics), parsing their output, and aggregating results into a single score with rich terminal output.
+CQ is a Python CLI tool for iterative, LLM-assisted code improvement. The primary use case is:
+
+```bash
+cq check -o llm   # returns the single most critical defect as markdown
+```
+
+The LLM fixes it, the user re-runs, and repeats until all tools pass. CQ runs
+11 static analysis tools in priority order (compile → security → lint → types →
+tests → coverage → complexity → dead code → style) and aggregates results into
+a single score.
 
 ## Commands
 
@@ -16,8 +25,10 @@ uv run pytest
 uv run pytest tests/test_common.py::test_score_logistic_variant
 
 # Run the CLI
-uv run cq run path/to/file.py
-uv run cq run path/to/project/
+uv run cq check              # table output, current directory
+uv run cq check -o llm       # LLM markdown, primary use case
+uv run cq check -o score     # numeric score
+uv run cq check path/to/project/
 
 # Lint
 uv run ruff check src/
@@ -27,14 +38,14 @@ uv run ruff check src/
 
 **Pipeline flow:** CLI (`cli.py`) → tool registry → execution engine → parsers → metric aggregator → output
 
-- **`cli.py`**: Typer app with a single `run` command. Validates input, orchestrates the pipeline, formats output as Rich tables.
+- **`cli.py`**: Typer app with a single `check` command. Output mode selected via `--output`/`-o` enum (`table`, `score`, `json`, `llm`). Runs tools in parallel by default.
 - **`tool_registry.py`**: Loads `config/tools.yaml` at import time, dynamically imports parser classes, builds a `dict[str, ToolConfig]` registry.
-- **`config/tools.yaml`**: Declares each analysis tool: shell command template (with `{context_path}` placeholder), parser class name, priority, warning/error thresholds.
-- **`execution_engine.py`**: Runs shell commands via `subprocess.run`, caches results with `cachier` using a content-based hash. Supports parallel execution via `ThreadPoolExecutor`.
-- **`parsers/`**: Each parser subclasses `AbstractParser` (from `localtypes.py`), implementing `parse(RawResult) -> ToolResult` and optionally `provide_help(ToolResult) -> str`. Parser module names must match the lowercase parser class name (e.g., `PytestParser` → `pytestparser.py`).
+- **`config/tools.yaml`**: Declares each analysis tool: shell command template (with `{context_path}` placeholder), parser class name, priority, warning/error thresholds. Tools are listed and executed in priority order.
+- **`execution_engine.py`**: Runs shell commands via `subprocess.run`, caches results with `diskcache` using a content-based hash. Parallel execution via `ThreadPoolExecutor`; results are sorted by priority before returning.
+- **`parsers/`**: Each parser subclasses `AbstractParser` (from `localtypes.py`), implementing `parse(RawResult) -> ToolResult` and optionally `format_llm_message(ToolResult) -> str`. Parser module names must match the lowercase parser class name (e.g., `PytestParser` → `pytestparser.py`).
 - **`localtypes.py`**: Core dataclasses — `ToolConfig`, `RawResult`, `ToolResult`, `CombinedToolResults`, and `AbstractParser` ABC.
 - **`metric_aggregator.py`**: Wraps results into `CombinedToolResults`, which computes an overall score as the average of per-tool mean metrics.
-- **`help_engine.py`**: Collects `provide_help()` output from each parser to generate actionable suggestions.
+- **`llm_formatter.py`**: Selects the worst-scoring tool by severity tier then priority, formats its top defect as markdown for LLM consumption.
 
 ## Adding a New Analysis Tool
 

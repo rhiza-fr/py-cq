@@ -8,11 +8,19 @@ tools:
     warning_threshold: 0.9999
     error_threshold: 0.9999
 
+  bandit:
+    name: "bandit"
+    command: "{python} -m bandit -r {context_path} -f json -q"
+    parser: "BanditParser"
+    priority: 2
+    warning_threshold: 0.9999
+    error_threshold: 0.8
+
   ruff:
     name: "ruff"
     command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
     parser: "RuffParser"
-    priority: 2
+    priority: 3
     warning_threshold: 0.9999
     error_threshold: 0.9
 
@@ -20,7 +28,7 @@ tools:
     name: "ty"
     command: "{python} -m ty check --output-format concise --color never {context_path}"
     parser: "TyParser"
-    priority: 3
+    priority: 4
     warning_threshold: 0.9999
     error_threshold: 0.8
     run_in_target_env: true
@@ -31,7 +39,7 @@ tools:
     name: "pytest"
     command: "{python} -m pytest -v {context_path}"
     parser: "PytestParser"
-    priority: 4
+    priority: 5
     warning_threshold: 0.7
     error_threshold: 0.5
     run_in_target_env: true
@@ -40,7 +48,7 @@ tools:
     name: "coverage"
     command: "{python} -m coverage run -m pytest {context_path} && {python} -m coverage report"
     parser: "CoverageParser"
-    priority: 5
+    priority: 6
     warning_threshold: 0.9
     error_threshold: 0.5
     run_in_target_env: true
@@ -52,7 +60,7 @@ tools:
     name: "radon cc"
     command: "{python} -m radon cc --json {context_path}"
     parser: "ComplexityParser"
-    priority: 6
+    priority: 7
     warning_threshold: 0.6
     error_threshold: 0.4
 
@@ -60,7 +68,7 @@ tools:
     name: "radon mi"
     command: "{python} -m radon mi -s --json {context_path}"
     parser: "MaintainabilityParser"
-    priority: 7
+    priority: 8
     warning_threshold: 0.6
     error_threshold: 0.4
 
@@ -68,14 +76,22 @@ tools:
     name: "radon hal"
     command: "{python} -m radon hal -f --json {context_path}"
     parser: "HalsteadParser"
-    priority: 8
+    priority: 9
     warning_threshold: 0.5
     error_threshold: 0.3
+
+  vulture:
+    name: "vulture"
+    command: "{python} -m vulture {context_path} --min-confidence 80"
+    parser: "VultureParser"
+    priority: 10
+    warning_threshold: 0.9999
+    error_threshold: 0.8
 
   pydocstyle:
     name: "pydocstyle"
     command: "{python} -m pydocstyle --convention=google {context_path}"
     parser: "PydocstyleParser"
-    priority: 9
+    priority: 11
     warning_threshold: 0.8
     error_threshold: 0.3

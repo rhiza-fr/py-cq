@@ -1,55 +1,63 @@
 # CQ - Code Quality Analysis Tool
 
-A Python-based code quality analysis tool that runs multiple metrics and provides actionable feedback on code quality.
+CQ is a Python CLI tool for iterative, LLM-assisted code improvement. The primary workflow is:
 
-## What it does
+```bash
+cq check -o llm   # get the single most critical defect as markdown
+```
 
-CQ analyzes Python files and projects to provide comprehensive code quality metrics. It runs various analysis tools in parallel or sequentially and aggregates the results into a single quality score with detailed feedback.
+Feed that output to an LLM, apply the fix, repeat until the score is clean.
+
+## Tools
+
+CQ runs these tools in priority order, in parallel:
+
+| Priority | Tool | Measures |
+|----------|------|----------|
+| 1 | compileall | Syntax errors |
+| 2 | bandit | Security vulnerabilities |
+| 3 | ruff | Lint / style |
+| 4 | ty | Type errors |
+| 5 | pytest | Test pass rate |
+| 6 | coverage | Test coverage |
+| 7 | radon cc | Cyclomatic complexity |
+| 8 | radon mi | Maintainability index |
+| 9 | radon hal | Halstead volume / bug estimate |
+| 10 | vulture | Dead code |
+| 11 | pydocstyle | Docstring style |
 
 ## Usage
 
 ```bash
-# Analyze a single Python file
-cq run path/to/file.py
+# LLM workflow: get the top defect as markdown (primary use case)
+cq check -o llm
 
-# Analyze a Python project (must contain pyproject.toml)
-cq run path/to/project/
+# Rich table with all metrics (default, also saves .cq.json)
+cq check
 
-# Output results as JSON
-cq run path/to/code --json
+# Numeric score only — useful in CI or scripts
+cq check -o score
 
-# Get only the final score
-cq run path/to/code --score
+# Full JSON output
+cq check -o json
 
-# Run analysis tools in parallel for faster execution
-cq run path/to/code --parallel
+# Explicit path (defaults to current directory)
+cq check path/to/project/
+cq check path/to/file.py
+
+# Run sequentially instead of in parallel
+cq check --sequential
 
 # Clear cached results before running
-cq run path/to/code --clear-cache
+cq check --clear-cache
 
-# Specify output file for results
-cq run path/to/code --out-file custom_results.json
-
-# Set logging level
-cq run path/to/code --log-level DEBUG
+# Save table output to a custom file
+cq check --out-file custom_results.json
 ```
 
-## Features
+## LLM workflow
 
-- **Multi-tool analysis**: Runs multiple code quality analysis tools
-- **Parallel execution**: Can run tools in parallel for faster results
-- **Caching**: Caches tool results to avoid re-running expensive analyses
-- **Rich output**: Displays results in formatted tables with color-coded status indicators
-- **Flexible output**: Can output as JSON, show only scores, or save to custom files
-- **Help system**: Provides actionable suggestions based on analysis results
-- **Project and file support**: Works with both individual Python files and full projects
-
-## Output
-
-The tool provides:
-- Individual metric scores for each analysis tool
-- Color-coded status indicators (OK, � Warning, L Error)
-- Overall quality score
-- Actionable help suggestions based on the analysis results
-
-Results are saved to `analysis_results.json` by default, or can be output directly to the console.
+`-o llm` selects the single worst-scoring tool and formats its top defect as
+concise markdown. The LLM fixes it, you re-run `cq check -o llm`, and repeat
+until all tools are green. Priority order ensures the most critical category
+(security, type errors, failing tests) is fixed before cosmetic ones.
