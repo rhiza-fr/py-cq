@@ -1,6 +1,6 @@
 [project]
 name = "python-code-quality"
-version = "0.1.4"
+version = "0.1.5"
 description = "Python Code Quality Analysis Tool - feed the results from 11 CQ CQ straight into an LLM."
 readme = "README.md"
 requires-python = ">=3.12"
