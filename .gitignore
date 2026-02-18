@@ -12,3 +12,6 @@ profile.prof
 analysis_results.json
 .coverage
 .aider*
+.claude
+.cq.json
+
