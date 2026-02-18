@@ -11,7 +11,12 @@ Feed that output to an LLM, apply the fix, repeat until the score is clean.
 ## Install
 
 ```bash
-uv tool install py-cq
+uv tool install python-code-quality
+
+# or
+git pull https://github.com/rhiza-fr/py-cq.git
+cd py-cq
+uv tool install . --editable
 ```
 
 ## Tools
