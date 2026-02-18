@@ -27,6 +27,8 @@ class BanditParser(AbstractParser):
         weighted = 0
         for issue in data.get("results", []):
             path = issue.get("filename", "").replace("\\", "/")
+            if "/.venv/" in path or "/site-packages/" in path:
+                continue
             severity = issue.get("issue_severity", "LOW")
             files.setdefault(path, []).append({
                 "line": issue.get("line_number", 0),
