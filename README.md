@@ -16,7 +16,7 @@ uv tool install py-cq
 
 ## Tools
 
-CQ runs these tools in priority order, in parallel:
+CQ runs these tools in parallel:
 
 | Priority | Tool | Measures |
 |----------|------|----------|
