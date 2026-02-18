@@ -88,10 +88,10 @@ tools:
     warning_threshold: 0.9999
     error_threshold: 0.8
 
-  pydocstyle:
-    name: "pydocstyle"
-    command: "{python} -m pydocstyle --convention=google {context_path}"
-    parser: "PydocstyleParser"
+  interrogate:
+    name: "interrogate"
+    command: "{python} -m interrogate {context_path} -v --fail-under 0"
+    parser: "InterrogateParser"
     priority: 11
     warning_threshold: 0.8
     error_threshold: 0.3

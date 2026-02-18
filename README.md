@@ -24,7 +24,7 @@ CQ runs these tools in priority order, in parallel:
 | 8 | radon mi | Maintainability index |
 | 9 | radon hal | Halstead volume / bug estimate |
 | 10 | vulture | Dead code |
-| 11 | pydocstyle | Docstring style |
+| 11 | interrogate | Docstring coverage |
 
 ## Usage
 

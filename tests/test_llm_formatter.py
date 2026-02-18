@@ -5,7 +5,7 @@ from cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolCo
 from cq.parsers.compileparser import CompileParser
 from cq.parsers.ruffparser import RuffParser
 from cq.parsers.typarser import TyParser
-from cq.parsers.pydocstyleparser import PydocstyleParser
+from cq.parsers.interrogateparser import InterrogateParser
 from cq.parsers.pytestparser import PytestParser
 from cq.parsers.halsteadparser import HalsteadParser
 
@@ -68,25 +68,25 @@ def test_priority1_beats_priority3_same_severity():
 
 def test_priority2_beats_priority5_same_severity():
     """Within the same severity tier, lower priority number wins."""
-    registry = make_registry(make_config("pytest", 2), make_config("pydocstyle", 5))
+    registry = make_registry(make_config("pytest", 2), make_config("interrogate", 5))
     combined = make_combined([
-        make_tr("pydocstyle", 0.4, command="python -m pydocstyle src/"),  # error state (< 0.5)
-        make_tr("pytest", 0.3, command="python -m pytest -v src/"),        # error state (< 0.5)
+        make_tr("interrogate", 0.4, command="python -m interrogate src/"),  # error state (< 0.5)
+        make_tr("pytest", 0.3, command="python -m pytest -v src/"),          # error state (< 0.5)
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "pytest -v src/" in result
-    assert "pydocstyle" not in result
+    assert "interrogate" not in result
 
 
 def test_severity_beats_priority():
     """A tool in error state wins over a higher-priority tool in OK state."""
-    registry = make_registry(make_config("compile", 1), make_config("pydocstyle", 5))
+    registry = make_registry(make_config("compile", 1), make_config("interrogate", 5))
     combined = make_combined([
-        make_tr("compile", 0.8, command="python -m compileall src/"),    # OK state (>= 0.7)
-        make_tr("pydocstyle", 0.3, command="python -m pydocstyle src/"), # error state (< 0.5)
+        make_tr("compile", 0.8, command="python -m compileall src/"),       # OK state (>= 0.7)
+        make_tr("interrogate", 0.3, command="python -m interrogate src/"),  # error state (< 0.5)
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
-    assert "pydocstyle src/" in result
+    assert "interrogate src/" in result
     assert "compileall" not in result
 
 
@@ -166,11 +166,11 @@ def test_ty_format_llm_message():
     assert "possibly-unbound" in msg
 
 
-def test_pydocstyle_format_llm_message():
-    tr = _tr("pydocstyle", {"src/qux.py": [{"line": 1, "code": "D100", "message": "Missing docstring"}]})
-    msg = PydocstyleParser().format_llm_message(tr)
-    assert "src/qux.py:1" in msg
-    assert "D100" in msg
+def test_interrogate_format_llm_message():
+    tr = _tr("interrogate", {"src/qux.py": {"total": 4, "missing": 2, "coverage": 0.5}})
+    msg = InterrogateParser().format_llm_message(tr)
+    assert "src/qux.py" in msg
+    assert "2 undocumented" in msg
 
 
 def test_pytest_format_llm_message():
