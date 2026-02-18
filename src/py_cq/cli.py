@@ -38,7 +38,15 @@ logging.basicConfig(
     handlers=[RichHandler(markup=True)],
 )
 log = logging.getLogger("cq")
-app = typer.Typer()
+app = typer.Typer(
+    epilog=(
+        "Examples:\n\n"
+        "  cq check .          # full table with all metrics (default)\n\n"
+        "  cq check . -o llm   # top defect as markdown (primary LLM workflow)\n\n"
+        "  cq check . -o score # numeric score only\n\n"
+        "  cq config .         # show effective tool configuration"
+    ),
+)
 
 
 def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str, ToolConfig]:
@@ -88,7 +96,7 @@ def check(
     out_file: str = typer.Option(
         DEFAULT_STORAGE_FILE,
         "--out-file",
-        help="File path to save results in table mode (defaults to analysis_results.json)",
+        help="File path to save results in table mode",
     ),
     clear_cache: bool = typer.Option(
         False, "--clear-cache", help="Clear cached tool results before running"

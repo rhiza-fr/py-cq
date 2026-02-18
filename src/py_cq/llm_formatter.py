@@ -42,8 +42,6 @@ def format_for_llm(
     if cq_invocation is None:
         cq_invocation = "cq " + " ".join(sys.argv[1:])
     return (
-        f"# Fix this code quality issue\n\n"
-        f"## Issue\n\n"
         f"{defect_md}\n\n"
         f"Please fix only this issue. After fixing, run `{cq_invocation}` to verify."
     )
