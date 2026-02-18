@@ -14,6 +14,7 @@ results into a Rich Table for convenient console display.
 import copy
 import json
 import logging
+import tomllib
 from enum import Enum
 from pathlib import Path
 
@@ -125,6 +126,59 @@ def check(
     else:
         save_result(combined_tool_results=combined_metrics, file_name=out_file)
         console.print(format_as_table(combined_metrics, effective_registry))
+
+
+@app.command()
+def config(
+    path: str = typer.Argument(".", help="Path to Python file or project directory"),
+) -> None:
+    """Show the effective tool configuration for a project."""
+    path_obj = Path(path).resolve()
+    toml_path = (
+        path_obj.parent / "pyproject.toml"
+        if path_obj.is_file()
+        else path_obj / "pyproject.toml"
+    )
+
+    if not toml_path.exists():
+        status_text = "[yellow]file not found[/yellow]"
+        user_cfg: dict = {}
+    else:
+        with toml_path.open("rb") as f:
+            toml_data = tomllib.load(f)
+        cq_section = toml_data.get("tool", {}).get("cq")
+        if cq_section is None:
+            status_text = "[yellow]no [tool.cq] section[/yellow]"
+            user_cfg = {}
+        else:
+            status_text = "[green]merged from [tool.cq][/green]"
+            user_cfg = cq_section
+
+    console.print(f"Config: [bold]{toml_path}[/bold] ({status_text})\n")
+
+    effective_registry = _apply_user_config(tool_registry, user_cfg)
+    disabled_ids = set(tool_registry.keys()) - set(effective_registry.keys())
+
+    table = Table()
+    table.add_column("Tool", style="cyan")
+    table.add_column("Priority", justify="right")
+    table.add_column("Warning", justify="right")
+    table.add_column("Error", justify="right")
+    table.add_column("Status", justify="center")
+
+    for tool_id in sorted(tool_registry, key=lambda t: tool_registry[t].priority):
+        tc = effective_registry.get(tool_id, tool_registry[tool_id])
+        is_disabled = tool_id in disabled_ids
+        status = "[red]disabled[/red]" if is_disabled else "[green]enabled[/green]"
+        table.add_row(
+            tc.name,
+            str(tc.priority),
+            f"{tc.warning_threshold:.2f}",
+            f"{tc.error_threshold:.2f}",
+            status,
+        )
+
+    console.print(table)
 
 
 def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig]):
