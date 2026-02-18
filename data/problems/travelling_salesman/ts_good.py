@@ -1,3 +1,4 @@
+"""Good implementation of the Travelling Salesman Problem using nearest-neighbor heuristic."""
 import math
 import random
 
@@ -16,10 +17,7 @@ def test_calc_dist():
 
 
 def nearest_neighbor(cities):
-    """
-    Implements the Nearest Neighbor heuristic for the TSP.
-    """
-    num_cities = len(cities)
+    """Implements the Nearest Neighbor heuristic for the TSP."""
     current_city = random.choice(cities)  # Start at a random city
     unvisited_cities = set(cities)
     unvisited_cities.remove(current_city)
@@ -49,6 +47,7 @@ def nearest_neighbor(cities):
 
 
 def main():
+    """Runs the nearest-neighbor TSP on a sample set of cities."""
     # Example cities (you can change these)
     cities = [(0, 0), (1, 5), (5, 3), (3, 1), (1, 4), (6, 12), (4, 1), (9, 13), (12, 4), (6, 14)]
 

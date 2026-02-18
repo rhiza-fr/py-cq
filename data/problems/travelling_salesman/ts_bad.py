@@ -1,3 +1,4 @@
+"""Intentionally bad implementation of the Travelling Salesman Problem for testing purposes."""
 import math
 import time
 
@@ -13,9 +14,7 @@ def calc_dist(city1, city2):
 
 # Missing Docstrings
 def find_nearest_city(cities, current_city):
-    """
-    Finds the nearest city to the current city.
-    """
+    """Finds the nearest city to the current city."""
     min_dist = float("inf")
     nearest_city = None
     for city in cities:
@@ -28,6 +27,7 @@ def find_nearest_city(cities, current_city):
 
 # Inefficient Loop
 def generate_tour(cities, start_city):
+    """Generates a tour starting from start_city visiting all cities."""
     #error = {a = b}
     tour = [start_city]
     total_distance = 0
@@ -51,6 +51,7 @@ def generate_tour(cities, start_city):
 
 
 def main():
+    """Runs the bad TSP implementation on a sample set of cities."""
     cities = [(0, 0), (1, 5), (5, 3), (3, 1), (1, 4)]
 
     tour, total_distance = generate_tour(cities, cities[0])

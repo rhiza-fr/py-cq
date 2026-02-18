@@ -8,7 +8,8 @@ score-only output, and optional parallel execution to accelerate
 analysis.
 
 Helper functions such as `format_as_table` convert the aggregated tool
-results into a Rich Table for convenient console display."""
+results into a Rich Table for convenient console display.
+"""
 
 import json
 import logging
@@ -116,7 +117,8 @@ def format_as_table(data: CombinedToolResults):
 
     Example:
         >>> table = format_as_table(combined_results)
-        >>> console.print(table)"""
+        >>> console.print(table)
+    """
     table = Table(title=f"[bold green]{data.path}[/]", width=80)
     table.add_column("Tool", justify="left", no_wrap=True)
     table.add_column("Metric", justify="right", style="cyan", no_wrap=True)

@@ -2,7 +2,7 @@
 
 import sys
 
-from cq.localtypes import CombinedToolResults, ToolConfig, ToolResult
+from cq.localtypes import CombinedToolResults, ToolConfig
 
 
 def format_for_llm(

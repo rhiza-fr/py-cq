@@ -173,9 +173,9 @@ class ProfileParser(AbstractParser):
                 "callees": callees_info,
             }
             if not filter:
-                result["functions"].append(func_entry)  # type: ignore
+                result["functions"].append(func_entry)
             elif filter in func_entry["function_name_long"]:
-                result["functions"].append(func_entry)  # type: ignore
+                result["functions"].append(func_entry)
         return result
 
     def pstats_to_json(self, stats_obj, indent=2):

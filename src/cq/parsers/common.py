@@ -25,6 +25,17 @@ def read_source_line(file_path: str, line: int) -> str:
     return ""
 
 
+def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
+    """Return up to `count` source lines starting at the given 1-based line number."""
+    from pathlib import Path
+    try:
+        all_lines = Path(file_path).read_text(encoding="utf-8").splitlines()
+        start = max(0, line - 1)
+        return "\n".join(all_lines[start : start + count])
+    except OSError:
+        return ""
+
+
 def inv_normalize(value: float, max_value: float) -> float:
     """Returns the inverse normalized value of `value` relative to `max_value`."""
     return (max_value - min(value, max_value)) / max_value
@@ -82,6 +93,6 @@ def score_logistic_variant(
             term = float("inf")
         else:
             term = base**steepness
-    except OverflowError:
+    except OverflowError:  # pragma: no cover
         return 0.0  # Score becomes 0 if term is too large
     return 1.0 / (1.0 + term)

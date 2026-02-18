@@ -22,7 +22,7 @@ import logging
 import re
 
 from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant, read_source_line
+from cq.parsers.common import score_logistic_variant, read_source_lines
 
 log = logging.getLogger("cq")
 
@@ -100,6 +100,6 @@ class PydocstyleParser(AbstractParser):
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")
-        src_line = read_source_line(file, line)
-        code_block = f"\n```python\n{src_line}\n```" if src_line else ""
+        src_lines = read_source_lines(file, line, count=6)
+        code_block = f"\n```python\n{src_lines}\n```" if src_lines else ""
         return f"`{file}:{line}` — **{code}**: {message}{code_block}"

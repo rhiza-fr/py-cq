@@ -61,6 +61,29 @@ class CoverageParser(AbstractParser):
                 if file_name == "TOTAL":
                     tr.metrics["coverage"] = coverage_percentage
                 else:
-                    details[file_name.replace("\\", "/")] = coverage_percentage
+                    try:
+                        missing = int(parts[2]) if len(parts) >= 4 else None
+                    except (ValueError, IndexError):
+                        missing = None
+                    details[file_name.replace("\\", "/")] = {
+                        "coverage": coverage_percentage,
+                        "missing": missing,
+                    }
         tr.details = details
         return tr
+
+    def format_llm_message(self, tr: ToolResult) -> str:
+        """Return the files with lowest coverage as a defect description."""
+        score = tr.metrics.get("coverage", 0)
+        uncovered = sorted(
+            [(f, d) for f, d in tr.details.items() if isinstance(d, dict) and d.get("missing")],
+            key=lambda x: x[1]["coverage"],
+        )[:5]
+        if not uncovered:
+            return f"**coverage** score: {score:.3f}"
+        lines = [f"**coverage** score: {score:.3f} — files with lowest coverage:"]
+        for path, data in uncovered:
+            pct = data["coverage"]
+            miss = data["missing"]
+            lines.append(f"- `{path}`: {pct:.0%} ({miss} uncovered statements)")
+        return "\n".join(lines)
