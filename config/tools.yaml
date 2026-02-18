@@ -3,18 +3,18 @@ tools:
 
   ruff:
     name: "ruff"
-    command: "ruff check --output-format concise --no-cache {context_path}"
+    command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
     parser: "RuffParser"
     priority: 3
-    warning_threshold: 0.95
+    warning_threshold: 0.9999
     error_threshold: 0.9
 
   ty:
     name: "ty"
-    command: "ty check --output-format concise --color never {context_path}"
+    command: "{python} -m ty check --output-format concise --color never {context_path}"
     parser: "TyParser"
     priority: 3
-    warning_threshold: 0.9
+    warning_threshold: 0.9999
     error_threshold: 0.8
 
   compilation:

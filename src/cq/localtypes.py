@@ -99,10 +99,8 @@ class CombinedToolResults:
             tool_results (list[ToolResult]): List of ToolResult objects."""
         self.tool_results = tool_results
         self.path = path
-        score = 0.0
-        for tr in self.tool_results:
-            score += sum(tr.metrics.values()) / len(tr.metrics) if tr.metrics else 0.0
-        self.score = score / len(self.tool_results) if tool_results else 0.0
+        scored = [tr for tr in tool_results if tr.metrics]
+        self.score = sum(sum(tr.metrics.values()) / len(tr.metrics) for tr in scored) / len(scored) if scored else 0.0
 
     metrics: list[ToolResult]
     # context_path: str # Path to project or file

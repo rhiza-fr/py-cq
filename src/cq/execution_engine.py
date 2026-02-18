@@ -3,8 +3,6 @@
 This module provides helper functions to run command-line tools while
 automatically caching their output.  The key capabilities are:
 
-* ``get_hash`` - generates a deterministic hash for arbitrary arguments
-  to identify cached results.
 * ``run_tool`` - executes a single tool configuration, captures its
   stdout/stderr/return code, and records a timestamp.
 * ``run_tools`` - runs many tool configurations, optionally in parallel,
@@ -21,23 +19,15 @@ import sys
 import time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from cachier import cachier
+import diskcache
 from cq.context_hash import get_context_hash
 from cq.localtypes import RawResult, ToolConfig, ToolResult
 
 log = logging.getLogger("cq")
 
-
-def get_hash(args, kwargs):
-    """Returns a hash string combining the tool command and context hash."""
-    p = kwargs["context_path"]
-    t = get_context_hash(p)
-    c = kwargs["tool_config"].command
-    hash = f"{c.format(context_path=p, python='python')}:{t}"
-    return hash
+_cache = diskcache.Cache(Path.home() / ".cache" / "cq")
 
 
-@cachier(hash_func=get_hash)
 def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
@@ -66,10 +56,14 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
             python = f'"{uv}" run --directory "{abs_dir}" {with_flags}'.rstrip()
             path = "."
     command = tool_config.command.format(context_path=path, python=python)
+    cache_key = f"{command}:{get_context_hash(context_path)}"
+    if cache_key in _cache:
+        log.info(f"Cache hit: {command}")
+        return _cache[cache_key]
     log.info(f"Running: {command}")
     result = subprocess.run(command, capture_output=True, text=True, shell=True)
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-    return RawResult(
+    raw_result = RawResult(
         tool_name=tool_config.name,
         command=command,
         stdout=result.stdout,
@@ -77,6 +71,8 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         return_code=result.returncode,
         timestamp=timestamp,
     )
+    _cache[cache_key] = raw_result
+    return raw_result
 
 
 def run_tools(tool_configs, path: str, parallel: bool = False) -> list[ToolResult]:

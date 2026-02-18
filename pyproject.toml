@@ -5,7 +5,7 @@ description = "Checks the code quality of a file or project"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "cachier>=3.1.2",
+    "diskcache>=5.6.3",
     "coverage>=7.8.2",
     "pydocstyle>=6.3.0",
     "pytest>=8.4.0",
@@ -14,20 +14,16 @@ dependencies = [
     "typer>=0.16.0",
     "pytest>=8.4.0",
     "pytest-cov>=6.1.1",
-    "numpy>=2.2.6",
-    "matplotlib>=3.10.3",
     "pyyaml>=6.0.2",
+    "ty>=0.0.17",
+    "ruff>=0.14.1",
+    "pytest-json-report>=1.5.0",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv]
-dev-dependencies = [
-    "pytest-json-report>=1.5.0",
-    "ruff>=0.11.12",
-]
 
 [project.scripts]
     cq = "cq.main:main"

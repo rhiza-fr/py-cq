@@ -46,22 +46,18 @@ class CoverageParser(AbstractParser):
             0.9"""
         # Simplified parsing - replace with actual logic
         tr = ToolResult(raw=raw_result)
-        tr.metrics["coverage"] = 0.0
-        # data\problems\travelling_salesman\ts_good.py      37     26    30%
-        # TOTAL                                             37     26    30%
         lines = raw_result.stdout.splitlines()
         coverage_lines = [line for line in lines if line.endswith("%")]
-        # print(f"Coverage lines found: {coverage_lines}")
         details = {}
         for line in coverage_lines:
             parts = line.split()
-            if len(parts) == 4:
+            if len(parts) >= 2:
                 file_name = parts[0]
                 try:
-                    coverage_percentage = float(parts[2]) / 100.0
+                    coverage_percentage = float(parts[-1].rstrip('%')) / 100.0
                 except ValueError:
                     log.warning("Error parsing coverage percentage from line: %s", line)
-                    coverage_percentage = 0.0
+                    continue
                 if file_name == "TOTAL":
                     tr.metrics["coverage"] = coverage_percentage
                 else:

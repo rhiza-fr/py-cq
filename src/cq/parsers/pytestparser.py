@@ -50,7 +50,7 @@ class PytestParser(AbstractParser):
         lines = raw_result.stdout.splitlines()
         tr = ToolResult(raw=raw_result)
         if "no tests ran" in raw_result.stdout:
-            tr.metrics["test"] = 0
+            pass
         else:
             tests_found = dict()
             num_tests = 0
