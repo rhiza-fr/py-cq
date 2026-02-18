@@ -19,6 +19,7 @@ import sys
 import time
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import cast
 import diskcache
 from cq.context_hash import get_context_hash
 from cq.localtypes import RawResult, ToolConfig, ToolResult
@@ -59,7 +60,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
         log.info(f"Cache hit: {command}")
-        return _cache[cache_key]
+        return cast(RawResult, _cache[cache_key])
     log.info(f"Running: {command}")
     result = subprocess.run(command, capture_output=True, text=True, shell=True)
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
