@@ -53,26 +53,40 @@ def test_clean_command_empty():
 
 # --- priority ordering ---
 
-def test_priority1_beats_priority3():
+def test_priority1_beats_priority3_same_severity():
+    """Within the same severity tier, lower priority number wins."""
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
     combined = make_combined([
-        make_tr("ruff", 0.5, command="python -m ruff check src/"),
-        make_tr("compile", 0.8, command="python -m compileall src/"),
+        make_tr("ruff", 0.4, command="python -m ruff check src/"),    # error state (< 0.5)
+        make_tr("compile", 0.3, command="python -m compileall src/"),  # error state (< 0.5)
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "compileall src/" in result
     assert "ruff check" not in result
 
 
-def test_priority2_beats_priority5():
+def test_priority2_beats_priority5_same_severity():
+    """Within the same severity tier, lower priority number wins."""
     registry = make_registry(make_config("pytest", 2), make_config("pydocstyle", 5))
     combined = make_combined([
-        make_tr("pydocstyle", 0.3, command="python -m pydocstyle src/"),
-        make_tr("pytest", 0.9, command="python -m pytest -v src/"),
+        make_tr("pydocstyle", 0.4, command="python -m pydocstyle src/"),  # error state (< 0.5)
+        make_tr("pytest", 0.3, command="python -m pytest -v src/"),        # error state (< 0.5)
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "pytest -v src/" in result
     assert "pydocstyle" not in result
+
+
+def test_severity_beats_priority():
+    """A tool in error state wins over a higher-priority tool in OK state."""
+    registry = make_registry(make_config("compile", 1), make_config("pydocstyle", 5))
+    combined = make_combined([
+        make_tr("compile", 0.8, command="python -m compileall src/"),    # OK state (>= 0.7)
+        make_tr("pydocstyle", 0.3, command="python -m pydocstyle src/"), # error state (< 0.5)
+    ])
+    result = format_for_llm(registry, combined, cq_invocation=CQ)
+    assert "pydocstyle src/" in result
+    assert "compileall" not in result
 
 
 def test_same_priority_worst_score_wins():

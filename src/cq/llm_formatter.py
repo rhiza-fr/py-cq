@@ -5,6 +5,15 @@ import sys
 from cq.localtypes import CombinedToolResults, ToolConfig
 
 
+def _severity(score: float, config: ToolConfig) -> int:
+    """Return 0 (error), 1 (warning), or 2 (ok) for a given score and tool config."""
+    if score < config.error_threshold:
+        return 0
+    if score < config.warning_threshold:
+        return 1
+    return 2
+
+
 def format_for_llm(
     tool_configs: dict,
     combined: CombinedToolResults,
@@ -14,10 +23,14 @@ def format_for_llm(
     by_name = {tc.name: tc for tc in tool_configs.values()}
 
     failing = sorted(
-        [tr for tr in combined.tool_results if tr.metrics and min(tr.metrics.values()) < 1.0],
+        [
+            tr for tr in combined.tool_results
+            if tr.metrics and (cfg := by_name.get(tr.raw.tool_name)) and min(tr.metrics.values()) < cfg.warning_threshold
+        ],
         key=lambda tr: (
-            by_name.get(tr.raw.tool_name, ToolConfig(name="", command="", parser_class=object, priority=99)).priority,
-            min(tr.metrics.values()),  # worst score first within same priority
+            _severity(min(tr.metrics.values()), by_name[tr.raw.tool_name]),
+            by_name[tr.raw.tool_name].priority,
+            min(tr.metrics.values()),
         ),
     )
     if not failing:

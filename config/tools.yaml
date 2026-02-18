@@ -5,7 +5,7 @@ tools:
     name: "ruff"
     command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
     parser: "RuffParser"
-    priority: 3
+    priority: 2
     warning_threshold: 0.9999
     error_threshold: 0.9
 
@@ -13,9 +13,12 @@ tools:
     name: "ty"
     command: "{python} -m ty check --output-format concise --color never {context_path}"
     parser: "TyParser"
-    priority: 4
+    priority: 3
     warning_threshold: 0.9999
     error_threshold: 0.8
+    run_in_target_env: true
+    extra_deps:
+      - ty
 
   compilation:
     name: "compile"
@@ -29,7 +32,7 @@ tools:
     name: "pytest"
     command: "{python} -m pytest -v {context_path}"
     parser: "PytestParser"
-    priority: 2
+    priority: 4
     warning_threshold: 0.7
     error_threshold: 0.5
     run_in_target_env: true
@@ -50,7 +53,7 @@ tools:
     name: "pydocstyle"
     command: "{python} -m pydocstyle --convention=google {context_path}"
     parser: "PydocstyleParser"
-    priority: 6
+    priority: 9
     warning_threshold: 0.8
     error_threshold: 0.3
 
@@ -66,7 +69,7 @@ tools:
     name: "radon cc"
     command: "{python} -m radon cc --json {context_path}"
     parser: "ComplexityParser"
-    priority: 8
+    priority: 6
     warning_threshold: 0.6
     error_threshold: 0.4
 
@@ -74,7 +77,7 @@ tools:
     name: "radon hal"
     command: "{python} -m radon hal -f --json {context_path}"
     parser: "HalsteadParser"
-    priority: 9
+    priority: 8
     warning_threshold: 0.5
     error_threshold: 0.3
 

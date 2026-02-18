@@ -29,6 +29,15 @@ log = logging.getLogger("cq")
 _cache = diskcache.Cache(Path.home() / ".cache" / "cq")
 
 
+def _find_project_root(path: Path) -> Path | None:
+    """Walk up from path to find the nearest directory containing pyproject.toml."""
+    for parent in [path] + list(path.parents):
+        candidate = parent if parent.is_dir() else parent.parent
+        if (candidate / "pyproject.toml").exists():
+            return candidate
+    return None
+
+
 def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
@@ -49,13 +58,19 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         0"""
     python = sys.executable
     path = context_path
-    if tool_config.run_in_target_env and Path(context_path).is_dir():
+    if tool_config.run_in_target_env:
         uv = shutil.which("uv")
         if uv:
-            abs_dir = str(Path(context_path).resolve())
+            resolved = Path(context_path).resolve()
+            if resolved.is_dir():
+                abs_dir = str(resolved)
+                path = "."
+            else:
+                project_root = _find_project_root(resolved)
+                abs_dir = str(project_root) if project_root else str(resolved.parent)
+                path = str(resolved)
             with_flags = " ".join(f"--with {dep}" for dep in tool_config.extra_deps)
             python = f'"{uv}" run --directory "{abs_dir}" {with_flags}'.rstrip()
-            path = "."
     command = tool_config.command.format(context_path=path, python=python)
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
