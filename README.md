@@ -1,4 +1,4 @@
-# CQ - Code Quality Analysis Tool
+# CQ - Python Code Quality Analysis Tool
 
 CQ is a Python CLI tool for iterative, LLM-assisted code improvement. The primary workflow is:
 
@@ -143,6 +143,8 @@ until all tools are green. Priority order ensures the most critical category
 (security, type errors, failing tests) is fixed before cosmetic ones.
 
 ## Tools
+
+Many thanks to all the wonderful maintainers of :
 
 - [compileall](https://docs.python.org/3/library/compileall.html)
 - [bandit](https://github.com/PyCQA/bandit)
