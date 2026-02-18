@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Collection
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import cast
@@ -91,7 +92,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     return raw_result
 
 
-def run_tools(tool_configs, path: str, parallel: bool = False) -> list[ToolResult]:
+def run_tools(tool_configs: Collection[ToolConfig], path: str, parallel: bool = False) -> list[ToolResult]:
     """Run multiple tools and return their parsed results.
 
     Runs each tool specified in *tool_configs* on the file or directory at

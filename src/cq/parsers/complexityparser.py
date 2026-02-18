@@ -62,10 +62,6 @@ class ComplexityParser(AbstractParser):
             >>> result = parser.parse(raw)
             >>> result.metrics["simplicity"]
             0.4"""
-        # Simplified parsing - replace with actual logic
-        # radon cc --json <path_to_file>
-        # {".\\data\\problems\\travelling_salesman\\ts_good.py": [
-        #    {"type": "function", "rank": "A", "name": "nearest_neighbor", "complexity": 4, "col_offset": 0, "lineno": 9, "endline": 39, "closures": []}, ... ]}
         tr = ToolResult(raw=raw_result)
         data = json.loads(raw_result.stdout)
         score = 0
@@ -76,16 +72,7 @@ class ComplexityParser(AbstractParser):
             if file_name not in tr.details:
                 tr.details[file_name] = {}
             for function in functions:
-                if function == "error":
-                    tr.details[file_name]["error"] = {
-                        "simplicity": 0,
-                        "rank": "F",
-                        "message": functions["error"],
-                    }
-                    break
                 num_items += 1
-                if file_name not in tr.details:
-                    tr.details[file_name] = {}
                 function_score = score_logistic_variant(
                     function.get("complexity", max_complexity), max_complexity
                 )

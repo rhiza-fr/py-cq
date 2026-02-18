@@ -109,12 +109,8 @@ class CompileParser(AbstractParser):
                     file_path = current_error["file"].replace("\\", "/")
                     failed_files[file_path] = error_info
                     current_error = None
-        # Calculate score as ratio of successful compiles to total attempts
         failure_ratio = len(failed_files) / compilations if compilations > 0 else 0.0
         score = score_logistic_variant(failure_ratio, scale_factor=0.25)
-        # score = (compilations - len(failed_files)) / compilations if compilations > 0 else 0.0
-        # I know raw should raw but meh!!!
-        # for sanities sake remove all the Listing lines ... wtf? python/windows
         raw_result.stdout = "\n".join(
             [
                 line.replace("\\\\", "/")

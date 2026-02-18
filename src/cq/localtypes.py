@@ -70,8 +70,6 @@ class ToolResult:
             self.details = {}
         if not isinstance(self.metrics, dict):
             self.metrics = {}
-        # if not isinstance(self.raw, dict):
-        #     self.raw =
 
     def to_dict(self) -> dict:
         """Returns a dictionary containing the metrics, details, and the raw data serialized via its own `to_dict` method."""
@@ -102,15 +100,11 @@ class CombinedToolResults:
         scored = [tr for tr in tool_results if tr.metrics]
         self.score = sum(sum(tr.metrics.values()) / len(tr.metrics) for tr in scored) / len(scored) if scored else 0.0
 
-    metrics: list[ToolResult]
-    # context_path: str # Path to project or file
     score: float = 0.0
     path: str = ""
 
     def to_dict(self) -> dict:
         """Returns a dictionary containing the path, overall score, and each ToolResult serialized."""
-        # "timestamp": self.timestamp,
-        # "context_path": self.context_path
         return {
             "metrics": [tool_result.to_dict() for tool_result in self.tool_results],
             "score": self.score,

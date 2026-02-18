@@ -39,9 +39,6 @@ class MaintainabilityParser(AbstractParser):
                 * ``metrics['maintainability']`` - the average score of all processed files (or ``0.0`` if none were processed).
                 * ``details`` - a mapping from each file name (converted to use forward slashes) to a dictionary with keys ``mi``, ``rank``, and optionally ``error``.
                 * ``details['return_code']`` - the tool's exit code."""
-        # Simplified parsing - replace with actual logic
-        # radon mi -s --json <path_to_file>
-        # {".\\data\\problems\\travelling_salesman\\ts_good.py": {"mi": 73.77377419557578, "rank": "A"}}
         tr = ToolResult(raw=raw_result)
         data = json.loads(raw_result.stdout)
         num_items = 0
@@ -53,7 +50,7 @@ class MaintainabilityParser(AbstractParser):
                     "rank": "F",
                     "error": values["error"],
                 }
-            if "mi" in values:
+            elif "mi" in values:
                 file_score = score_logistic_variant(100 - values["mi"], 85)
                 score += file_score
                 num_items += 1

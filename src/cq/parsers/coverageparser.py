@@ -1,5 +1,5 @@
-'''"""Parses raw coverage tool output into a standardized `ToolResult` for consistent analysis across different coverage utilities.
-The module defines `CoverageParser`, a concrete implementation of `AbstractParser`, which extracts overall and per-file coverage metrics from a `RawResult` object and normalises the data format for downstream processing.'''
+"""Parses raw coverage tool output into a standardized `ToolResult` for consistent analysis across different coverage utilities.
+The module defines `CoverageParser`, a concrete implementation of `AbstractParser`, which extracts overall and per-file coverage metrics from a `RawResult` object and normalises the data format for downstream processing."""
 
 import logging
 
@@ -44,7 +44,6 @@ class CoverageParser(AbstractParser):
             0.9
             >>> result.details['src/main.py']
             0.9"""
-        # Simplified parsing - replace with actual logic
         tr = ToolResult(raw=raw_result)
         lines = raw_result.stdout.splitlines()
         coverage_lines = [line for line in lines if line.endswith("%")]

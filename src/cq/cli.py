@@ -15,12 +15,15 @@ import json
 import logging
 from enum import Enum
 from pathlib import Path
+
 import typer
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
+
 from cq.config import DEFAULT_STORAGE_FILE
-from cq.execution_engine import run_tools, _cache as tool_cache
+from cq.execution_engine import _cache as tool_cache
+from cq.execution_engine import run_tools
 from cq.localtypes import CombinedToolResults
 from cq.metric_aggregator import aggregate_metrics
 from cq.storage import save_result
@@ -37,6 +40,7 @@ app = typer.Typer()
 
 
 class OutputMode(str, Enum):
+    """Enum of output types."""
     TABLE = "table"
     SCORE = "score"
     JSON = "json"
@@ -47,7 +51,6 @@ class OutputMode(str, Enum):
 def callback():
     """CQ - Code Quality Analysis Tool."""
 console = Console()
-# TODO make this work on projects
 
 
 @app.command()

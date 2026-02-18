@@ -1,5 +1,4 @@
-"""Utilities for computing cryptographic signatures and context hashes of files and
-directories.
+"""Utilities for computing cryptographic signatures and context hashes.
 
 This module offers two lightweight helpers that simplify integrity checks and
 change-detection in larger systems:
@@ -14,7 +13,8 @@ change-detection in larger systems:
   time; for a directory it aggregates the signatures of all contained files.
 
 These functions provide deterministic fingerprints that can be used for
-file integrity verification, caching, and change-detection logic."""
+file integrity verification, caching, and change-detection logic.
+"""
 
 import hashlib
 import os
@@ -39,7 +39,8 @@ def get_sigs(path: str):
 
     Example:
         >>> get_sigs('/tmp/project')
-        ['/tmp/project/main.py:1024:1680000000.0', ...]"""
+        ['/tmp/project/main.py:1024:1680000000.0', ...]
+    """
     items = []
     with os.scandir(path) as entries:
         for entry in entries:
@@ -69,7 +70,8 @@ def get_context_hash(path: str):
 
     Example:
         >>> get_context_hash('/tmp/example.txt')
-        '5d41402abc4b2a76b9719d911017c592'"""
+        '5d41402abc4b2a76b9719d911017c592'
+    """
     sig = "empty"
     if os.path.isfile(path):
         s = os.stat(path)
