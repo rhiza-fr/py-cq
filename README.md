@@ -16,7 +16,7 @@ uv tool install py-cq
 
 ## Tools
 
-CQ runs these tools in parallel:
+CQ runs these tools in *parallel*:
 
 | Priority | Tool | Measures |
 |----------|------|----------|
@@ -141,3 +141,15 @@ Tool IDs match the keys in `config/tools.yaml`: `compilation`, `bandit`, `ruff`,
 concise markdown. The LLM fixes it, you re-run `cq check -o llm`, and repeat
 until all tools are green. Priority order ensures the most critical category
 (security, type errors, failing tests) is fixed before cosmetic ones.
+
+## Tools
+
+- [compileall](https://docs.python.org/3/library/compileall.html)
+- [bandit](https://github.com/PyCQA/bandit)
+- [ruff](https://github.com/astral-sh/ruff)
+- [ty](https://github.com/astral-sh/ty)
+- [pytest](https://github.com/pytest-dev/pytest)
+- [coverage.py](https://github.com/nedbat/coveragepy)
+- [radon](https://github.com/rubik/radon)
+- [vulture](https://github.com/jendrikseipp/vulture)
+- [interrogate](https://github.com/econchick/interrogate)
