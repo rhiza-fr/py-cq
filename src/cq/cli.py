@@ -81,7 +81,7 @@ def run(
     elif path_obj.is_dir():
         if not (path_obj / "pyproject.toml").exists():
             raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
-    log.setLevel(log_level)
+    log.setLevel("CRITICAL" if as_llm else log_level)
     if clear_cache:
         tool_cache.clear()
     tool_results = run_tools(tool_registry.values(), path, parallel)
