@@ -18,6 +18,9 @@ def find_nearest_city(cities, current_city):
     min_dist = float("inf")
     nearest_city = None
     for city in cities:
+        # unused_variable:str = "oink"
+        # unused_variable = 3
+        # printthatdoesnotexist(unused_variable)
         dist = calc_dist(current_city, city)
         if dist < min_dist:
             min_dist = dist

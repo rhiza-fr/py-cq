@@ -11,6 +11,7 @@ Helper functions such as `format_as_table` convert the aggregated tool
 results into a Rich Table for convenient console display.
 """
 
+import copy
 import json
 import logging
 from enum import Enum
@@ -21,13 +22,13 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 
-from cq.config import DEFAULT_STORAGE_FILE
-from cq.execution_engine import _cache as tool_cache
-from cq.execution_engine import run_tools
-from cq.localtypes import CombinedToolResults
-from cq.metric_aggregator import aggregate_metrics
-from cq.storage import save_result
-from cq.tool_registry import tool_registry
+from py_cq.config import DEFAULT_STORAGE_FILE, load_user_config
+from py_cq.execution_engine import _cache as tool_cache
+from py_cq.execution_engine import run_tools
+from py_cq.localtypes import CombinedToolResults, ToolConfig
+from py_cq.metric_aggregator import aggregate_metrics
+from py_cq.storage import save_result
+from py_cq.tool_registry import tool_registry
 
 logging.basicConfig(
     level="INFO",
@@ -37,6 +38,25 @@ logging.basicConfig(
 )
 log = logging.getLogger("cq")
 app = typer.Typer()
+
+
+def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str, ToolConfig]:
+    """Return a modified copy of base with user overrides applied.
+
+    Supports:
+      - ``disable``: list of tool IDs to remove
+      - ``thresholds.<tool_id>.warning`` / ``.error``: override per-tool thresholds
+    """
+    registry = {k: copy.copy(v) for k, v in base.items()}
+    for tool_id in user_cfg.get("disable", []):
+        registry.pop(tool_id, None)
+    for tool_id, thresholds in user_cfg.get("thresholds", {}).items():
+        if tool_id in registry:
+            if "warning" in thresholds:
+                registry[tool_id].warning_threshold = float(thresholds["warning"])
+            if "error" in thresholds:
+                registry[tool_id].error_threshold = float(thresholds["error"])
+    return registry
 
 
 class OutputMode(str, Enum):
@@ -87,9 +107,10 @@ def check(
         if not (path_obj / "pyproject.toml").exists():
             raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
     log.setLevel(log_level)
+    effective_registry = _apply_user_config(tool_registry, load_user_config(path_obj))
     if clear_cache:
         tool_cache.clear()
-    tool_results = run_tools(tool_registry.values(), path, not sequential)
+    tool_results = run_tools(effective_registry.values(), path, not sequential)
     for tr in tool_results:
         log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)
@@ -99,14 +120,14 @@ def check(
         console.print(json.dumps(combined_metrics.to_dict(), indent=2))
     elif output == OutputMode.LLM:
         log.setLevel("CRITICAL")
-        from cq.llm_formatter import format_for_llm
-        console.print(format_for_llm(tool_registry, combined_metrics))
+        from py_cq.llm_formatter import format_for_llm
+        console.print(format_for_llm(effective_registry, combined_metrics))
     else:
         save_result(combined_tool_results=combined_metrics, file_name=out_file)
-        console.print(format_as_table(combined_metrics))
+        console.print(format_as_table(combined_metrics, effective_registry))
 
 
-def format_as_table(data: CombinedToolResults):
+def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig]):
     """Format combined tool results into a Rich Table.
 
     Args:
@@ -130,7 +151,7 @@ def format_as_table(data: CombinedToolResults):
     table.add_column("Status")
     for tr in data.tool_results:
         tool_name = tr.raw.tool_name
-        config = next((t for t in tool_registry.values() if t.name == tool_name))
+        config = next((t for t in registry.values() if t.name == tool_name))
         for name, value in tr.metrics.items():
             status = ""
             if value < config.error_threshold:

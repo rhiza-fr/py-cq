@@ -1,13 +1,13 @@
 """Tests for llm_formatter pipeline and each parser's format_llm_message."""
 
-from cq.llm_formatter import format_for_llm, _clean_command
-from cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolConfig, ToolResult
-from cq.parsers.compileparser import CompileParser
-from cq.parsers.ruffparser import RuffParser
-from cq.parsers.typarser import TyParser
-from cq.parsers.interrogateparser import InterrogateParser
-from cq.parsers.pytestparser import PytestParser
-from cq.parsers.halsteadparser import HalsteadParser
+from py_cq.llm_formatter import format_for_llm
+from py_cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolConfig, ToolResult
+from py_cq.parsers.compileparser import CompileParser
+from py_cq.parsers.halsteadparser import HalsteadParser
+from py_cq.parsers.interrogateparser import InterrogateParser
+from py_cq.parsers.pytestparser import PytestParser
+from py_cq.parsers.ruffparser import RuffParser
+from py_cq.parsers.typarser import TyParser
 
 CQ = "cq run test.py --llm"
 
@@ -37,79 +37,64 @@ def make_registry(*configs: ToolConfig) -> dict:
     return {tc.name: tc for tc in configs}
 
 
-# --- command cleaning ---
-
-def test_clean_command_strips_interpreter():
-    cmd = r"C:\venv\python.exe -m ruff check --no-cache src/foo.py"
-    assert _clean_command(cmd) == "ruff check --no-cache src/foo.py"
-
-
-def test_clean_command_no_module_flag():
-    assert _clean_command("ruff check src/foo.py") == "ruff check src/foo.py"
-
-
-def test_clean_command_empty():
-    assert _clean_command("") == ""
-
-
 # --- priority ordering ---
 
 def test_priority1_beats_priority3_same_severity():
     """Within the same severity tier, lower priority number wins."""
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
     combined = make_combined([
-        make_tr("ruff", 0.4, command="python -m ruff check src/"),    # error state (< 0.5)
-        make_tr("compile", 0.3, command="python -m compileall src/"),  # error state (< 0.5)
+        make_tr("ruff", 0.4),    # error state
+        make_tr("compile", 0.3), # error state, higher priority → wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
-    assert "compileall src/" in result
-    assert "ruff check" not in result
+    assert "0.300" in result  # compile selected
+    assert "0.400" not in result
 
 
 def test_priority2_beats_priority5_same_severity():
     """Within the same severity tier, lower priority number wins."""
     registry = make_registry(make_config("pytest", 2), make_config("interrogate", 5))
     combined = make_combined([
-        make_tr("interrogate", 0.4, command="python -m interrogate src/"),  # error state (< 0.5)
-        make_tr("pytest", 0.3, command="python -m pytest -v src/"),          # error state (< 0.5)
+        make_tr("interrogate", 0.4), # error state
+        make_tr("pytest", 0.3),      # error state, higher priority → wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
-    assert "pytest -v src/" in result
-    assert "interrogate" not in result
+    assert "0.300" in result  # pytest selected
+    assert "0.400" not in result
 
 
 def test_severity_beats_priority():
-    """A tool in error state wins over a higher-priority tool in OK state."""
+    """A tool in error state wins over a higher-priority tool in warning/ok state."""
     registry = make_registry(make_config("compile", 1), make_config("interrogate", 5))
     combined = make_combined([
-        make_tr("compile", 0.8, command="python -m compileall src/"),       # OK state (>= 0.7)
-        make_tr("interrogate", 0.3, command="python -m interrogate src/"),  # error state (< 0.5)
+        make_tr("compile", 0.8),     # warning/ok state
+        make_tr("interrogate", 0.3), # error state → wins despite lower priority
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
-    assert "interrogate src/" in result
-    assert "compileall" not in result
+    assert "0.300" in result  # interrogate selected
+    assert "0.800" not in result
 
 
 def test_same_priority_worst_score_wins():
     registry = make_registry(make_config("ruff", 3), make_config("ty", 3))
     combined = make_combined([
-        make_tr("ruff", 0.8, command="python -m ruff check src/"),
-        make_tr("ty", 0.2, command="python -m ty check src/"),
+        make_tr("ruff", 0.8),
+        make_tr("ty", 0.2),  # worse score → wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
-    assert "ty check src/" in result
-    assert "ruff check" not in result
+    assert "0.200" in result  # ty selected
+    assert "0.800" not in result
 
 
 def test_passing_tool_ignored():
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
     combined = make_combined([
-        make_tr("compile", 1.0, command="python -m compileall src/"),
-        make_tr("ruff", 0.5, command="python -m ruff check src/"),
+        make_tr("compile", 1.0), # passes → ignored
+        make_tr("ruff", 0.5),
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
-    assert "ruff check src/" in result
-    assert "compileall" not in result
+    assert "0.500" in result  # ruff selected
+    assert "1.000" not in result
 
 
 def test_all_passing_returns_no_issues():

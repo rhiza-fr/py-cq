@@ -11,8 +11,8 @@ score stored under the ``dead_code`` metric key.
 
 import re
 
-from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.parsers.common import score_logistic_variant
 
 _LINE_RE = re.compile(r"^(.+):(\d+): (unused \S+) '(.+)' \((\d+)% confidence\)$")
 

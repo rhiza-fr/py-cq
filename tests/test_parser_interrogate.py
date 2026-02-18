@@ -1,8 +1,9 @@
 """Tests for InterrogateParser."""
 
-from cq.localtypes import RawResult, ToolResult
-from cq.parsers.interrogateparser import InterrogateParser
 from conftest import raw
+
+from py_cq.localtypes import RawResult, ToolResult
+from py_cq.parsers.interrogateparser import InterrogateParser
 
 INTERROGATE_OUTPUT = """\
 ------------ Interrogate Results -------------------

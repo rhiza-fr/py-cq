@@ -14,7 +14,8 @@ Example
 >>> print(output_path)"""
 
 import json
-from cq.localtypes import CombinedToolResults
+
+from py_cq.localtypes import CombinedToolResults
 
 
 def save_result(combined_tool_results: CombinedToolResults, file_name: str):

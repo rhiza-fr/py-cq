@@ -1,7 +1,8 @@
 """Tests for CompileParser."""
 
-from cq.parsers.compileparser import CompileParser
 from conftest import raw
+
+from py_cq.parsers.compileparser import CompileParser
 
 COMPILE_OUTPUT_WITH_ERROR = """\
 Listing '.\\src'...

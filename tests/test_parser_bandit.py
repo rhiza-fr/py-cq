@@ -2,9 +2,10 @@
 
 import json
 
-from cq.localtypes import RawResult, ToolResult
-from cq.parsers.banditparser import BanditParser
 from conftest import raw
+
+from py_cq.localtypes import RawResult, ToolResult
+from py_cq.parsers.banditparser import BanditParser
 
 
 def _bandit_json(results):

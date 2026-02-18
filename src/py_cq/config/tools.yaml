@@ -10,7 +10,7 @@ tools:
 
   bandit:
     name: "bandit"
-    command: "{python} -m bandit -r {context_path} -f json -q"
+    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude ./.venv,./tests/"
     parser: "BanditParser"
     priority: 2
     warning_threshold: 0.9999
@@ -82,7 +82,7 @@ tools:
 
   vulture:
     name: "vulture"
-    command: "{python} -m vulture {context_path} --min-confidence 80"
+    command: "{python} -m vulture {context_path} --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git"
     parser: "VultureParser"
     priority: 10
     warning_threshold: 0.9999

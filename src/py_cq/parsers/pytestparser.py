@@ -9,7 +9,8 @@ from multiple test tools.  It is part of the test-collection framework and
 enables consistent handling of pytest output across the system."""
 
 import re
-from cq.localtypes import AbstractParser, RawResult, ToolResult
+
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
 
 class PytestParser(AbstractParser):

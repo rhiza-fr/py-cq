@@ -5,8 +5,8 @@ compile score, and providing concise help messages for any failures."""
 
 import logging
 
-from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.parsers.common import read_source_lines, score_logistic_variant
 
 log = logging.getLogger("cq")
 
@@ -53,15 +53,7 @@ class CompileParser(AbstractParser):
             0.5
             >>> result.details['failed_files']['a.c']['type']
             'error'"""
-        # Listing '.\\src\\cq'...
-        # Listing '.\\src\\cq\\parsers'...
-        # Compiling '.\\data\\problems\\travelling_salesman\\ts_bad.py'...
-        # Compiling '.\\src\\cq\\main.py'...
-        # ***   File ".\data\problems\travelling_salesman\ts_bad.py", line 31
-        #     error = {a = b}
-        #              ^^^^^
-        # SyntaxError: invalid syntax. Maybe you meant '==' or ':=' instead of '='?
-        # Compiling '.\\src\\cq\\metric_aggregator.py'...
+
         compilations = 0
         failed_files: dict[str, dict] = {}
         current_error = None
@@ -130,8 +122,13 @@ class CompileParser(AbstractParser):
             return "Compilation failed (no details available)"
         file, info = next(iter(failed.items()))
         line = info.get("line", "?")
-        src = info.get("src", "")
         typ = info.get("type", "Error")
         help_msg = info.get("help", "")
+        if isinstance(line, int):
+            context_start = max(1, line - 3)
+            raw_lines = read_source_lines(file, context_start, count=8).splitlines()
+            src = "\n".join(f"{context_start + i}: {rline}" for i, rline in enumerate(raw_lines)) if raw_lines else info.get("src", "")
+        else:
+            src = info.get("src", "")
         code_block = f"\n```python\n{src}\n```" if src else ""
         return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}"

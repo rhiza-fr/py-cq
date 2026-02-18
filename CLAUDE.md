@@ -38,9 +38,9 @@ uv run ruff check src/
 
 **Pipeline flow:** CLI (`cli.py`) → tool registry → execution engine → parsers → metric aggregator → output
 
-- **`cli.py`**: Typer app with a single `check` command. Output mode selected via `--output`/`-o` enum (`table`, `score`, `json`, `llm`). Runs tools in parallel by default.
-- **`tool_registry.py`**: Loads `config/tools.yaml` at import time, dynamically imports parser classes, builds a `dict[str, ToolConfig]` registry.
-- **`config/tools.yaml`**: Declares each analysis tool: shell command template (with `{context_path}` placeholder), parser class name, priority, warning/error thresholds. Tools are listed and executed in priority order.
+- **`cli.py`**: Typer app with a single `check` command. Output mode selected via `--output`/`-o` enum (`table`, `score`, `json`, `llm`). Runs tools in parallel by default. Reads `[tool.cq]` from the target project's `pyproject.toml` and applies overrides before running.
+- **`tool_registry.py`**: Loads `src/cq/config/tools.yaml` at import time via `importlib.resources`, dynamically imports parser classes, builds a `dict[str, ToolConfig]` registry.
+- **`config/tools.yaml`** (at `src/cq/config/tools.yaml`): Declares each analysis tool: shell command template (with `{context_path}` placeholder), parser class name, priority, warning/error thresholds. Tools are listed and executed in priority order.
 - **`execution_engine.py`**: Runs shell commands via `subprocess.run`, caches results with `diskcache` using a content-based hash. Parallel execution via `ThreadPoolExecutor`; results are sorted by priority before returning.
 - **`parsers/`**: Each parser subclasses `AbstractParser` (from `localtypes.py`), implementing `parse(RawResult) -> ToolResult` and optionally `format_llm_message(ToolResult) -> str`. Parser module names must match the lowercase parser class name (e.g., `PytestParser` → `pytestparser.py`).
 - **`localtypes.py`**: Core dataclasses — `ToolConfig`, `RawResult`, `ToolResult`, `CombinedToolResults`, and `AbstractParser` ABC.

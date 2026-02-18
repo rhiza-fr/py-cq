@@ -1,8 +1,9 @@
 """Tests for CoverageParser."""
 
-from cq.localtypes import RawResult, ToolResult
-from cq.parsers.coverageparser import CoverageParser
 from conftest import raw
+
+from py_cq.localtypes import RawResult, ToolResult
+from py_cq.parsers.coverageparser import CoverageParser
 
 COVERAGE_OUTPUT = """\
 Name               Stmts   Miss  Cover

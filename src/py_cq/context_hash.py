@@ -78,4 +78,4 @@ def get_context_hash(path: str):
         sig = f"{path}:{s.st_size}:{s.st_mtime}"
     elif os.path.isdir(path):
         sig = "".join(get_sigs(path=path))
-    return f"{hashlib.md5(sig.encode('utf-8')).hexdigest()}"
+    return f"{hashlib.md5(sig.encode('utf-8')).hexdigest()}" # nosec

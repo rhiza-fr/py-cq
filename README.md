@@ -8,6 +8,12 @@ cq check -o llm   # get the single most critical defect as markdown
 
 Feed that output to an LLM, apply the fix, repeat until the score is clean.
 
+## Install
+
+```bash
+uv tool install py-cq
+```
+
 ## Tools
 
 CQ runs these tools in priority order, in parallel:
@@ -54,6 +60,51 @@ cq check --clear-cache
 # Save table output to a custom file
 cq check --out-file custom_results.json
 ```
+
+## Output
+
+```bash
+cq check .
+┏━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Tool               ┃                          Metric ┃ Score     ┃ Status    ┃
+┡━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ compile            │                         compile │ 1.000     │ OK        │
+│ bandit             │                        security │ 1.000     │ OK        │
+│ ruff               │                            lint │ 1.000     │ OK        │
+│ ty                 │                      type_check │ 1.000     │ OK        │
+│ pytest             │                           tests │ 1.000     │ OK        │
+│ coverage           │                        coverage │ 0.930     │ OK        │
+│ radon cc           │                      simplicity │ 0.983     │ OK        │
+│ radon mi           │                 maintainability │ 0.871     │ OK        │
+│ radon hal          │                   file_bug_free │ 0.915     │ OK        │
+│ radon hal          │                  file_smallness │ 0.828     │ OK        │
+│ radon hal          │              functions_bug_free │ 0.913     │ OK        │
+│ radon hal          │             functions_smallness │ 0.724     │ OK        │
+│ vulture            │                       dead_code │ 1.000     │ OK        │
+│ interrogate        │                    doc_coverage │ 1.000     │ OK        │
+│                    │                           Score │ 0.966     │           │
+└────────────────────┴─────────────────────────────────┴───────────┴───────────┘
+
+cq check -o score
+0.9662730667181059 # this is designed to approach but not reach 1.0
+```
+
+## Configuration
+
+Add a `[tool.cq]` section to your project's `pyproject.toml`:
+
+```toml
+[tool.cq]
+# Skip tools that are slow or not relevant to your project
+disable = ["coverage", "interrogate"]
+
+# Override warning/error thresholds per tool
+[tool.cq.thresholds.coverage]
+warning = 0.9
+error = 0.7
+```
+
+Tool IDs match the keys in `config/tools.yaml`: `compilation`, `bandit`, `ruff`, `ty`, `pytest`, `coverage`, `complexity`, `maintainability`, `halstead`, `vulture`, `interrogate`.
 
 ## LLM workflow
 

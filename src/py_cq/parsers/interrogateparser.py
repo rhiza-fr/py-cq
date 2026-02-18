@@ -12,7 +12,7 @@ as the ``doc_coverage`` metric (0.0–1.0).
 
 import re
 
-from cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
 _ROW_RE = re.compile(r"^\|\s+(.+?)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+(\d+)%\s+\|")
 

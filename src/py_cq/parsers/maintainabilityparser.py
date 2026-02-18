@@ -5,8 +5,9 @@ convert raw JSON output from a maintainability tool into a
 `ToolResult` structure that other components of the framework can consume."""
 
 import json
-from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant
+
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.parsers.common import score_logistic_variant
 
 
 class MaintainabilityParser(AbstractParser):

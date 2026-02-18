@@ -1,8 +1,9 @@
 """Tests for RuffParser."""
 
-from cq.localtypes import RawResult, ToolResult
-from cq.parsers.ruffparser import RuffParser
 from conftest import raw
+
+from py_cq.localtypes import RawResult, ToolResult
+from py_cq.parsers.ruffparser import RuffParser
 
 RUFF_OUTPUT = """\
 src/foo.py:10:1: E501 line too long (100 > 79 characters)

@@ -1,7 +1,8 @@
 """Tests for PytestParser."""
 
-from cq.parsers.pytestparser import PytestParser
 from conftest import raw
+
+from py_cq.parsers.pytestparser import PytestParser
 
 PYTEST_OUTPUT = """\
 tests/test_foo.py::test_one PASSED    [ 50%]

@@ -1,8 +1,9 @@
 """Provides a `ComplexityParser` that converts raw complexity-analysis output into structured `ToolResult` objects for downstream use."""
 
 import json
-from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant
+
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.parsers.common import score_logistic_variant
 
 
 class ComplexityParser(AbstractParser):

@@ -13,17 +13,6 @@ Both functions return a float and can be used directly in downstream analytics,
 visualisation or decision-making pipelines."""
 
 
-def read_source_line(file_path: str, line: int) -> str:
-    """Return the source line at the given 1-based line number, or empty string on failure."""
-    from pathlib import Path
-    try:
-        lines = Path(file_path).read_text(encoding="utf-8").splitlines()
-        if 1 <= line <= len(lines):
-            return lines[line - 1]
-    except OSError:
-        pass
-    return ""
-
 
 def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
     """Return up to `count` source lines starting at the given 1-based line number."""

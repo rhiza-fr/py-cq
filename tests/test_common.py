@@ -1,5 +1,10 @@
 import pytest
-from cq.parsers.common import inv_normalize, read_source_line, read_source_lines, score_logistic_variant
+
+from py_cq.parsers.common import (
+    inv_normalize,
+    read_source_lines,
+    score_logistic_variant,
+)
 
 
 def test_inv_normalize():
@@ -18,21 +23,6 @@ def test_read_source_lines_valid(tmp_path):
 def test_read_source_lines_missing_file():
     assert read_source_lines("/nonexistent/path.py", 1) == ""
 
-
-def test_read_source_line_valid(tmp_path):
-    f = tmp_path / "foo.py"
-    f.write_text("line one\nline two\nline three")
-    assert read_source_line(str(f), 2) == "line two"
-
-
-def test_read_source_line_out_of_bounds(tmp_path):
-    f = tmp_path / "foo.py"
-    f.write_text("only one line")
-    assert read_source_line(str(f), 99) == ""
-
-
-def test_read_source_line_missing_file():
-    assert read_source_line("/nonexistent/path.py", 1) == ""
 
 
 def test_score_logistic_large_base():

@@ -141,45 +141,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cq"
-version = "0.1.1"
-source = { editable = "." }
-dependencies = [
-    { name = "bandit" },
-    { name = "coverage" },
-    { name = "diskcache" },
-    { name = "interrogate" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-json-report" },
-    { name = "pyyaml" },
-    { name = "radon" },
-    { name = "rich" },
-    { name = "ruff" },
-    { name = "ty" },
-    { name = "typer" },
-    { name = "vulture" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bandit", specifier = ">=1.8.0" },
-    { name = "coverage", specifier = ">=7.8.2" },
-    { name = "diskcache", specifier = ">=5.6.3" },
-    { name = "interrogate", specifier = ">=1.7.0" },
-    { name = "pytest", specifier = ">=8.4.0" },
-    { name = "pytest-cov", specifier = ">=6.1.1" },
-    { name = "pytest-json-report", specifier = ">=1.5.0" },
-    { name = "pyyaml", specifier = ">=6.0.2" },
-    { name = "radon", specifier = ">=6.0.1" },
-    { name = "rich", specifier = ">=14.0.0" },
-    { name = "ruff", specifier = ">=0.14.1" },
-    { name = "ty", specifier = ">=0.0.17" },
-    { name = "typer", specifier = ">=0.16.0" },
-    { name = "vulture", specifier = ">=2.14" },
-]
-
-[[package]]
 name = "diskcache"
 version = "5.6.3"
 source = { registry = "https://pypi.org/simple" }
@@ -271,6 +232,45 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/98/ff/fec109ceb715d2a6b4c4a85a61af3b40c723a961e8828319fbcb15b868dc/py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719", size = 207796, upload-time = "2021-11-04T17:17:01.377Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f6/f0/10642828a8dfb741e5f3fbaac830550a518a775c7fff6f04a007259b0548/py-1.11.0-py2.py3-none-any.whl", hash = "sha256:607c53218732647dff4acdfcd50cb62615cedf612e72d1724fb1a0cc6405b378", size = 98708, upload-time = "2021-11-04T17:17:00.152Z" },
+]
+
+[[package]]
+name = "py-cq"
+version = "0.1.1"
+source = { editable = "." }
+dependencies = [
+    { name = "bandit" },
+    { name = "coverage" },
+    { name = "diskcache" },
+    { name = "interrogate" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-json-report" },
+    { name = "pyyaml" },
+    { name = "radon" },
+    { name = "rich" },
+    { name = "ruff" },
+    { name = "ty" },
+    { name = "typer" },
+    { name = "vulture" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bandit", specifier = ">=1.8.0" },
+    { name = "coverage", specifier = ">=7.8.2" },
+    { name = "diskcache", specifier = ">=5.6.3" },
+    { name = "interrogate", specifier = ">=1.7.0" },
+    { name = "pytest", specifier = ">=8.4.0" },
+    { name = "pytest-cov", specifier = ">=6.1.1" },
+    { name = "pytest-json-report", specifier = ">=1.5.0" },
+    { name = "pyyaml", specifier = ">=6.0.2" },
+    { name = "radon", specifier = ">=6.0.1" },
+    { name = "rich", specifier = ">=14.0.0" },
+    { name = "ruff", specifier = ">=0.14.1" },
+    { name = "ty", specifier = ">=0.0.17" },
+    { name = "typer", specifier = ">=0.16.0" },
+    { name = "vulture", specifier = ">=2.14" },
 ]
 
 [[package]]

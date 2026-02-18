@@ -1,8 +1,9 @@
 """Tests for VultureParser."""
 
-from cq.localtypes import RawResult, ToolResult
-from cq.parsers.vultureparser import VultureParser
 from conftest import raw
+
+from py_cq.localtypes import RawResult, ToolResult
+from py_cq.parsers.vultureparser import VultureParser
 
 VULTURE_OUTPUT = """\
 src/foo.py:10: unused function 'bar' (80% confidence)

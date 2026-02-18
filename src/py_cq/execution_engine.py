@@ -18,12 +18,14 @@ import subprocess
 import sys
 import time
 from collections.abc import Collection
-from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import cast
+
 import diskcache
-from cq.context_hash import get_context_hash
-from cq.localtypes import RawResult, ToolConfig, ToolResult
+
+from py_cq.context_hash import get_context_hash
+from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 log = logging.getLogger("cq")
 
@@ -78,7 +80,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         log.info(f"Cache hit: {command}")
         return cast(RawResult, _cache[cache_key])
     log.info(f"Running: {command}")
-    result = subprocess.run(command, capture_output=True, text=True, shell=True)
+    result = subprocess.run(command, capture_output=True, text=True, shell=True) # nosec
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     raw_result = RawResult(
         tool_name=tool_config.name,

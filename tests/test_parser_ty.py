@@ -1,8 +1,9 @@
 """Tests for TyParser."""
 
-from cq.localtypes import RawResult, ToolResult
-from cq.parsers.typarser import TyParser
 from conftest import raw
+
+from py_cq.localtypes import RawResult, ToolResult
+from py_cq.parsers.typarser import TyParser
 
 TY_OUTPUT = """\
 src/baz.py:7:5: error[invalid-return-type] return type mismatch

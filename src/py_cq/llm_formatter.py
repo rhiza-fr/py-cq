@@ -2,7 +2,7 @@
 
 import sys
 
-from cq.localtypes import CombinedToolResults, ToolConfig
+from py_cq.localtypes import CombinedToolResults, ToolConfig
 
 
 def _severity(score: float, config: ToolConfig) -> int:
@@ -41,23 +41,8 @@ def format_for_llm(
     defect_md = config.parser_class().format_llm_message(worst)
     if cq_invocation is None:
         cq_invocation = "cq " + " ".join(sys.argv[1:])
-    return _render(combined.score, defect_md, worst.raw.command, cq_invocation)
-
-
-def _clean_command(raw_command: str) -> str:
-    """Strip the Python interpreter prefix, keeping just the module invocation."""
-    if " -m " in raw_command:
-        return raw_command.split(" -m ", 1)[1]
-    return raw_command
-
-
-def _render(score: float, defect_md: str, raw_command: str, cq_invocation: str) -> str:
-    clean_cmd = _clean_command(raw_command)
-    cmd_line = f"`{clean_cmd}` returned an error." if clean_cmd else "A static analysis tool returned an error."
     return (
         f"# Fix this code quality issue\n\n"
-        f"{cmd_line}\n"
-        f"Overall score: **{score:.2f} / 1.0**\n\n"
         f"## Issue\n\n"
         f"{defect_md}\n\n"
         f"Please fix only this issue. After fixing, run `{cq_invocation}` to verify."

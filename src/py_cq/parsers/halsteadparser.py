@@ -7,8 +7,8 @@ maximum thresholds, and aggregates file- and function-level metrics."""
 
 import json
 
-from cq.localtypes import AbstractParser, RawResult, ToolResult
-from cq.parsers.common import score_logistic_variant
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.parsers.common import score_logistic_variant
 
 
 class HalsteadParser(AbstractParser):

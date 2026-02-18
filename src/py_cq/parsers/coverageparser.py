@@ -3,7 +3,7 @@ The module defines `CoverageParser`, a concrete implementation of `AbstractParse
 
 import logging
 
-from cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
 log = logging.getLogger("cq")
 

@@ -6,7 +6,7 @@ metrics from each tool into a :class:`CombinedToolResults` instance, and returns
 The resulting object can be consumed by reporting tools or CI pipelines to present a single view of all analysis
 results for a given file or directory."""
 
-from cq.localtypes import CombinedToolResults, ToolResult
+from py_cq.localtypes import CombinedToolResults, ToolResult
 
 
 def aggregate_metrics(path: str, metrics: list[ToolResult]) -> CombinedToolResults:

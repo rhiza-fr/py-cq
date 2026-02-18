@@ -1,6 +1,6 @@
 """Shared test helpers."""
 
-from cq.localtypes import RawResult
+from py_cq.localtypes import RawResult
 
 
 def raw(stdout="", return_code=0):
