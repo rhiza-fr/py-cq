@@ -29,7 +29,7 @@ from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 log = logging.getLogger("cq")
 
-_cache = diskcache.Cache(Path.home() / ".cache" / "cq")
+_cache = diskcache.Cache(Path.home() / ".cache" / "cq", size_limit=100 * 1024 * 1024)
 
 
 def _find_project_root(path: Path) -> Path | None:
@@ -92,7 +92,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         return_code=result.returncode,
         timestamp=timestamp,
     )
-    _cache[cache_key] = raw_result
+    _cache.set(cache_key, raw_result, expire=5 * 24 * 60 * 60)
     return raw_result
 
 

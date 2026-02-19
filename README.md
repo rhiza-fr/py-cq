@@ -59,6 +59,8 @@ CQ runs these tools in **parallel**:
 | 10 | vulture | Dead code |
 | 11 | interrogate | Docstring coverage |
 
+Diskcache is used to cache tool output for lightning fast re-runs. Default sanity limits: 100 Mb, 5 days.
+
 ## Usage
 
 ```bash
@@ -177,7 +179,7 @@ Tool IDs match the keys in `config/tools.yaml`: `compilation`, `bandit`, `ruff`,
 
 ### Default config
 
-```toml
+```yaml
 tools:
 
   compilation:
