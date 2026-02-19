@@ -20,6 +20,7 @@ import time
 from collections.abc import Collection
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any, cast
 
 from diskcache import Cache, JSONDisk
 
@@ -79,7 +80,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
         log.info(f"Cache hit: {command}")
-        return RawResult(**_cache[cache_key])
+        return RawResult(**cast(dict[str, Any], _cache[cache_key]))
     log.info(f"Running: {command}")
     result = subprocess.run(command, capture_output=True, text=True, shell=True) # nosec
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")

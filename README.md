@@ -59,9 +59,7 @@ These tools are run in **parallel**:
 | 10 | vulture | Dead code |
 | 11 | interrogate | Docstring coverage |
 
-Diskcache is used to cache tool output for lightning fast re-runs.
-
-Default sanity limits: 100 Mb, 5 days, No pickle
+Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults: <100 Mb, <5 days, No pickle
 
 
 ## Usage
@@ -296,3 +294,5 @@ Many thanks to all the wonderful maintainers of :
 - [radon](https://github.com/rubik/radon)
 - [vulture](https://github.com/jendrikseipp/vulture)
 - [interrogate](https://github.com/econchick/interrogate)
+- [diskcache](https://github.com/grantjenks/python-diskcache)
+- [typer](https://github.com/fastapi/typer)

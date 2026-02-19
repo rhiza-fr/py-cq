@@ -96,7 +96,9 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
     mock_result.stderr = ""
     mock_result.returncode = 0
 
-    with patch("py_cq.execution_engine._cache", {}):
+    mock_cache = MagicMock()
+    mock_cache.__contains__ = MagicMock(return_value=False)
+    with patch("py_cq.execution_engine._cache", mock_cache):
         with patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
             result = run_tool(cfg, str(tmp_path))
     mock_sub.assert_called_once()
@@ -114,11 +116,13 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
     cached = RawResult(tool_name="echo", stdout="cached!")
     # Build the cache key the same way run_tool does
     import sys
+    from pathlib import Path
 
     from py_cq.context_hash import get_context_hash
-    command = cfg.command.format(context_path=str(tmp_path), python=sys.executable)
+    input_path_posix = Path(str(tmp_path)).as_posix().rstrip("/")
+    command = cfg.command.format(context_path=str(tmp_path), abs_context_path=str(tmp_path), input_path_posix=input_path_posix, python=sys.executable)
     cache_key = f"{command}:{get_context_hash(str(tmp_path))}"
-    fake_cache = {cache_key: cached}
+    fake_cache = {cache_key: cached.to_dict()}
 
     with patch("py_cq.execution_engine._cache", fake_cache):
         with patch("py_cq.execution_engine.subprocess.run") as mock_sub:
