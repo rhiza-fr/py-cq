@@ -20,16 +20,15 @@ import time
 from collections.abc import Collection
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import cast
 
-import diskcache
+from diskcache import Cache, JSONDisk
 
 from py_cq.context_hash import get_context_hash
 from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 log = logging.getLogger("cq")
 
-_cache = diskcache.Cache(Path.home() / ".cache" / "cq", size_limit=100 * 1024 * 1024)
+_cache = Cache(Path.home() / ".cache" / "cq", size_limit=100 * 1024 * 1024, disk=JSONDisk)
 
 
 def _find_project_root(path: Path) -> Path | None:
@@ -80,7 +79,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
         log.info(f"Cache hit: {command}")
-        return cast(RawResult, _cache[cache_key])
+        return RawResult(**_cache[cache_key])
     log.info(f"Running: {command}")
     result = subprocess.run(command, capture_output=True, text=True, shell=True) # nosec
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -92,7 +91,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         return_code=result.returncode,
         timestamp=timestamp,
     )
-    _cache.set(cache_key, raw_result, expire=5 * 24 * 60 * 60)
+    _cache.set(cache_key, raw_result.to_dict(), expire=5 * 24 * 60 * 60)
     return raw_result
 
 

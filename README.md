@@ -43,7 +43,7 @@ uv tool install .
 
 ## Tools
 
-CQ runs these tools in **parallel**:
+These tools are run in **parallel**:
 
 | Priority | Tool | Measures |
 |----------|------|----------|
@@ -59,7 +59,10 @@ CQ runs these tools in **parallel**:
 | 10 | vulture | Dead code |
 | 11 | interrogate | Docstring coverage |
 
-Diskcache is used to cache tool output for lightning fast re-runs. Default sanity limits: 100 Mb, 5 days.
+Diskcache is used to cache tool output for lightning fast re-runs.
+
+Default sanity limits: 100 Mb, 5 days, No pickle
+
 
 ## Usage
 
