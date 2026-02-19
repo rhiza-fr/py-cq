@@ -67,6 +67,14 @@ class PytestParser(AbstractParser):
                     num_tests += 1
                     if test_status == "PASSED":
                         passed_tests += 1
+            if num_tests == 0:
+                # No individual test lines found (e.g. non-verbose output);
+                # fall back to parsing the pytest summary line.
+                summary = re.search(r"(\d+) passed(?:.*?(\d+) failed)?", raw_result.stdout)
+                if summary:
+                    passed_tests = int(summary.group(1))
+                    failed_tests = int(summary.group(2)) if summary.group(2) else 0
+                    num_tests = passed_tests + failed_tests
             tr.metrics["tests"] = passed_tests / num_tests if num_tests else 0
             tr.details = tests_found
         return tr

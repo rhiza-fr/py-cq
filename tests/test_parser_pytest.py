@@ -1,5 +1,6 @@
 """Tests for PytestParser."""
 
+import pytest
 from conftest import raw
 
 from py_cq.parsers.pytestparser import PytestParser
@@ -33,3 +34,16 @@ def test_pytest_parse_no_tests():
 def test_pytest_parse_empty():
     tr = PytestParser().parse(raw(""))
     assert tr.metrics["tests"] == 0
+
+
+def test_pytest_deselected_summary_only():
+    """Summary line only (no verbose lines) with deselected tests should report pass rate from summary."""
+    stdout = "256 passed, 13 deselected in 16.83s"
+    tr = PytestParser().parse(raw(stdout, return_code=0))
+    assert tr.metrics["tests"] == 1.0
+
+
+def test_pytest_deselected_with_failures_summary_only():
+    stdout = "254 passed, 2 failed, 13 deselected in 16.83s"
+    tr = PytestParser().parse(raw(stdout, return_code=1))
+    assert tr.metrics["tests"] == pytest.approx(254 / 256)
