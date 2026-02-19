@@ -75,8 +75,8 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
             with_flags = " ".join(f"--with {dep}" for dep in tool_config.extra_deps)
             python = f'"{uv}" run --directory "{abs_dir}" {with_flags}'.rstrip()
     abs_context_path = str(Path(context_path).resolve())
-    context_dir = Path(context_path).as_posix().rstrip("/")
-    command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, context_dir=context_dir, python=python)
+    input_path_posix = Path(context_path).as_posix().rstrip("/")
+    command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, input_path_posix=input_path_posix, python=python)
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
         log.info(f"Cache hit: {command}")

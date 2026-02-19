@@ -23,12 +23,11 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 
-from py_cq.config import DEFAULT_STORAGE_FILE, load_user_config
+from py_cq.config import load_user_config
 from py_cq.execution_engine import _cache as tool_cache
 from py_cq.execution_engine import run_tools
 from py_cq.localtypes import CombinedToolResults, ToolConfig
 from py_cq.metric_aggregator import aggregate_metrics
-from py_cq.storage import save_result
 from py_cq.tool_registry import tool_registry
 
 logging.basicConfig(
@@ -44,6 +43,7 @@ app = typer.Typer(
         "  cq check .          # full table with all metrics (default)\n\n"
         "  cq check . -o llm   # top defect as markdown (primary LLM workflow)\n\n"
         "  cq check . -o score # numeric score only\n\n"
+        "  cq check . -o json  # full raw json of all tools"
         "  cq config .         # show effective tool configuration"
     ),
 )
@@ -78,7 +78,7 @@ class OutputMode(str, Enum):
 
 @app.callback()
 def callback():
-    """CQ - Code Quality Analysis Tool."""
+    """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""
 console = Console()
 
 
@@ -93,11 +93,6 @@ def check(
         "--log-level",
         help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     ),
-    out_file: str = typer.Option(
-        DEFAULT_STORAGE_FILE,
-        "--out-file",
-        help="File path to save results in table mode",
-    ),
     clear_cache: bool = typer.Option(
         False, "--clear-cache", help="Clear cached tool results before running"
     ),
@@ -105,7 +100,7 @@ def check(
         0, "--workers", help="Max parallel workers (default: one per tool, use 1 for sequential)"
     ),
 ):
-    """Run static analysis on a Python file or project directory."""
+    """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm""" # --help
     path_obj = Path(path)
     if not path_obj.exists():
         raise typer.BadParameter(f"Path does not exist: {path}")
@@ -132,7 +127,6 @@ def check(
         from py_cq.llm_formatter import format_for_llm
         console.print(format_for_llm(effective_registry, combined_metrics))
     else:
-        save_result(combined_tool_results=combined_metrics, file_name=out_file)
         console.print(format_as_table(combined_metrics, effective_registry))
 
 

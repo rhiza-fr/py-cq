@@ -1,19 +1,41 @@
 # CQ - Python Code Quality Analysis Tool
 
-Python Code Quality Analysis Tool - feed the results from 11 CQ tools straight into an LLM. The primary workflow is:
+Feed the results from 11+ code quality tools to an LLM. Minimal tokens.
+
+The primary workflow is:
 
 ```bash
-cq check -o llm   # get the single most critical defect as markdown
+# get the single most critical defect as markdown
+cq check . -o llm
 ```
+Outputs the top error from the first priority tool where the score < warning_threshold,. The code context is expanded if available.
+```md
+`data/problems/travelling_salesman/ts_bad.py:21` — **F841**: Local variable `unused_variable` is assigned to but never used
 
-Feed that output to an LLM, apply the fix, repeat until the score is clean.
+18:     min_dist = float("inf")
+19:     nearest_city = None
+20:     for city in cities:
+21:         unused_variable = 67
+22:         dist = calc_dist(current_city, city)
+23:         if dist < min_dist:
+24:             min_dist = dist
+25:             nearest_city = city
+
+Please fix only this issue. After fixing, run `cq check . -o llm` to verify.
+```
+Feed to an LLM with edit tools and repeat until there are no issues, e.g.
+
+```
+cq check . -o llm | claude -p "fix this"
+```
 
 ## Install
 
 ```bash
+# install the `cq` command line tool from PyPi
 uv tool install python-code-quality
 
-# or
+# or, clone it then install 
 git pull https://github.com/rhiza-fr/py-cq.git
 cd py-cq
 uv tool install .
@@ -21,7 +43,7 @@ uv tool install .
 
 ## Tools
 
-CQ runs these tools in *parallel*:
+CQ runs these tools in **parallel**:
 
 | Priority | Tool | Measures |
 |----------|------|----------|
@@ -43,34 +65,31 @@ CQ runs these tools in *parallel*:
 # LLM workflow: get the top defect as markdown (primary use case)
 cq check -o llm
 
-# Rich table with all metrics (default, also saves .cq.json)
-cq check
+# Rich table with all metrics
+cq check .
 
 # Numeric score only — useful in CI or scripts
-cq check -o score
+cq check . -o score
 
-# Full JSON output
-cq check -o json
+# Full JSON output, including raw test results
+cq check . -o json
 
-# Explicit path (defaults to current directory)
+# Explicit path
 cq check path/to/project/
 cq check path/to/file.py
 
-# Run sequentially (1 worker) instead of in parallel
-cq check --workers 1
+# Run sequentially if you like things slow
+cq check . --workers 1
 
-# Clear cached results before running
-cq check --clear-cache
-
-# Save table output to a custom file
-cq check --out-file custom_results.json
+# Clear cached results before running (rarely needed)
+cq check . --clear-cache
 
 # Show effective tool configuration (thresholds, enabled/disabled status)
 cq config
 cq config path/to/project/
 ```
 
-## Output
+## Table output
 
 ```bash
 > cq check .
@@ -97,6 +116,8 @@ cq config path/to/project/
 │                  │          │                     Score │ 0.965   │          │
 └──────────────────┴──────────┴───────────────────────────┴─────────┴──────────┘
 ```
+
+## Single score output
 ```bash
 > cq check . -o score
 ```
@@ -104,23 +125,36 @@ cq config path/to/project/
 0.9662730667181059 # this is designed to approach but not reach 1.0
 ```
 
+## Json output
 ```bash
-> cq check . -o llm
+> cq check . -o json
 ```
 
-```md
-`data/problems/travelling_salesman/ts_bad.py:21` — **F841**: Local variable `unused_variable` is assigned to but never used
-
-18:     min_dist = float("inf")
-19:     nearest_city = None
-20:     for city in cities:
-21:         unused_variable = 67
-22:         dist = calc_dist(current_city, city)
-23:         if dist < min_dist:
-24:             min_dist = dist
-25:             nearest_city = city
-
-Please fix only this issue. After fixing, run `cq check . -o llm` to verify.
+```json
+{
+  "metrics": [
+    {
+      "metrics": {
+        "compile": 1.0
+      },
+      "details": {},
+      "raw": {
+        "tool_name": "compile",
+        "command": ".venv\\Scripts\\python.exe -m compileall -r 10 -j 8 . -x .*venv",
+        "stdout": "Compiling './src/project/file.py'...",
+        "stderr": "",
+        "return_code": 0,
+        "timestamp": "2026-02-19 05:03:11"
+      },
+      "duration_s": 0.08294440002646297
+    },
+    {
+      "metrics": {
+        "security": 1.0
+      }
+      // many more lines ...
+    }
+]}
 ```
 
 ## Configuration
@@ -140,14 +174,111 @@ error = 0.7
 
 Tool IDs match the keys in `config/tools.yaml`: `compilation`, `bandit`, `ruff`, `ty`, `pytest`, `coverage`, `complexity`, `maintainability`, `halstead`, `vulture`, `interrogate`.
 
-## LLM workflow
 
-`-o llm` selects the single worst-scoring tool and formats its top defect as
-concise markdown. The LLM fixes it, you re-run `cq check -o llm`, and repeat
-until all tools are green. Priority order ensures the most critical category
-(security, type errors, failing tests) is fixed before cosmetic ones.
+### Default config
 
-## Tools
+```toml
+tools:
+
+  compilation:
+    name: "compile"
+    command: "{python} -m compileall -r 10 -j 8 {context_path} -x .*venv"
+    parser: "CompileParser"
+    priority: 1
+    warning_threshold: 0.9999
+    error_threshold: 0.9999
+
+  bandit:
+    name: "bandit"
+    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
+    parser: "BanditParser"
+    priority: 2
+    warning_threshold: 0.9999
+    error_threshold: 0.8
+
+  ruff:
+    name: "ruff"
+    command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
+    parser: "RuffParser"
+    priority: 3
+    warning_threshold: 0.9999
+    error_threshold: 0.9
+
+  ty:
+    name: "ty"
+    command: "{python} -m ty check --output-format concise --color never {context_path}"
+    parser: "TyParser"
+    priority: 4
+    warning_threshold: 0.9999
+    error_threshold: 0.8
+    run_in_target_env: true
+    extra_deps:
+      - ty
+
+  pytest:
+    name: "pytest"
+    command: "{python} -m pytest -v {context_path}"
+    parser: "PytestParser"
+    priority: 5
+    warning_threshold: 0.7
+    error_threshold: 0.5
+    run_in_target_env: true
+
+  coverage:
+    name: "coverage"
+    command: "{python} -m coverage run -m pytest {context_path} && {python} -m coverage report"
+    parser: "CoverageParser"
+    priority: 6
+    warning_threshold: 0.9
+    error_threshold: 0.5
+    run_in_target_env: true
+    extra_deps:
+      - coverage
+      - pytest
+
+  complexity:
+    name: "radon cc"
+    command: "{python} -m radon cc --json {context_path}"
+    parser: "ComplexityParser"
+    priority: 7
+    warning_threshold: 0.6
+    error_threshold: 0.4
+
+  maintainability:
+    name: "radon mi"
+    command: "{python} -m radon mi -s --json {context_path}"
+    parser: "MaintainabilityParser"
+    priority: 8
+    warning_threshold: 0.6
+    error_threshold: 0.4
+
+  halstead:
+    name: "radon hal"
+    command: "{python} -m radon hal -f --json {context_path}"
+    parser: "HalsteadParser"
+    priority: 9
+    warning_threshold: 0.5
+    error_threshold: 0.3
+
+  vulture:
+    name: "vulture"
+    command: "{python} -m vulture {context_path} --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git"
+    parser: "VultureParser"
+    priority: 10
+    warning_threshold: 0.9999
+    error_threshold: 0.8
+
+  interrogate:
+    name: "interrogate"
+    command: "{python} -m interrogate {context_path} -v --fail-under 0"
+    parser: "InterrogateParser"
+    priority: 11
+    warning_threshold: 0.8
+    error_threshold: 0.3
+
+```
+
+## Respect
 
 Many thanks to all the wonderful maintainers of :
 

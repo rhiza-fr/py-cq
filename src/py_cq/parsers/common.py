@@ -25,6 +25,18 @@ def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
         return ""
 
 
+def format_source_context(file: str, line: int | str, context: int = 3, count: int = 8) -> str:
+    """Return a fenced python code block for the source around `line`, or '' if unavailable."""
+    if not isinstance(line, int):
+        return ""
+    context_start = max(1, line - context)
+    raw_lines = read_source_lines(file, context_start, count=count).splitlines()
+    if not raw_lines:
+        return ""
+    src = "\n".join(f"{context_start + i}: {rline}" for i, rline in enumerate(raw_lines))
+    return f"\n```python\n{src}\n```"
+
+
 def inv_normalize(value: float, max_value: float) -> float:
     """Returns the inverse normalized value of `value` relative to `max_value`."""
     return (max_value - min(value, max_value)) / max_value

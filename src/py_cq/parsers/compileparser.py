@@ -6,7 +6,7 @@ compile score, and providing concise help messages for any failures."""
 import logging
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import read_source_lines, score_logistic_variant
+from py_cq.parsers.common import format_source_context, score_logistic_variant
 
 log = logging.getLogger("cq")
 
@@ -124,11 +124,5 @@ class CompileParser(AbstractParser):
         line = info.get("line", "?")
         typ = info.get("type", "Error")
         help_msg = info.get("help", "")
-        if isinstance(line, int):
-            context_start = max(1, line - 3)
-            raw_lines = read_source_lines(file, context_start, count=8).splitlines()
-            src = "\n".join(f"{context_start + i}: {rline}" for i, rline in enumerate(raw_lines)) if raw_lines else info.get("src", "")
-        else:
-            src = info.get("src", "")
-        code_block = f"\n```python\n{src}\n```" if src else ""
+        code_block = format_source_context(file, line) or (f"\n```python\n{info['src']}\n```" if info.get("src") else "")
         return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}"

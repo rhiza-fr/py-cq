@@ -12,7 +12,7 @@ score stored under the ``dead_code`` metric key.
 import re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import score_logistic_variant
+from py_cq.parsers.common import format_source_context, score_logistic_variant
 
 _LINE_RE = re.compile(r"^(.+):(\d+): (unused \S+) '(.+)' \((\d+)% confidence\)$")
 
@@ -45,4 +45,4 @@ class VultureParser(AbstractParser):
         kind = issue.get("type", "unused")
         name = issue.get("name", "")
         confidence = issue.get("confidence", "?")
-        return f"`{file}:{line}` — **{kind}** `{name}` ({confidence}% confidence)"
+        return f"`{file}:{line}` — **{kind}** `{name}` ({confidence}% confidence){format_source_context(file, line)}"

@@ -9,7 +9,7 @@ logistic-variant score stored under the ``security`` metric key.
 import json
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import score_logistic_variant
+from py_cq.parsers.common import format_source_context, score_logistic_variant
 
 _SEVERITY_WEIGHT = {"HIGH": 5, "MEDIUM": 2, "LOW": 1}
 
@@ -51,4 +51,4 @@ class BanditParser(AbstractParser):
         code = issue.get("code", "")
         severity = issue.get("severity", "")
         message = issue.get("message", "")
-        return f"`{file}:{line}` — **{code}** [{severity}]: {message}"
+        return f"`{file}:{line}` — **{code}** [{severity}]: {message}{format_source_context(file, line)}"

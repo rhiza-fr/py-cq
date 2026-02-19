@@ -10,7 +10,7 @@ tools:
 
   bandit:
     name: "bandit"
-    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {context_dir}/.venv,{context_dir}/tests"
+    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
     parser: "BanditParser"
     priority: 2
     warning_threshold: 0.9999

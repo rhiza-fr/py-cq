@@ -13,7 +13,7 @@ followed by a summary line ``Found N error.`` or ``All checks passed!``."""
 import re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import read_source_lines, score_logistic_variant
+from py_cq.parsers.common import format_source_context, score_logistic_variant
 
 _DIAG_RE = re.compile(r"^(.+):(\d+):(\d+): ([A-Z]\d+) (.+)$")
 
@@ -54,8 +54,4 @@ class RuffParser(AbstractParser):
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")
-        context_start = max(1, line - 3) if isinstance(line, int) else line
-        raw_lines = read_source_lines(file, context_start, count=8).splitlines() if isinstance(line, int) else []
-        src = "\n".join(f"{context_start + i}: {rline}" for i, rline in enumerate(raw_lines)) if raw_lines else ""
-        code_block = f"\n```python\n{src}\n```" if src else ""
-        return f"`{file}:{line}` — **{code}**: {message}{code_block}"
+        return f"`{file}:{line}` — **{code}**: {message}{format_source_context(file, line)}"

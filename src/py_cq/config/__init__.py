@@ -1,9 +1,7 @@
-"""Default storage path and user config loader."""
+"""User config loader."""
 
 import tomllib
 from pathlib import Path
-
-DEFAULT_STORAGE_FILE = ".cq.json"
 
 
 def load_user_config(project_path: Path) -> dict:
