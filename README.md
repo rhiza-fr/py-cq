@@ -8,7 +8,13 @@ The primary workflow is:
 # get the single most critical defect as markdown
 cq check . -o llm
 ```
-Outputs the top error from the lowest-order tool where the score < warning_threshold. The code context is expanded if available.
+Selects the single most critical defect using this priority order:
+
+1. **Severity** — tools with score below `error_threshold` come before those only below `warning_threshold`
+2. **Order** — among tools at the same severity, lower-order tools win (compile before lint before style)
+3. **Score** — among ties, the lower score wins
+
+The code context is expanded if available.
 ```md
 `data/problems/travelling_salesman/ts_bad.py:21` — **F841**: Local variable `unused_variable` is assigned to but never used
 
