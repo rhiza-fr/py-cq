@@ -73,31 +73,15 @@ Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults
 ## Usage
 
 ```bash
-# LLM workflow: get the top defect as markdown (primary use case)
-cq check -o llm
-
-# Rich table with all metrics
-cq check .
-
-# Numeric score only — useful in CI or scripts
-cq check . -o score
-
-# Full JSON output, including raw test results
-cq check . -o json
-
-# Explicit path
-cq check path/to/project/
-cq check path/to/file.py
-
-# Run sequentially if you like things slow
-cq check . --workers 1
-
-# Clear cached results before running (rarely needed)
-cq check . --clear-cache
-
-# Show effective tool configuration (thresholds, enabled/disabled status)
-cq config
-cq config path/to/project/
+cq check .                 # Table overview of scores for humans
+cq check -o llm            # Top defect as markdown for LLMs
+cq check . -o score        # Numeric score only for CI
+cq check . -o json         # Detailed parsed JSON output for jq
+cq check . -o raw          # Raw tool output for debug
+cq check path/to/file.py   # Just one file (skips pytest and coverage)
+cq check . --workers 1     # Run sequentially if you like things slow
+cq check . --clear-cache   # Clear cached results before running (rarely needed)
+cq config path/to/project/ # Show effective tool configuration
 ```
 
 ## Table output
