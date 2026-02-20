@@ -125,11 +125,7 @@ def check(
     elif output == OutputMode.JSON:
         console.print(json.dumps([tr.to_dict() for tr in tool_results], indent=2))
     elif output == OutputMode.RAW:
-        raw_data = {
-            "path": path,
-            "results": [tr.raw.to_dict() for tr in tool_results],
-        }
-        console.print(json.dumps(raw_data, indent=2))
+        console.print(json.dumps([tr.raw.to_dict() for tr in tool_results], indent=2))
     elif output == OutputMode.LLM:
         # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
