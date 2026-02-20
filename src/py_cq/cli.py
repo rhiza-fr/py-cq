@@ -171,18 +171,18 @@ def config(
 
     table = Table()
     table.add_column("Tool", style="cyan")
-    table.add_column("Priority", justify="right")
+    table.add_column("Order", justify="right")
     table.add_column("Warning", justify="right")
     table.add_column("Error", justify="right")
     table.add_column("Status", justify="center")
 
-    for tool_id in sorted(tool_registry, key=lambda t: tool_registry[t].priority):
+    for tool_id in sorted(tool_registry, key=lambda t: tool_registry[t].order):
         tc = effective_registry.get(tool_id, tool_registry[tool_id])
         is_disabled = tool_id in disabled_ids
         status = "[red]disabled[/red]" if is_disabled else "[green]enabled[/green]"
         table.add_row(
             tc.name,
-            str(tc.priority),
+            str(tc.order),
             f"{tc.warning_threshold:.2f}",
             f"{tc.error_threshold:.2f}",
             status,

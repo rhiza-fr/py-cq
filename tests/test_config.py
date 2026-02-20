@@ -7,10 +7,10 @@ from py_cq.config import load_user_config
 from py_cq.localtypes import ToolConfig
 
 
-def _cfg(name: str, priority: int = 1) -> ToolConfig:
+def _cfg(name: str, order: int = 1) -> ToolConfig:
     return ToolConfig(
         name=name, command="", parser_class=object,
-        priority=priority, warning_threshold=0.7, error_threshold=0.5,
+        order=order, warning_threshold=0.7, error_threshold=0.5,
     )
 
 

@@ -10,13 +10,13 @@ from typing import Any
 
 @dataclass
 class ToolConfig:
-    """Represents the configuration for an analysis tool, including its name, command, parser class, context path, priority, and thresholds for warnings and errors."""
+    """Represents the configuration for an analysis tool, including its name, command, parser class, context path, order, and thresholds for warnings and errors."""
 
     name: str  # e.g., "pytest", "coverage", "pydocstyle"
     command: str  # The command to execute (can include placeholders)
     parser_class: Callable  # Name of the parser class to use
     context_path: str = ""  # Path to project or file
-    priority: int = 5  # 1=critical (compilation), 5=low (style)
+    order: int = 5  # 1=first (compilation), 11=last (style)
     warning_threshold: float = 0.7  # Yellow warning if below this
     error_threshold: float = 0.5  # Red error if below this
     run_in_target_env: bool = False  # If True, run in target project's env via uv

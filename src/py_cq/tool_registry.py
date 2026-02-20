@@ -24,7 +24,7 @@ def load_tool_configs() -> dict[str, ToolConfig]:
             name=tool_data["name"],
             command=tool_data["command"],
             parser_class=parser_class,
-            priority=tool_data["priority"],
+            order=tool_data["order"],
             warning_threshold=tool_data["warning_threshold"],
             error_threshold=tool_data["error_threshold"],
             run_in_target_env=tool_data.get("run_in_target_env", False),

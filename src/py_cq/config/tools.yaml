@@ -4,7 +4,7 @@ tools:
     name: "compile"
     command: "{python} -m compileall -r 10 -j 8 {context_path} -x .*venv"
     parser: "CompileParser"
-    priority: 1
+    order: 1
     warning_threshold: 0.9999
     error_threshold: 0.9999
 
@@ -12,7 +12,7 @@ tools:
     name: "bandit"
     command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
     parser: "BanditParser"
-    priority: 2
+    order: 2
     warning_threshold: 0.9999
     error_threshold: 0.8
 
@@ -20,7 +20,7 @@ tools:
     name: "ruff"
     command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
     parser: "RuffParser"
-    priority: 3
+    order: 3
     warning_threshold: 0.9999
     error_threshold: 0.9
 
@@ -28,7 +28,7 @@ tools:
     name: "ty"
     command: "{python} -m ty check --output-format concise --color never {context_path}"
     parser: "TyParser"
-    priority: 4
+    order: 4
     warning_threshold: 0.9999
     error_threshold: 0.8
     run_in_target_env: true
@@ -39,7 +39,7 @@ tools:
     name: "pytest"
     command: "{python} -m pytest -v {context_path}"
     parser: "PytestParser"
-    priority: 5
+    order: 5
     warning_threshold: 0.7
     error_threshold: 0.5
     run_in_target_env: true
@@ -48,7 +48,7 @@ tools:
     name: "coverage"
     command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest {context_path} && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
     parser: "CoverageParser"
-    priority: 6
+    order: 6
     warning_threshold: 0.9
     error_threshold: 0.5
     run_in_target_env: true
@@ -60,7 +60,7 @@ tools:
     name: "radon cc"
     command: "{python} -m radon cc --json {context_path}"
     parser: "ComplexityParser"
-    priority: 7
+    order: 7
     warning_threshold: 0.6
     error_threshold: 0.4
 
@@ -68,7 +68,7 @@ tools:
     name: "radon mi"
     command: "{python} -m radon mi -s --json {context_path}"
     parser: "MaintainabilityParser"
-    priority: 8
+    order: 8
     warning_threshold: 0.6
     error_threshold: 0.4
 
@@ -76,7 +76,7 @@ tools:
     name: "radon hal"
     command: "{python} -m radon hal -f --json {context_path}"
     parser: "HalsteadParser"
-    priority: 9
+    order: 9
     warning_threshold: 0.5
     error_threshold: 0.3
 
@@ -84,7 +84,7 @@ tools:
     name: "vulture"
     command: "{python} -m vulture {context_path} --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git"
     parser: "VultureParser"
-    priority: 10
+    order: 10
     warning_threshold: 0.9999
     error_threshold: 0.8
 
@@ -92,6 +92,6 @@ tools:
     name: "interrogate"
     command: "{python} -m interrogate {context_path} -v --fail-under 0"
     parser: "InterrogateParser"
-    priority: 11
+    order: 11
     warning_threshold: 0.8
     error_threshold: 0.3

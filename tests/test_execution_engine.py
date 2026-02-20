@@ -6,13 +6,13 @@ from py_cq.execution_engine import _find_project_root, run_tools
 from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 
-def _fake_config(name="fake", priority=1):
+def _fake_config(name="fake", order=1):
     class FakeParser:
         def parse(self, raw):
             return ToolResult(metrics={"score": 1.0}, raw=raw)
     return ToolConfig(
         name=name, command="echo hi", parser_class=FakeParser,
-        priority=priority, warning_threshold=0.7, error_threshold=0.5,
+        order=order, warning_threshold=0.7, error_threshold=0.5,
     )
 
 
@@ -53,9 +53,9 @@ def test_run_tools_returns_results():
     assert results[0].metrics["score"] == 1.0
 
 
-def test_run_tools_sorted_by_priority():
-    cfg_low = _fake_config("low", priority=10)
-    cfg_high = _fake_config("high", priority=1)
+def test_run_tools_sorted_by_order():
+    cfg_low = _fake_config("low", order=10)
+    cfg_high = _fake_config("high", order=1)
     fake_raw_low = RawResult(tool_name="low", stdout="")
     fake_raw_high = RawResult(tool_name="high", stdout="")
 
@@ -84,7 +84,7 @@ def test_run_tools_empty():
 
 # --- run_tools early_exit ---
 
-def _fake_config_with_score(name, priority, score, error_threshold=0.5):
+def _fake_config_with_score(name, order, score, error_threshold=0.5):
     class FakeParser:
         def __init__(self, _score=score):
             self._score = _score
@@ -92,15 +92,15 @@ def _fake_config_with_score(name, priority, score, error_threshold=0.5):
             return ToolResult(metrics={"score": self._score}, raw=raw)
     return ToolConfig(
         name=name, command="echo hi", parser_class=FakeParser,
-        priority=priority, warning_threshold=0.7, error_threshold=error_threshold,
+        order=order, warning_threshold=0.7, error_threshold=error_threshold,
     )
 
 
 def test_run_tools_early_exit_stops_on_error():
     """When a tool returns an error-level score, subsequent tools must not run."""
-    cfg1 = _fake_config_with_score("first", priority=1, score=0.0)   # error
-    cfg2 = _fake_config_with_score("second", priority=2, score=1.0)  # ok
-    cfg3 = _fake_config_with_score("third", priority=3, score=1.0)   # ok
+    cfg1 = _fake_config_with_score("first", order=1, score=0.0)   # error
+    cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
+    cfg3 = _fake_config_with_score("third", order=3, score=1.0)   # ok
 
     called = []
     def fake_run_tool(config, path):
@@ -117,8 +117,8 @@ def test_run_tools_early_exit_stops_on_error():
 
 def test_run_tools_early_exit_continues_past_warning():
     """A warning-level result should not trigger early exit."""
-    cfg1 = _fake_config_with_score("first", priority=1, score=0.6)   # warning (0.5 < 0.6 < 0.7)
-    cfg2 = _fake_config_with_score("second", priority=2, score=1.0)  # ok
+    cfg1 = _fake_config_with_score("first", order=1, score=0.6)   # warning (0.5 < 0.6 < 0.7)
+    cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
     def fake_run_tool(config, path):
@@ -134,8 +134,8 @@ def test_run_tools_early_exit_continues_past_warning():
 
 def test_run_tools_early_exit_false_runs_all_despite_error():
     """Without early_exit, all tools run even when one errors."""
-    cfg1 = _fake_config_with_score("first", priority=1, score=0.0)   # error
-    cfg2 = _fake_config_with_score("second", priority=2, score=1.0)  # ok
+    cfg1 = _fake_config_with_score("first", order=1, score=0.0)   # error
+    cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
     def fake_run_tool(config, path):
@@ -155,7 +155,7 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
     from py_cq.execution_engine import run_tool
     cfg = ToolConfig(
         name="echo", command="echo {context_path}",
-        parser_class=MagicMock, priority=1,
+        parser_class=MagicMock, order=1,
         warning_threshold=0.7, error_threshold=0.5,
     )
     mock_result = MagicMock()
@@ -177,7 +177,7 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
     from py_cq.execution_engine import run_tool
     cfg = ToolConfig(
         name="echo", command="echo {context_path}",
-        parser_class=MagicMock, priority=1,
+        parser_class=MagicMock, order=1,
         warning_threshold=0.7, error_threshold=0.5,
     )
     cached = RawResult(tool_name="echo", stdout="cached!")

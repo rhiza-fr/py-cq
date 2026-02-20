@@ -141,14 +141,14 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
         raw_result = run_tool(tool_config, path)
         tr = tool_config.parser_class().parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
-        return tool_config.priority, tr
+        return tool_config.order, tr
 
     if not tool_configs:
         return []
     t_start = time.perf_counter()
     prioritized: list[tuple[int, ToolResult]] = []
     if early_exit:
-        for tool_config in sorted(tool_configs, key=lambda tc: tc.priority):
+        for tool_config in sorted(tool_configs, key=lambda tc: tc.order):
             try:
                 prioritized.append(_run_and_parse(tool_config))
             except Exception as exc:

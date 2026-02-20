@@ -29,7 +29,7 @@ def format_for_llm(
         ],
         key=lambda tr: (
             _severity(min(tr.metrics.values()), by_name[tr.raw.tool_name]),
-            by_name[tr.raw.tool_name].priority,
+            by_name[tr.raw.tool_name].order,
             min(tr.metrics.values()),
         ),
     )

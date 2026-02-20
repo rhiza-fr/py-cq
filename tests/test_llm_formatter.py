@@ -17,8 +17,8 @@ class FakeParser(AbstractParser):
     def parse(self, raw_result): return ToolResult()
 
 
-def make_config(name: str, priority: int) -> ToolConfig:
-    return ToolConfig(name=name, command="", parser_class=FakeParser, priority=priority)
+def make_config(name: str, order: int) -> ToolConfig:
+    return ToolConfig(name=name, command="", parser_class=FakeParser, order=order)
 
 
 def make_tr(tool_name: str, score: float, details: dict | None = None, command: str = "") -> ToolResult:
@@ -37,45 +37,45 @@ def make_registry(*configs: ToolConfig) -> dict:
     return {tc.name: tc for tc in configs}
 
 
-# --- priority ordering ---
+# --- order ordering ---
 
-def test_priority1_beats_priority3_same_severity():
-    """Within the same severity tier, lower priority number wins."""
+def test_order1_beats_order3_same_severity():
+    """Within the same severity tier, lower order number wins."""
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
     combined = make_combined([
         make_tr("ruff", 0.4),    # error state
-        make_tr("compile", 0.3), # error state, higher priority → wins
+        make_tr("compile", 0.3), # error state, lower order → wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # compile selected
     assert "0.400" not in result
 
 
-def test_priority2_beats_priority5_same_severity():
-    """Within the same severity tier, lower priority number wins."""
+def test_order2_beats_order5_same_severity():
+    """Within the same severity tier, lower order number wins."""
     registry = make_registry(make_config("pytest", 2), make_config("interrogate", 5))
     combined = make_combined([
         make_tr("interrogate", 0.4), # error state
-        make_tr("pytest", 0.3),      # error state, higher priority → wins
+        make_tr("pytest", 0.3),      # error state, lower order → wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # pytest selected
     assert "0.400" not in result
 
 
-def test_severity_beats_priority():
-    """A tool in error state wins over a higher-priority tool in warning/ok state."""
+def test_severity_beats_order():
+    """A tool in error state wins over a lower-order tool in warning/ok state."""
     registry = make_registry(make_config("compile", 1), make_config("interrogate", 5))
     combined = make_combined([
         make_tr("compile", 0.8),     # warning/ok state
-        make_tr("interrogate", 0.3), # error state → wins despite lower priority
+        make_tr("interrogate", 0.3), # error state → wins despite higher order number
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # interrogate selected
     assert "0.800" not in result
 
 
-def test_same_priority_worst_score_wins():
+def test_same_order_worst_score_wins():
     registry = make_registry(make_config("ruff", 3), make_config("ty", 3))
     combined = make_combined([
         make_tr("ruff", 0.8),
@@ -225,7 +225,7 @@ def test_default_fallback_metric():
 
 
 def test_format_for_llm_default_invocation():
-    config = ToolConfig(name="ruff", command="", parser_class=RuffParser, priority=3)
+    config = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
     registry = {"ruff": config}
     tr = ToolResult(
         metrics={"lint": 0.5},
