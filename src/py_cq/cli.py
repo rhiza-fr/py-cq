@@ -43,7 +43,8 @@ app = typer.Typer(
         "  cq check .          # full table with all metrics (default)\n\n"
         "  cq check . -o llm   # top defect as markdown (primary LLM workflow)\n\n"
         "  cq check . -o score # numeric score only\n\n"
-        "  cq check . -o json  # full raw json of all tools"
+        "  cq check . -o json  # parsed metrics as json\n\n"
+        "  cq check . -o raw   # unprocessed tool output as json\n\n"
         "  cq config .         # show effective tool configuration"
     ),
 )
@@ -74,6 +75,7 @@ class OutputMode(str, Enum):
     SCORE = "score"
     JSON = "json"
     LLM = "llm"
+    RAW = "raw"
 
 
 @app.callback()
@@ -115,15 +117,21 @@ def check(
     if clear_cache:
         tool_cache.clear()
     tool_results = run_tools(effective_registry.values(), path, workers)
-    for tr in tool_results:
-        log.debug(json.dumps(tr.to_dict(), indent=2))
+    # for tr in tool_results:
+    #     log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)
     if output == OutputMode.SCORE:
         console.print(combined_metrics.score)
     elif output == OutputMode.JSON:
-        console.print(json.dumps(combined_metrics.to_dict(), indent=2))
+        console.print(json.dumps([tr.to_dict() for tr in tool_results], indent=2))
+    elif output == OutputMode.RAW:
+        raw_data = {
+            "path": path,
+            "results": [tr.raw.to_dict() for tr in tool_results],
+        }
+        console.print(json.dumps(raw_data, indent=2))
     elif output == OutputMode.LLM:
-        log.setLevel("CRITICAL")
+        # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
         console.print(format_for_llm(effective_registry, combined_metrics))
     else:

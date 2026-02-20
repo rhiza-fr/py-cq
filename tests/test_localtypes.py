@@ -21,10 +21,11 @@ def test_raw_result_to_dict():
 
 
 def test_tool_result_to_dict():
-    tr = ToolResult(metrics={"lint": 0.9}, details={"f.py": []})
+    tr = ToolResult(metrics={"lint": 0.9}, details={"f.py": []}, raw=RawResult(tool_name="ruff"))
     d = tr.to_dict()
+    assert d["tool_name"] == "ruff"
     assert d["metrics"] == {"lint": 0.9}
-    assert "raw" in d
+    assert "raw" not in d
 
 
 def test_tool_result_post_init_coerces_non_dict():

@@ -73,11 +73,11 @@ class ToolResult:
             self.metrics = {}
 
     def to_dict(self) -> dict:
-        """Returns a dictionary containing the metrics, details, and the raw data serialized via its own `to_dict` method."""
+        """Returns a dictionary containing the tool name, metrics, details, and duration."""
         return {
+            "tool_name": self.raw.tool_name,
             "metrics": self.metrics,
             "details": self.details,
-            "raw": self.raw.to_dict(),
             "duration_s": self.duration_s,
         }
 
