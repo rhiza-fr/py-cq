@@ -62,7 +62,7 @@ class HalsteadParser(AbstractParser):
         MAX_FILE_BUGS = 1
         MAX_FILE_VOLUME = 2000
         MAX_FUNCTION_BUGS = 0.2
-        MAX_FUNCTION_VOLUME = 300
+        MAX_FUNCTION_VOLUME = 600
         min_file_nb = 1.0
         min_file_sm = 1.0
         min_function_nb = 1.0
