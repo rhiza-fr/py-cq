@@ -196,3 +196,96 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
             result = run_tool(cfg, str(tmp_path))
     mock_sub.assert_not_called()
     assert result.stdout == "cached!"
+
+
+# --- run_tool: run_in_target_env ---
+
+def test_run_tool_target_env_uv_not_found(tmp_path):
+    """When uv is not on PATH, python stays as sys.executable."""
+    from py_cq.execution_engine import run_tool
+    cfg = ToolConfig(
+        name="check", command="{python} -m check {context_path}",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+        run_in_target_env=True,
+    )
+    mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
+    mock_cache = MagicMock()
+    mock_cache.__contains__ = MagicMock(return_value=False)
+    with patch("py_cq.execution_engine._cache", mock_cache), \
+         patch("py_cq.execution_engine.shutil.which", return_value=None), \
+         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+        run_tool(cfg, str(tmp_path))
+    # uv not found → python stays as sys.executable
+    import sys
+    called_cmd = mock_sub.call_args[0][0]
+    assert sys.executable in called_cmd
+
+
+def test_run_tool_target_env_uv_found_directory(tmp_path):
+    """When uv is found and path is a directory, python becomes uv run."""
+    from py_cq.execution_engine import run_tool
+    cfg = ToolConfig(
+        name="check", command="{python} -m check {context_path}",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+        run_in_target_env=True,
+    )
+    mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
+    mock_cache = MagicMock()
+    mock_cache.__contains__ = MagicMock(return_value=False)
+    fake_uv = "/usr/bin/uv"
+    with patch("py_cq.execution_engine._cache", mock_cache), \
+         patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
+         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+        run_tool(cfg, str(tmp_path))
+    called_cmd = mock_sub.call_args[0][0]
+    assert "uv" in called_cmd
+    assert "run" in called_cmd
+
+
+def test_run_tool_target_env_uv_found_file(tmp_path):
+    """When uv is found and path is a file, project root is found."""
+    from py_cq.execution_engine import run_tool
+    (tmp_path / "pyproject.toml").write_text("")
+    py_file = tmp_path / "foo.py"
+    py_file.write_text("x = 1")
+    cfg = ToolConfig(
+        name="check", command="{python} -m check {context_path}",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+        run_in_target_env=True,
+    )
+    mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
+    mock_cache = MagicMock()
+    mock_cache.__contains__ = MagicMock(return_value=False)
+    fake_uv = "/usr/bin/uv"
+    with patch("py_cq.execution_engine._cache", mock_cache), \
+         patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
+         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+        run_tool(cfg, str(py_file))
+    called_cmd = mock_sub.call_args[0][0]
+    assert "uv" in called_cmd
+
+
+def test_run_tool_target_env_with_extra_deps(tmp_path):
+    """Extra deps are included in the uv command as --with flags."""
+    from py_cq.execution_engine import run_tool
+    cfg = ToolConfig(
+        name="check", command="{python} -m check {context_path}",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+        run_in_target_env=True,
+        extra_deps=["pytest", "coverage"],
+    )
+    mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
+    mock_cache = MagicMock()
+    mock_cache.__contains__ = MagicMock(return_value=False)
+    fake_uv = "/usr/bin/uv"
+    with patch("py_cq.execution_engine._cache", mock_cache), \
+         patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
+         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+        run_tool(cfg, str(tmp_path))
+    called_cmd = mock_sub.call_args[0][0]
+    assert "--with pytest" in called_cmd
+    assert "--with coverage" in called_cmd

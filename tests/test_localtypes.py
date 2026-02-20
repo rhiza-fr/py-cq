@@ -2,6 +2,7 @@
 
 from py_cq import hello
 from py_cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolResult
+from py_cq.metric_aggregator import aggregate_metrics
 
 
 class MinimalParser(AbstractParser):
@@ -58,3 +59,16 @@ def test_abstract_parse_body_via_super():
         def parse(self, raw_result):
             return super().parse(raw_result)
     assert SuperCaller().parse(RawResult()) is None
+
+
+def test_aggregate_metrics_returns_combined():
+    tr = ToolResult(metrics={"score": 0.9}, raw=RawResult(tool_name="ruff"))
+    result = aggregate_metrics("myproject", [tr])
+    assert isinstance(result, CombinedToolResults)
+    assert result.path == "myproject"
+    assert len(result.tool_results) == 1
+
+
+def test_aggregate_metrics_empty():
+    result = aggregate_metrics(".", [])
+    assert result.score == 0.0

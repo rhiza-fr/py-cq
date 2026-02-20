@@ -1,6 +1,7 @@
 import pytest
 
 from py_cq.parsers.common import (
+    format_source_context,
     inv_normalize,
     read_source_lines,
     score_logistic_variant,
@@ -22,6 +23,23 @@ def test_read_source_lines_valid(tmp_path):
 
 def test_read_source_lines_missing_file():
     assert read_source_lines("/nonexistent/path.py", 1) == ""
+
+
+def test_format_source_context_non_int_line():
+    assert format_source_context("any_file.py", "not-an-int") == ""
+
+
+def test_format_source_context_valid(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text("line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\n")
+    result = format_source_context(str(f), 4, context=1, count=3)
+    assert "```python" in result
+    assert "line3" in result
+
+
+def test_format_source_context_missing_file():
+    result = format_source_context("/nonexistent/path.py", 5)
+    assert result == ""
 
 
 
