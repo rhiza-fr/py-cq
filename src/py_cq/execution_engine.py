@@ -96,7 +96,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     return raw_result
 
 
-def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int = 0) -> list[ToolResult]:
+def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int = 0, early_exit: bool = False) -> list[ToolResult]:
     """Run multiple tools and return their parsed results.
 
     Runs each tool specified in *tool_configs* on the file or directory at
@@ -147,6 +147,18 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
         return []
     t_start = time.perf_counter()
     prioritized: list[tuple[int, ToolResult]] = []
+    if early_exit:
+        for tool_config in sorted(tool_configs, key=lambda tc: tc.priority):
+            try:
+                prioritized.append(_run_and_parse(tool_config))
+            except Exception as exc:
+                log.error(f"{tool_config.name} generated an exception: {exc}")
+                break
+            _, tr = prioritized[-1]
+            if tr.metrics and min(tr.metrics.values()) < tool_config.error_threshold:
+                break
+        log.info(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
+        return [tr for _, tr in sorted(prioritized)]
     with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
         future_to_tool = {
             executor.submit(_run_and_parse, tool_config): tool_config

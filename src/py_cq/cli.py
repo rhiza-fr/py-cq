@@ -116,7 +116,7 @@ def check(
     effective_registry = _apply_user_config(tool_registry, load_user_config(path_obj))
     if clear_cache:
         tool_cache.clear()
-    tool_results = run_tools(effective_registry.values(), path, workers)
+    tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output == OutputMode.LLM))
     # for tr in tool_results:
     #     log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)

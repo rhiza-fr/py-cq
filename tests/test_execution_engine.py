@@ -82,6 +82,73 @@ def test_run_tools_empty():
     assert results == []
 
 
+# --- run_tools early_exit ---
+
+def _fake_config_with_score(name, priority, score, error_threshold=0.5):
+    class FakeParser:
+        def __init__(self, _score=score):
+            self._score = _score
+        def parse(self, raw):
+            return ToolResult(metrics={"score": self._score}, raw=raw)
+    return ToolConfig(
+        name=name, command="echo hi", parser_class=FakeParser,
+        priority=priority, warning_threshold=0.7, error_threshold=error_threshold,
+    )
+
+
+def test_run_tools_early_exit_stops_on_error():
+    """When a tool returns an error-level score, subsequent tools must not run."""
+    cfg1 = _fake_config_with_score("first", priority=1, score=0.0)   # error
+    cfg2 = _fake_config_with_score("second", priority=2, score=1.0)  # ok
+    cfg3 = _fake_config_with_score("third", priority=3, score=1.0)   # ok
+
+    called = []
+    def fake_run_tool(config, path):
+        called.append(config.name)
+        return RawResult(tool_name=config.name, stdout="")
+
+    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
+        results = run_tools([cfg1, cfg2, cfg3], ".", early_exit=True)
+
+    assert called == ["first"]
+    assert len(results) == 1
+    assert results[0].raw.tool_name == "first"
+
+
+def test_run_tools_early_exit_continues_past_warning():
+    """A warning-level result should not trigger early exit."""
+    cfg1 = _fake_config_with_score("first", priority=1, score=0.6)   # warning (0.5 < 0.6 < 0.7)
+    cfg2 = _fake_config_with_score("second", priority=2, score=1.0)  # ok
+
+    called = []
+    def fake_run_tool(config, path):
+        called.append(config.name)
+        return RawResult(tool_name=config.name, stdout="")
+
+    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
+        results = run_tools([cfg1, cfg2], ".", early_exit=True)
+
+    assert called == ["first", "second"]
+    assert len(results) == 2
+
+
+def test_run_tools_early_exit_false_runs_all_despite_error():
+    """Without early_exit, all tools run even when one errors."""
+    cfg1 = _fake_config_with_score("first", priority=1, score=0.0)   # error
+    cfg2 = _fake_config_with_score("second", priority=2, score=1.0)  # ok
+
+    called = []
+    def fake_run_tool(config, path):
+        called.append(config.name)
+        return RawResult(tool_name=config.name, stdout="")
+
+    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
+        results = run_tools([cfg1, cfg2], ".", early_exit=False)
+
+    assert set(called) == {"first", "second"}
+    assert len(results) == 2
+
+
 # --- run_tool (cache miss path) ---
 
 def test_run_tool_cache_miss_calls_subprocess(tmp_path):
