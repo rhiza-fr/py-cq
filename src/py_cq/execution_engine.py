@@ -82,7 +82,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         log.info(f"Cache hit: {command}")
         return RawResult(**cast(dict[str, Any], _cache[cache_key]))
     log.info(f"Running: {command}")
-    result = subprocess.run(command, capture_output=True, text=True, shell=True) # nosec
+    result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace") # nosec
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     raw_result = RawResult(
         tool_name=tool_config.name,
