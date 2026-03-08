@@ -113,7 +113,9 @@ def check(
         if not (path_obj / "pyproject.toml").exists():
             raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
     log.setLevel(log_level)
-    effective_registry = _apply_user_config(tool_registry, load_user_config(path_obj))
+    user_cfg = load_user_config(path_obj)
+    context_lines: int = int(user_cfg.get("context_lines", 15))
+    effective_registry = _apply_user_config(tool_registry, user_cfg)
     if clear_cache:
         tool_cache.clear()
     tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output == OutputMode.LLM))
@@ -129,7 +131,7 @@ def check(
     elif output == OutputMode.LLM:
         # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
-        console.print(format_for_llm(effective_registry, combined_metrics))
+        console.print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines))
     else:
         console.print(format_as_table(combined_metrics, effective_registry))
 

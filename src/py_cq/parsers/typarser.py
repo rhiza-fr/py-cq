@@ -49,7 +49,7 @@ class TyParser(AbstractParser):
         score = score_logistic_variant(weighted, scale_factor=10)
         return ToolResult(raw=raw_result, metrics={"type_check": score}, details=files)
 
-    def format_llm_message(self, tr: ToolResult) -> str:
+    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
         """Return the first type-check diagnostic as a defect description."""
         if not tr.details:
             return "ty reported issues (no details available)"

@@ -113,7 +113,7 @@ class HalsteadParser(AbstractParser):
         }
         return tr
 
-    def format_llm_message(self, tr: ToolResult) -> str:
+    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
         """Return the worst Halstead offender as an actionable defect description."""
         if not tr.metrics:
             return "No Halstead details available"

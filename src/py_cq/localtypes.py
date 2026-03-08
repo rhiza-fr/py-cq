@@ -124,7 +124,7 @@ class AbstractParser(ABC):
         """Converts raw tool output into a structured ToolResult."""
         pass
 
-    def format_llm_message(self, tr: ToolResult) -> str:
+    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
         """Return a single-defect description for LLM consumption.
 
         Default implementation reports the worst metric by name and score.

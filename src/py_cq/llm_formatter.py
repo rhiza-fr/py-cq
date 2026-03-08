@@ -18,6 +18,7 @@ def format_for_llm(
     tool_configs: dict,
     combined: CombinedToolResults,
     cq_invocation: str | None = None,
+    context_lines: int = 15,
 ) -> str:
     """Return a markdown prompt describing the single most important defect."""
     by_name = {tc.name: tc for tc in tool_configs.values()}
@@ -38,7 +39,7 @@ def format_for_llm(
 
     worst = failing[0]
     config = by_name[worst.raw.tool_name]
-    defect_md = config.parser_class().format_llm_message(worst)
+    defect_md = config.parser_class().format_llm_message(worst, context_lines=context_lines)
     if cq_invocation is None:
         cq_invocation = "cq " + " ".join(sys.argv[1:])
     return (

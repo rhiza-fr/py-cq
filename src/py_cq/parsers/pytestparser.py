@@ -79,7 +79,7 @@ class PytestParser(AbstractParser):
             tr.details = tests_found
         return tr
 
-    def format_llm_message(self, tr: ToolResult) -> str:
+    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
         """Return the first failing test as a defect description."""
         for file, tests in tr.details.items():
             if isinstance(tests, dict):
