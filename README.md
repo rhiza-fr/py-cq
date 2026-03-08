@@ -2,20 +2,16 @@
 
 Feed the results from 11+ code quality tools to an LLM. Minimal tokens.
 
+Why? It removes the mental burden of understanding all these tools and parsing their results.
+
 The primary workflow is:
 
 ```bash
 # get the single most critical defect as markdown
 cq check . -o llm
 ```
-Selects the single most critical defect using this priority order:
 
-1. **Severity** — tools with score below `error_threshold` come before those only below `warning_threshold`
-2. **Order** — among tools at the same severity, lower-order tools win (compile before lint before style)
-3. **Score** — among ties, the lower score wins
-
-The code context is expanded if available.
-```md
+```python
 `data/problems/travelling_salesman/ts_bad.py:21` — **F841**: Local variable `unused_variable` is assigned to but never used
 
 18:     min_dist = float("inf")
@@ -37,6 +33,7 @@ cq check . -o llm | claude -p "fix this"
 cq check . -o llm | ollama gpt-oss:20b "Explain how to fix this"
 ```
 
+
 ## Install
 
 ```bash
@@ -56,9 +53,9 @@ These tools are run in **parallel** except when looking for the first error in -
 | Order | Tool | Measures |
 |----------|------|----------|
 | 1 | compileall | Syntax errors |
-| 2 | bandit | Security vulnerabilities |
-| 3 | ruff | Lint / style |
-| 4 | ty | Type errors |
+| 2 | ruff | Lint / style |
+| 3 | ty | Type errors |
+| 4 | bandit | Security vulnerabilities |
 | 5 | pytest | Test pass rate |
 | 6 | coverage | Test coverage |
 | 7 | radon cc | Cyclomatic complexity |
@@ -74,7 +71,7 @@ Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults
 
 ```bash
 cq check .                 # Table overview of scores for humans
-cq check -o llm            # Top defect as markdown for LLMs
+cq check . -o llm          # Top defect as markdown for LLMs
 cq check . -o score        # Numeric score only for CI
 cq check . -o json         # Detailed parsed JSON output for jq
 cq check . -o raw          # Raw tool output for debug
