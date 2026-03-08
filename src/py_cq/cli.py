@@ -25,6 +25,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from py_cq.config import load_user_config
+from py_cq.language_detector import detect_language
 from py_cq.execution_engine import _cache as tool_cache
 from py_cq.execution_engine import run_tools
 from py_cq.localtypes import CombinedToolResults, ToolConfig
@@ -121,11 +122,25 @@ def check(
     workers: int = typer.Option(
         0, "--workers", help="Max parallel workers (default: one per tool, use 1 for sequential)"
     ),
+    language: str | None = typer.Option(
+        None, "--language", "-l", help="Override language detection (e.g. python, typescript, rust)"
+    ),
 ):
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm""" # --help
     path_obj = Path(path)
     if not path_obj.exists():
         raise typer.BadParameter(f"Path does not exist: {path}")
+
+    resolved_language = language or detect_language(path_obj)
+
+    if resolved_language is not None and resolved_language != "python":
+        console.print(
+            f"[yellow]{resolved_language.capitalize()} project detected. "
+            "Non-Python language support is not yet available.[/yellow]"
+        )
+        raise typer.Exit(0)
+
+    # Python path (or unknown — fall through to existing validation)
     if path_obj.is_file():
         if path_obj.suffix != ".py":
             raise typer.BadParameter(f"File must be a Python file (.py): {path}")

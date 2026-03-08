@@ -315,3 +315,45 @@ def test_apply_user_config_user_tool_overrides_builtin():
     }
     result = _apply_user_config(cfg, user_cfg)
     assert result["ruff"].command == "custom-ruff {context_path}"
+
+
+# --- check: language detection and --language flag ---
+
+def test_check_typescript_project_prints_message(tmp_path):
+    """A TypeScript project prints a clear message and exits 0."""
+    (tmp_path / "package.json").write_text("{}")
+    result = runner.invoke(app, ["check", str(tmp_path)])
+    assert result.exit_code == 0
+    assert "typescript" in result.output.lower()
+    assert "not yet available" in result.output.lower()
+
+
+def test_check_rust_project_prints_message(tmp_path):
+    (tmp_path / "Cargo.toml").write_text("")
+    result = runner.invoke(app, ["check", str(tmp_path)])
+    assert result.exit_code == 0
+    assert "rust" in result.output.lower()
+
+
+def test_check_language_flag_overrides_detection(tmp_path):
+    """--language typescript on an empty dir prints the message (no auto-detect needed)."""
+    result = runner.invoke(app, ["check", str(tmp_path), "--language", "typescript"])
+    assert result.exit_code == 0
+    assert "typescript" in result.output.lower()
+
+
+def test_check_language_flag_python_runs_normally(project_dir):
+    """--language python still runs the Python fast path."""
+    tr = _fake_tr()
+    combined = _fake_combined(str(project_dir))
+    with patch("py_cq.cli.run_tools", return_value=[tr]), \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        result = runner.invoke(app, ["check", str(project_dir), "--language", "python", "-o", "score"])
+    assert result.exit_code == 0
+    assert "0.9" in result.output
+
+
+def test_check_unknown_dir_still_errors(tmp_path):
+    """A directory with no recognised markers still produces an error."""
+    result = runner.invoke(app, ["check", str(tmp_path)])
+    assert result.exit_code != 0
