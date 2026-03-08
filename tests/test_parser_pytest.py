@@ -86,9 +86,10 @@ def test_format_llm_message_includes_function_body(tmp_path):
 
 
 def test_format_llm_message_no_body_fallback():
-    """When test file doesn't exist, still returns something useful."""
+    """When test file doesn't exist, header is returned without function body."""
     tr = PytestParser().parse(raw(
         "tests/nonexistent.py::test_missing FAILED    [100%]\n", return_code=1
     ))
     msg = PytestParser().format_llm_message(tr, context_lines=15)
     assert "FAILED" in msg
+    assert "def test_missing" not in msg  # no body since file doesn't exist

@@ -8,7 +8,7 @@ process return code so downstream components can uniformly consume results
 from multiple test tools.  It is part of the test-collection framework and
 enables consistent handling of pytest output across the system."""
 
-import re
+import re as _re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
@@ -16,9 +16,10 @@ from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
     """Extract the failure section for test_name from pytest stdout."""
     lines = stdout.splitlines()
+    pattern = _re.compile(rf"_{{4,}}\s+{_re.escape(test_name)}\s+_{{4,}}")
     start = None
     for i, line in enumerate(lines):
-        if test_name in line and line.strip().startswith("_"):
+        if pattern.search(line):
             start = i + 1
             break
     if start is None:
@@ -79,7 +80,7 @@ class PytestParser(AbstractParser):
             passed_tests = 0
             for line in lines:
                 # tests/test_common.py::test_name[param] PASSED    [ 8%]
-                tests_match = re.search(r"(.*\.py)::([\w\[\].,+\- ]+) (PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)", line)
+                tests_match = _re.search(r"(.*\.py)::([\w\[\].,+\- ]+) (PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)", line)
                 if tests_match:
                     test_file = tests_match.group(1)
                     test_name = tests_match.group(2).strip()
@@ -91,7 +92,7 @@ class PytestParser(AbstractParser):
             if num_tests == 0:
                 # No individual test lines found (e.g. non-verbose output);
                 # fall back to parsing the pytest summary line.
-                summary = re.search(r"(\d+) passed(?:.*?(\d+) failed)?", raw_result.stdout)
+                summary = _re.search(r"(\d+) passed(?:.*?(\d+) failed)?", raw_result.stdout)
                 if summary:
                     passed_tests = int(summary.group(1))
                     failed_tests = int(summary.group(2)) if summary.group(2) else 0
