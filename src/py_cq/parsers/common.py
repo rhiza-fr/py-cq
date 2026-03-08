@@ -64,7 +64,7 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
         collected.append(line)
         if len(collected) >= max_lines:
             break
-    numbered = "\n".join(f"{start_idx + 1 + i}: {l}" for i, l in enumerate(collected))
+    numbered = "\n".join(f"{start_idx + 1 + i}: {ln}" for i, ln in enumerate(collected))
     return f"\n```python\n{numbered}\n```"
 
 
