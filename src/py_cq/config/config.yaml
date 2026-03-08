@@ -1,4 +1,4 @@
-tools:
+python:
 
   compile:
     command: "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv"

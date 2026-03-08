@@ -16,7 +16,7 @@ def load_tool_configs() -> dict[str, ToolConfig]:
     yaml_text = files("py_cq.config").joinpath("config.yaml").read_text(encoding="utf-8")
     config = yaml.safe_load(yaml_text)
     registry = {}
-    for tool_id, tool_data in config["tools"].items():
+    for tool_id, tool_data in config["python"].items():
         # Dynamically import parser class
         module = import_module(f"py_cq.parsers.{tool_data['parser'].lower()}")
         parser_class = getattr(module, tool_data["parser"])
