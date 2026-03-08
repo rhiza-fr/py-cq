@@ -9,11 +9,11 @@ from py_cq.localtypes import ToolConfig
 
 
 def load_tool_configs() -> dict[str, ToolConfig]:
-    """Load tool configurations from the bundled tools.yaml and return a registry.
+    """Load tool configurations from the bundled config.yaml and return a registry.
 
     Returns:
         dict[str, ToolConfig]: A mapping from tool ID to its configuration instance."""
-    yaml_text = files("py_cq.config").joinpath("tools.yaml").read_text(encoding="utf-8")
+    yaml_text = files("py_cq.config").joinpath("config.yaml").read_text(encoding="utf-8")
     config = yaml.safe_load(yaml_text)
     registry = {}
     for tool_id, tool_data in config["tools"].items():

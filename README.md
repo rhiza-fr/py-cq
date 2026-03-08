@@ -172,13 +172,16 @@ Add a `[tool.cq]` section to your project's `pyproject.toml`:
 # Skip tools that are slow or not relevant to your project
 disable = ["coverage", "interrogate"]
 
+# Lines of source context shown around each defect in LLM output (default: 15)
+context_lines = 15
+
 # Override warning/error thresholds per tool
 [tool.cq.thresholds.coverage]
 warning = 0.9
 error = 0.7
 ```
 
-Tool IDs match the keys in `config/tools.yaml`: `compilation`, `bandit`, `ruff`, `ty`, `pytest`, `coverage`, `complexity`, `maintainability`, `halstead`, `vulture`, `interrogate`.
+Tool IDs match the keys in `config/config.yaml`: `compilation`, `bandit`, `ruff`, `ty`, `pytest`, `coverage`, `complexity`, `maintainability`, `halstead`, `vulture`, `interrogate`.
 
 
 ### Default config
