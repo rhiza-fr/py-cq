@@ -2,7 +2,7 @@ tools:
 
   compilation:
     name: "compile"
-    command: "{python} -m compileall -r 10 -j 8 {context_path} -x .*venv"
+    command: "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv"
     parser: "CompileParser"
     order: 1
     warning_threshold: 0.9999
@@ -10,7 +10,7 @@ tools:
 
   ruff:
     name: "ruff"
-    command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
+    command: "{python} -m ruff check --output-format concise --no-cache \"{context_path}\""
     parser: "RuffParser"
     order: 2
     warning_threshold: 0.9999
@@ -18,7 +18,7 @@ tools:
 
   ty:
     name: "ty"
-    command: "{python} -m ty check --output-format concise --color never {context_path}"
+    command: "{python} -m ty check --output-format concise --color never \"{context_path}\""
     parser: "TyParser"
     order: 3
     warning_threshold: 0.9999
@@ -29,7 +29,7 @@ tools:
 
   bandit:
     name: "bandit"
-    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
+    command: "{python} -m bandit -r \"{context_path}\" -f json -q -s B101 --severity-level medium --exclude \"{input_path_posix}/.venv,{input_path_posix}/tests\""
     parser: "BanditParser"
     order: 4
     warning_threshold: 0.9999
@@ -37,7 +37,7 @@ tools:
 
   pytest:
     name: "pytest"
-    command: "{python} -m pytest -v {context_path}"
+    command: "{python} -m pytest -v \"{context_path}\""
     parser: "PytestParser"
     order: 5
     warning_threshold: 0.7
@@ -46,7 +46,7 @@ tools:
 
   coverage:
     name: "coverage"
-    command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest {context_path} && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
+    command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
     parser: "CoverageParser"
     order: 6
     warning_threshold: 0.9
@@ -58,7 +58,7 @@ tools:
 
   complexity:
     name: "radon cc"
-    command: "{python} -m radon cc --json {context_path}"
+    command: "{python} -m radon cc --json \"{context_path}\""
     parser: "ComplexityParser"
     order: 7
     warning_threshold: 0.6
@@ -66,7 +66,7 @@ tools:
 
   maintainability:
     name: "radon mi"
-    command: "{python} -m radon mi -s --json {context_path}"
+    command: "{python} -m radon mi -s --json \"{context_path}\""
     parser: "MaintainabilityParser"
     order: 8
     warning_threshold: 0.6
@@ -74,7 +74,7 @@ tools:
 
   halstead:
     name: "radon hal"
-    command: "{python} -m radon hal -f --json {context_path}"
+    command: "{python} -m radon hal -f --json \"{context_path}\""
     parser: "HalsteadParser"
     order: 9
     warning_threshold: 0.5
@@ -82,7 +82,7 @@ tools:
 
   vulture:
     name: "vulture"
-    command: "{python} -m vulture {context_path} --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git"
+    command: "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git"
     parser: "VultureParser"
     order: 10
     warning_threshold: 0.9999
@@ -90,7 +90,7 @@ tools:
 
   interrogate:
     name: "interrogate"
-    command: "{python} -m interrogate {context_path} -v --fail-under 0"
+    command: "{python} -m interrogate \"{context_path}\" -v --fail-under 0"
     parser: "InterrogateParser"
     order: 11
     warning_threshold: 0.8
