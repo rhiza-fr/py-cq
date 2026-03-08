@@ -21,7 +21,7 @@ def load_tool_configs() -> dict[str, ToolConfig]:
         module = import_module(f"py_cq.parsers.{tool_data['parser'].lower()}")
         parser_class = getattr(module, tool_data["parser"])
         registry[tool_id] = ToolConfig(
-            name=tool_data["name"],
+            name=tool_id,
             command=tool_data["command"],
             parser_class=parser_class,
             order=tool_data["order"],

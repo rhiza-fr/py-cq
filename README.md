@@ -65,7 +65,7 @@ When running '-o llm', we run sequentially and exit early at the first error.
 | 10 | vulture | Dead code |
 | 11 | interrogate | Docstring coverage |
 
-Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults: <100 Mb, <5 days, No pickle
+Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults: <100 Mb, <5 days, No pickle risk.
 
 
 ## Usage
@@ -181,7 +181,7 @@ warning = 0.9
 error = 0.7
 ```
 
-Tool IDs match the keys in `config/config.yaml`: `compilation`, `bandit`, `ruff`, `ty`, `pytest`, `coverage`, `complexity`, `maintainability`, `halstead`, `vulture`, `interrogate`.
+Tool IDs match the keys in `config/config.yaml`: `compile`, `ruff`, `ty`, `bandit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`.
 
 
 ### Default config
@@ -189,8 +189,7 @@ Tool IDs match the keys in `config/config.yaml`: `compilation`, `bandit`, `ruff`
 ```yaml
 tools:
 
-  compilation:
-    name: "compile"
+  compile:
     command: "{python} -m compileall -r 10 -j 8 {context_path} -x .*venv"
     parser: "CompileParser"
     order: 1
@@ -198,7 +197,6 @@ tools:
     error_threshold: 0.9999
 
   ruff:
-    name: "ruff"
     command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
     parser: "RuffParser"
     order: 2
@@ -206,7 +204,6 @@ tools:
     error_threshold: 0.9
 
   ty:
-    name: "ty"
     command: "{python} -m ty check --output-format concise --color never {context_path}"
     parser: "TyParser"
     order: 3
@@ -217,7 +214,6 @@ tools:
       - ty
 
   bandit:
-    name: "bandit"
     command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
     parser: "BanditParser"
     order: 4
@@ -225,16 +221,14 @@ tools:
     error_threshold: 0.8
 
   pytest:
-    name: "pytest"
     command: "{python} -m pytest -v {context_path}"
     parser: "PytestParser"
     order: 5
-    warning_threshold: 0.7
-    error_threshold: 0.5
+    warning_threshold: 1.0
+    error_threshold: 1.0
     run_in_target_env: true
 
   coverage:
-    name: "coverage"
     command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest {context_path} && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
     parser: "CoverageParser"
     order: 6
@@ -245,24 +239,21 @@ tools:
       - coverage
       - pytest
 
-  complexity:
-    name: "radon cc"
+  radon-cc:
     command: "{python} -m radon cc --json {context_path}"
     parser: "ComplexityParser"
     order: 7
     warning_threshold: 0.6
     error_threshold: 0.4
 
-  maintainability:
-    name: "radon mi"
+  radon-mi:
     command: "{python} -m radon mi -s --json {context_path}"
     parser: "MaintainabilityParser"
     order: 8
     warning_threshold: 0.6
     error_threshold: 0.4
 
-  halstead:
-    name: "radon hal"
+  radon-hal:
     command: "{python} -m radon hal -f --json {context_path}"
     parser: "HalsteadParser"
     order: 9
@@ -270,7 +261,6 @@ tools:
     error_threshold: 0.3
 
   vulture:
-    name: "vulture"
     command: "{python} -m vulture {context_path} --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git"
     parser: "VultureParser"
     order: 10
@@ -278,7 +268,6 @@ tools:
     error_threshold: 0.8
 
   interrogate:
-    name: "interrogate"
     command: "{python} -m interrogate {context_path} -v --fail-under 0"
     parser: "InterrogateParser"
     order: 11
