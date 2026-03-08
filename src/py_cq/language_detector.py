@@ -10,7 +10,6 @@ _MARKERS: list[tuple[str, list[str]]] = [
     ("go", ["go.mod"]),
     ("ruby", ["Gemfile"]),
     ("java", ["pom.xml", "build.gradle"]),
-    ("dotnet", []),  # glob-based, handled separately
 ]
 
 _DOTNET_SUFFIXES = {".csproj", ".sln"}
@@ -19,13 +18,12 @@ _DOTNET_SUFFIXES = {".csproj", ".sln"}
 def detect_language(path: Path) -> str | None:
     """Return the detected language for a project path, or None if unrecognised.
 
-    If path is a file, the parent directory is checked."""
+    If path is a file, the parent directory is checked.
+    Dotnet is checked last as it uses suffix matching rather than fixed filenames."""
     directory = path if path.is_dir() else path.parent
     for language, markers in _MARKERS:
-        if language == "dotnet":
-            if any(f.suffix in _DOTNET_SUFFIXES for f in directory.iterdir() if f.is_file()):
-                return "dotnet"
-        else:
-            if any((directory / marker).exists() for marker in markers):
-                return language
+        if any((directory / marker).exists() for marker in markers):
+            return language
+    if any(f.suffix in _DOTNET_SUFFIXES for f in directory.iterdir() if f.is_file()):
+        return "dotnet"
     return None

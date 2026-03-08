@@ -81,3 +81,8 @@ def test_file_input_no_markers(tmp_path):
     f = tmp_path / "foo.txt"
     f.write_text("")
     assert detect_language(f) is None
+
+
+def test_dotnet_sln(tmp_path):
+    (tmp_path / "Solution.sln").write_text("")
+    assert detect_language(tmp_path) == "dotnet"
