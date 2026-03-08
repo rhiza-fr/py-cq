@@ -71,7 +71,7 @@ class CoverageParser(AbstractParser):
         tr.details = details
         return tr
 
-    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
         """Return the files with lowest coverage as a defect description."""
         score = tr.metrics.get("coverage", 0)
         uncovered = sorted(

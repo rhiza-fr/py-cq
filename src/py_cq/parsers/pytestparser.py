@@ -101,7 +101,7 @@ class PytestParser(AbstractParser):
             tr.details = tests_found
         return tr
 
-    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
         """Return the first failing test with function body and failure output."""
         from py_cq.parsers.common import find_function_source
         for file, tests in tr.details.items():

@@ -42,7 +42,7 @@ class InterrogateParser(AbstractParser):
         score = total_coverage if total_coverage is not None else 1.0
         return ToolResult(raw=raw_result, metrics={"doc_coverage": score}, details=files)
 
-    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
         score = tr.metrics.get("doc_coverage", 0)
         uncovered = sorted(
             [(f, d) for f, d in tr.details.items() if d.get("missing", 0) > 0],

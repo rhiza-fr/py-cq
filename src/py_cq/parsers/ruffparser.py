@@ -45,7 +45,7 @@ class RuffParser(AbstractParser):
         )
         return ToolResult(raw=raw_result, metrics={"lint": score}, details=files)
 
-    def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
         """Return the first lint violation as a defect description."""
         if not tr.details:
             return "ruff reported issues (no details available)"
