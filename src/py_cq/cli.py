@@ -16,6 +16,7 @@ import json
 import logging
 import tomllib
 from enum import Enum
+from importlib import import_module
 from pathlib import Path
 
 import typer
@@ -56,6 +57,7 @@ def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str,
     Supports:
       - ``disable``: list of tool IDs to remove
       - ``thresholds.<tool_id>.warning`` / ``.error``: override per-tool thresholds
+      - ``tools.<tool_id>``: declare new tools (or override built-ins)
     """
     registry = {k: copy.copy(v) for k, v in base.items()}
     for tool_id in user_cfg.get("disable", []):
@@ -66,6 +68,21 @@ def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str,
                 registry[tool_id].warning_threshold = float(thresholds["warning"])
             if "error" in thresholds:
                 registry[tool_id].error_threshold = float(thresholds["error"])
+    for tool_id, tool_data in user_cfg.get("tools", {}).items():
+        parser_name = tool_data["parser"]
+        module = import_module(f"py_cq.parsers.{parser_name.lower()}")
+        parser_class = getattr(module, parser_name)
+        registry[tool_id] = ToolConfig(
+            name=tool_id,
+            command=tool_data["command"],
+            parser_class=parser_class,
+            order=tool_data["order"],
+            warning_threshold=tool_data["warning_threshold"],
+            error_threshold=tool_data["error_threshold"],
+            run_in_target_env=tool_data.get("run_in_target_env", False),
+            extra_deps=tool_data.get("extra_deps", []),
+            parser_config=tool_data.get("parser_config", {}),
+        )
     return registry
 
 

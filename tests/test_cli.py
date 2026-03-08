@@ -226,3 +226,61 @@ def test_format_as_table_error_status():
     table = format_as_table(combined, _registry())
     from rich.table import Table
     assert isinstance(table, Table)
+
+
+def test_apply_user_config_adds_user_tool():
+    """User can declare a new tool under [tool.cq.tools]."""
+    cfg = {"ruff": _tc()}
+    user_cfg = {
+        "tools": {
+            "mycheck": {
+                "command": "mycheck {context_path}",
+                "parser": "ExitCodeParser",
+                "order": 99,
+                "warning_threshold": 0.9,
+                "error_threshold": 0.5,
+            }
+        }
+    }
+    result = _apply_user_config(cfg, user_cfg)
+    assert "mycheck" in result
+    assert result["mycheck"].order == 99
+    assert result["mycheck"].warning_threshold == 0.9
+    assert result["mycheck"].command == "mycheck {context_path}"
+
+
+def test_apply_user_config_user_tool_parser_config():
+    """parser_config is threaded through to the ToolConfig."""
+    cfg = {}
+    user_cfg = {
+        "tools": {
+            "mychecker": {
+                "command": "cmd {context_path}",
+                "parser": "LineCountParser",
+                "order": 5,
+                "warning_threshold": 0.8,
+                "error_threshold": 0.5,
+                "parser_config": {"scale_factor": 20},
+            }
+        }
+    }
+    result = _apply_user_config(cfg, user_cfg)
+    assert result["mychecker"].parser_config == {"scale_factor": 20}
+
+
+def test_apply_user_config_user_tool_overrides_builtin():
+    """A user tool entry with the same key replaces the built-in."""
+    cfg = {"ruff": _tc("ruff", order=2)}
+    user_cfg = {
+        "tools": {
+            "ruff": {
+                "command": "custom-ruff {context_path}",
+                "parser": "ExitCodeParser",
+                "order": 2,
+                "warning_threshold": 0.5,
+                "error_threshold": 0.3,
+            }
+        }
+    }
+    result = _apply_user_config(cfg, user_cfg)
+    assert result["ruff"].command == "custom-ruff {context_path}"
