@@ -69,20 +69,23 @@ def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str,
             if "error" in thresholds:
                 registry[tool_id].error_threshold = float(thresholds["error"])
     for tool_id, tool_data in user_cfg.get("tools", {}).items():
-        parser_name = tool_data["parser"]
-        module = import_module(f"py_cq.parsers.{parser_name.lower()}")
-        parser_class = getattr(module, parser_name)
-        registry[tool_id] = ToolConfig(
-            name=tool_id,
-            command=tool_data["command"],
-            parser_class=parser_class,
-            order=tool_data["order"],
-            warning_threshold=tool_data["warning_threshold"],
-            error_threshold=tool_data["error_threshold"],
-            run_in_target_env=tool_data.get("run_in_target_env", False),
-            extra_deps=tool_data.get("extra_deps", []),
-            parser_config=tool_data.get("parser_config", {}),
-        )
+        try:
+            parser_name = tool_data["parser"]
+            module = import_module(f"py_cq.parsers.{parser_name.lower()}")
+            parser_class = getattr(module, parser_name)
+            registry[tool_id] = ToolConfig(
+                name=tool_id,
+                command=tool_data["command"],
+                parser_class=parser_class,
+                order=tool_data["order"],
+                warning_threshold=tool_data["warning_threshold"],
+                error_threshold=tool_data["error_threshold"],
+                run_in_target_env=tool_data.get("run_in_target_env", False),
+                extra_deps=tool_data.get("extra_deps", []),
+                parser_config=tool_data.get("parser_config", {}),
+            )
+        except KeyError as e:
+            raise typer.BadParameter(f"[tool.cq.tools.{tool_id}] missing required field {e}")
     return registry
 
 
@@ -199,8 +202,9 @@ def config(
     table.add_column("Error", justify="right")
     table.add_column("Status", justify="center")
 
-    for tool_id in sorted(tool_registry, key=lambda t: tool_registry[t].order):
-        tc = effective_registry.get(tool_id, tool_registry[tool_id])
+    all_tool_ids = set(tool_registry) | set(effective_registry)
+    for tool_id in sorted(all_tool_ids, key=lambda t: (effective_registry.get(t) or tool_registry[t]).order):
+        tc = effective_registry.get(tool_id) or tool_registry[tool_id]
         is_disabled = tool_id in disabled_ids
         status = "[red]disabled[/red]" if is_disabled else "[green]enabled[/green]"
         table.add_row(

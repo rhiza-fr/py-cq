@@ -197,6 +197,37 @@ def test_config_py_file_input(tmp_path):
     assert result.exit_code == 0
 
 
+def test_config_shows_user_defined_tool(tmp_path):
+    toml = (
+        "[tool.cq.tools.mycheck]\n"
+        'command = "mycheck {context_path}"\n'
+        'parser = "ExitCodeParser"\n'
+        "order = 99\n"
+        "warning_threshold = 0.9\n"
+        "error_threshold = 0.5\n"
+    )
+    (tmp_path / "pyproject.toml").write_text(toml)
+    result = runner.invoke(app, ["config", str(tmp_path)])
+    assert result.exit_code == 0
+    assert "mycheck" in result.output
+
+
+def test_apply_user_config_missing_required_field_raises():
+    import typer
+    user_cfg = {
+        "tools": {
+            "mycheck": {
+                "command": "mycheck {context_path}",
+                "parser": "ExitCodeParser",
+                # missing order, warning_threshold, error_threshold
+            }
+        }
+    }
+    with pytest.raises(typer.BadParameter) as exc_info:
+        _apply_user_config({}, user_cfg)
+    assert "mycheck" in str(exc_info.value)
+
+
 # --- format_as_table ---
 
 def _registry(name="ruff", warning=0.7, error=0.5):
