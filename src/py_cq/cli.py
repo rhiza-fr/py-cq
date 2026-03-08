@@ -170,6 +170,7 @@ def check(
         from py_cq.llm_formatter import format_for_llm
         console.print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines))
     else:
+        console.print(f"[bold green]{path_obj.resolve()}[/]")
         console.print(format_as_table(combined_metrics, effective_registry))
 
     tool_by_name = {tc.name: tc for tc in effective_registry.values()}
@@ -252,7 +253,7 @@ def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig]):
         >>> table = format_as_table(combined_results)
         >>> console.print(table)
     """
-    table = Table(title=f"[bold green]{data.path}[/]", width=80)
+    table = Table(width=80)
     table.add_column("Tool", justify="left", no_wrap=True)
     table.add_column("Time", justify="right", style="dim")
     table.add_column("Metric", justify="right", style="cyan", no_wrap=True)
