@@ -84,7 +84,7 @@ def test_abstract_parser_stores_parser_config():
     from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
     class MyParser(AbstractParser):
-        def parse(self, raw: RawResult) -> ToolResult:
+        def parse(self, raw_result: RawResult) -> ToolResult:
             return ToolResult()
 
     p = MyParser({"scale_factor": 10})
@@ -95,7 +95,7 @@ def test_abstract_parser_defaults_config_to_empty():
     from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
     class MyParser(AbstractParser):
-        def parse(self, raw: RawResult) -> ToolResult:
+        def parse(self, raw_result: RawResult) -> ToolResult:
             return ToolResult()
 
     p = MyParser()
