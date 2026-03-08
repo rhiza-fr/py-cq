@@ -333,6 +333,7 @@ def test_check_rust_project_prints_message(tmp_path):
     result = runner.invoke(app, ["check", str(tmp_path)])
     assert result.exit_code == 0
     assert "rust" in result.output.lower()
+    assert "not yet available" in result.output.lower()
 
 
 def test_check_language_flag_overrides_detection(tmp_path):
@@ -340,6 +341,7 @@ def test_check_language_flag_overrides_detection(tmp_path):
     result = runner.invoke(app, ["check", str(tmp_path), "--language", "typescript"])
     assert result.exit_code == 0
     assert "typescript" in result.output.lower()
+    assert "not yet available" in result.output.lower()
 
 
 def test_check_language_flag_python_runs_normally(project_dir):
