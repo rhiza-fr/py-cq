@@ -1,6 +1,7 @@
 import pytest
 
 from py_cq.parsers.common import (
+    find_function_source,
     format_source_context,
     inv_normalize,
     read_source_lines,
@@ -41,6 +42,51 @@ def test_format_source_context_missing_file():
     result = format_source_context("/nonexistent/path.py", 5)
     assert result == ""
 
+
+
+def test_find_function_source_basic(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text(
+        "def unrelated():\n"
+        "    pass\n"
+        "\n"
+        "def test_bar():\n"
+        "    x = 1\n"
+        "    assert x == 1\n"
+        "\n"
+        "def after():\n"
+        "    pass\n"
+    )
+    result = find_function_source(str(f), "test_bar", max_lines=10)
+    assert "def test_bar" in result
+    assert "assert x == 1" in result
+    assert "def after" not in result
+    assert "```python" in result
+
+
+def test_find_function_source_truncates(tmp_path):
+    f = tmp_path / "foo.py"
+    lines = ["def test_long():\n"] + [f"    x = {i}\n" for i in range(20)]
+    f.write_text("".join(lines))
+    result = find_function_source(str(f), "test_long", max_lines=5)
+    assert result.count("\n") <= 7  # fences + 5 lines
+
+
+def test_find_function_source_not_found(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text("def other(): pass\n")
+    assert find_function_source(str(f), "missing", max_lines=10) == ""
+
+
+def test_find_function_source_missing_file():
+    assert find_function_source("/nonexistent/foo.py", "test_x", max_lines=10) == ""
+
+
+def test_find_function_source_async(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text("async def test_async():\n    await something()\n")
+    result = find_function_source(str(f), "test_async", max_lines=10)
+    assert "async def test_async" in result
 
 
 def test_score_logistic_large_base():

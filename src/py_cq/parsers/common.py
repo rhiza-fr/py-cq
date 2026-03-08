@@ -37,6 +37,38 @@ def format_source_context(file: str, line: int | str, context: int = 3, count: i
     return f"\n```python\n{src}\n```"
 
 
+def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
+    """Return a fenced python block for the body of func_name, or '' if unavailable."""
+    from pathlib import Path
+    try:
+        all_lines = Path(file).read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ""
+    import re
+    pattern = re.compile(rf"^(\s*)(?:async\s+)?def\s+{re.escape(func_name)}\s*\(")
+    start_idx = None
+    baseline_indent = None
+    for i, line in enumerate(all_lines):
+        m = pattern.match(line)
+        if m:
+            start_idx = i
+            baseline_indent = len(m.group(1))
+            break
+    if start_idx is None:
+        return ""
+    collected = [all_lines[start_idx]]
+    for line in all_lines[start_idx + 1 :]:
+        stripped = line.lstrip()
+        indent = len(line) - len(stripped)
+        if stripped and indent <= baseline_indent:
+            break
+        collected.append(line)
+        if len(collected) >= max_lines:
+            break
+    numbered = "\n".join(f"{start_idx + 1 + i}: {l}" for i, l in enumerate(collected))
+    return f"\n```python\n{numbered}\n```"
+
+
 def inv_normalize(value: float, max_value: float) -> float:
     """Returns the inverse normalized value of `value` relative to `max_value`."""
     return (max_value - min(value, max_value)) / max_value
