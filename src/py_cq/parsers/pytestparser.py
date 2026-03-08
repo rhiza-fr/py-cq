@@ -73,7 +73,7 @@ class PytestParser(AbstractParser):
         lines = raw_result.stdout.splitlines()
         tr = ToolResult(raw=raw_result)
         if "no tests ran" in raw_result.stdout:
-            pass
+            tr.metrics["tests"] = 0.0
         else:
             tests_found = dict()
             num_tests = 0
@@ -119,4 +119,14 @@ class PytestParser(AbstractParser):
                 if failure:
                     parts.append(failure)
                 return "\n".join(parts)
+        if "no tests ran" in tr.raw.stdout:
+            return (
+                "**No tests found.** This project has no pytest test suite.\n\n"
+                "Add a `tests/` directory with at least one test file (e.g. `tests/test_basic.py`) "
+                "and write a first test covering a core function."
+            )
+        output = (tr.raw.stdout + tr.raw.stderr).strip()
+        if output:
+            tail = "\n".join(output.splitlines()[-30:])
+            return f"pytest reported failures:\n\n```\n{tail}\n```"
         return "pytest reported failures (no details available)"

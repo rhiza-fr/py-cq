@@ -28,7 +28,7 @@ def test_pytest_parse_all_pass():
 
 def test_pytest_parse_no_tests():
     tr = PytestParser().parse(raw(PYTEST_NO_TESTS))
-    assert tr.metrics == {}
+    assert tr.metrics == {"tests": 0.0}
 
 
 def test_pytest_parse_empty():
@@ -83,6 +83,23 @@ def test_format_llm_message_includes_function_body(tmp_path):
     tr = PytestParser().parse(raw(stdout, return_code=1))
     msg = PytestParser().format_llm_message(tr, context_lines=15)
     assert "def test_bar" in msg
+
+
+def test_format_llm_message_no_tests_ran():
+    """'no tests ran' produces a clear actionable message."""
+    tr = PytestParser().parse(raw(PYTEST_NO_TESTS))
+    msg = PytestParser().format_llm_message(tr)
+    assert "No tests found" in msg
+    assert "tests/" in msg
+
+
+def test_format_llm_message_no_details_shows_stderr():
+    """When no test details exist, fallback shows stderr content."""
+    from py_cq.localtypes import RawResult, ToolResult
+    raw_result = RawResult(tool_name="pytest", command="cmd", stdout="", stderr="No module named pytest\n", return_code=1)
+    tr = PytestParser().parse(raw_result)
+    msg = PytestParser().format_llm_message(tr, context_lines=15)
+    assert "No module named pytest" in msg
 
 
 def test_format_llm_message_no_body_fallback():
