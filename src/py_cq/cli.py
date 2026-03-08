@@ -25,9 +25,9 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 from py_cq.config import load_user_config
-from py_cq.language_detector import detect_language
 from py_cq.execution_engine import _cache as tool_cache
 from py_cq.execution_engine import run_tools
+from py_cq.language_detector import detect_language
 from py_cq.localtypes import CombinedToolResults, ToolConfig
 from py_cq.metric_aggregator import aggregate_metrics
 from py_cq.tool_registry import tool_registry
@@ -140,7 +140,9 @@ def check(
         )
         raise typer.Exit(0)
 
-    # Python path (or unknown — fall through to existing validation)
+    # Python path (or unknown — fall through to existing validation).
+    # Note: --language python still requires pyproject.toml; the flag selects
+    # the tool set, not the input validation rules.
     if path_obj.is_file():
         if path_obj.suffix != ".py":
             raise typer.BadParameter(f"File must be a Python file (.py): {path}")
