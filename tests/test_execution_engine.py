@@ -8,6 +8,8 @@ from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 def _fake_config(name="fake", order=1):
     class FakeParser:
+        def __init__(self, parser_config=None):
+            pass
         def parse(self, raw):
             return ToolResult(metrics={"score": 1.0}, raw=raw)
     return ToolConfig(
@@ -86,7 +88,7 @@ def test_run_tools_empty():
 
 def _fake_config_with_score(name, order, score, error_threshold=0.5):
     class FakeParser:
-        def __init__(self, _score=score):
+        def __init__(self, parser_config=None, _score=score):
             self._score = _score
         def parse(self, raw):
             return ToolResult(metrics={"score": self._score}, raw=raw)

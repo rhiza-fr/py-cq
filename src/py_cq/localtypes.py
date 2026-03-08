@@ -21,7 +21,7 @@ class ToolConfig:
     error_threshold: float = 0.5  # Red error if below this
     run_in_target_env: bool = False  # If True, run in target project's env via uv
     extra_deps: list[str] = field(default_factory=list)  # Extra deps to inject via uv --with
-    parser_config: dict = field(default_factory=dict)
+    parser_config: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

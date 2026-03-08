@@ -139,7 +139,7 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
     def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
         t0 = time.perf_counter()
         raw_result = run_tool(tool_config, path)
-        tr = tool_config.parser_class().parse(raw_result)
+        tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr
 
