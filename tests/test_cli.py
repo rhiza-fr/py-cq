@@ -131,8 +131,8 @@ def test_check_json_output(project_dir):
 def test_check_raw_output(project_dir):
     result = _mock_check(project_dir, "-o", "raw")
     assert result.exit_code == 0
-    assert '"path"' in result.output
-    assert '"results"' in result.output
+    assert '"tool_name"' in result.output
+    assert '"stdout"' in result.output
 
 
 def test_check_table_output(project_dir):
