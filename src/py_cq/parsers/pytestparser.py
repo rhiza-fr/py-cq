@@ -13,6 +13,27 @@ import re
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
 
+def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
+    """Extract the failure section for test_name from pytest stdout."""
+    lines = stdout.splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if test_name in line and line.strip().startswith("_"):
+            start = i + 1
+            break
+    if start is None:
+        return ""
+    collected = []
+    for line in lines[start:]:
+        if line.strip().startswith("_") or line.strip().startswith("="):
+            break
+        collected.append(line)
+        if len(collected) >= max_lines:
+            break
+    text = "\n".join(collected).strip()
+    return f"\n```\n{text}\n```" if text else ""
+
+
 class PytestParser(AbstractParser):
     """Parses raw pytest output into a structured `ToolResult`.
 
@@ -80,10 +101,21 @@ class PytestParser(AbstractParser):
         return tr
 
     def format_llm_message(self, tr: ToolResult, context_lines: int = 15) -> str:
-        """Return the first failing test as a defect description."""
+        """Return the first failing test with function body and failure output."""
+        from py_cq.parsers.common import find_function_source
         for file, tests in tr.details.items():
-            if isinstance(tests, dict):
-                for test_name, status in tests.items():
-                    if status == "FAILED":
-                        return f"`{file}::{test_name}` — test **FAILED**"
+            if not isinstance(tests, dict):
+                continue
+            for test_name, status in tests.items():
+                if status != "FAILED":
+                    continue
+                header = f"`{file}::{test_name}` — test **FAILED**"
+                body = find_function_source(file, test_name, max_lines=context_lines)
+                failure = _extract_failure(tr.raw.stdout, test_name, max_lines=context_lines)
+                parts = [header]
+                if body:
+                    parts.append(body)
+                if failure:
+                    parts.append(failure)
+                return "\n".join(parts)
         return "pytest reported failures (no details available)"
