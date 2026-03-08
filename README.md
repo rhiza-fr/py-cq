@@ -187,7 +187,7 @@ Tool IDs match the keys in `config/config.yaml`: `compile`, `ruff`, `ty`, `bandi
 ### Default config
 
 ```yaml
-tools:
+python:
 
   compile:
     command: "{python} -m compileall -r 10 -j 8 {context_path} -x .*venv"
