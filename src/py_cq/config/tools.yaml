@@ -8,19 +8,11 @@ tools:
     warning_threshold: 0.9999
     error_threshold: 0.9999
 
-  bandit:
-    name: "bandit"
-    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
-    parser: "BanditParser"
-    order: 2
-    warning_threshold: 0.9999
-    error_threshold: 0.8
-
   ruff:
     name: "ruff"
     command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
     parser: "RuffParser"
-    order: 3
+    order: 2
     warning_threshold: 0.9999
     error_threshold: 0.9
 
@@ -28,12 +20,20 @@ tools:
     name: "ty"
     command: "{python} -m ty check --output-format concise --color never {context_path}"
     parser: "TyParser"
-    order: 4
+    order: 3
     warning_threshold: 0.9999
     error_threshold: 0.8
     run_in_target_env: true
     extra_deps:
       - ty
+
+  bandit:
+    name: "bandit"
+    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
+    parser: "BanditParser"
+    order: 4
+    warning_threshold: 0.9999
+    error_threshold: 0.8
 
   pytest:
     name: "pytest"
