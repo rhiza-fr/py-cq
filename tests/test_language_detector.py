@@ -1,5 +1,4 @@
 """Tests for language_detector."""
-from pathlib import Path
 from py_cq.language_detector import detect_language
 
 

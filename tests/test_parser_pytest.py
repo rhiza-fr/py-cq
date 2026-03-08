@@ -95,7 +95,7 @@ def test_format_llm_message_no_tests_ran():
 
 def test_format_llm_message_no_details_shows_stderr():
     """When no test details exist, fallback shows stderr content."""
-    from py_cq.localtypes import RawResult, ToolResult
+    from py_cq.localtypes import RawResult
     raw_result = RawResult(tool_name="pytest", command="cmd", stdout="", stderr="No module named pytest\n", return_code=1)
     tr = PytestParser().parse(raw_result)
     msg = PytestParser().format_llm_message(tr, context_lines=15)
