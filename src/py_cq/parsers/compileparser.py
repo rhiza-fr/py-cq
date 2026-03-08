@@ -124,5 +124,5 @@ class CompileParser(AbstractParser):
         line = info.get("line", "?")
         typ = info.get("type", "Error")
         help_msg = info.get("help", "")
-        code_block = format_source_context(file, line) or (f"\n```python\n{info['src']}\n```" if info.get("src") else "")
+        code_block = format_source_context(file, line, count=context_lines) or (f"\n```python\n{info['src']}\n```" if info.get("src") else "")
         return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}"

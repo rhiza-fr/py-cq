@@ -54,4 +54,4 @@ class RuffParser(AbstractParser):
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")
-        return f"`{file}:{line}` — **{code}**: {message}{format_source_context(file, line)}"
+        return f"`{file}:{line}` — **{code}**: {message}{format_source_context(file, line, count=context_lines)}"

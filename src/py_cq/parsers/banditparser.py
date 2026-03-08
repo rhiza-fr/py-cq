@@ -51,4 +51,4 @@ class BanditParser(AbstractParser):
         code = issue.get("code", "")
         severity = issue.get("severity", "")
         message = issue.get("message", "")
-        return f"`{file}:{line}` — **{code}** [{severity}]: {message}{format_source_context(file, line)}"
+        return f"`{file}:{line}` — **{code}** [{severity}]: {message}{format_source_context(file, line, count=context_lines)}"
