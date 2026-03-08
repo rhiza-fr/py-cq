@@ -133,6 +133,14 @@ def check(
     else:
         console.print(format_as_table(combined_metrics, effective_registry))
 
+    tool_by_name = {tc.name: tc for tc in effective_registry.values()}
+    if any(
+        min(tr.metrics.values()) < tool_by_name[tr.raw.tool_name].error_threshold
+        for tr in tool_results
+        if tr.metrics and tr.raw.tool_name in tool_by_name
+    ):
+        raise typer.Exit(code=1)
+
 
 @app.command()
 def config(

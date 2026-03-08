@@ -30,7 +30,7 @@ Feed to an LLM with edit tools and repeat until there are no issues, e.g.
 ```python
 cq check . -o llm | claude -p "fix this"
 # or
-cq check . -o llm | ollama gpt-oss:20b "Explain how to fix this"
+cq check . -o llm | ollama run gpt-oss:20b "Explain how to fix this"
 ```
 
 
@@ -41,14 +41,15 @@ cq check . -o llm | ollama gpt-oss:20b "Explain how to fix this"
 uv tool install python-code-quality
 
 # or, clone it then install 
-git pull https://github.com/rhiza-fr/py-cq.git
+git clone https://github.com/rhiza-fr/py-cq.git
 cd py-cq
 uv tool install .
 ```
 
 ## Tools
 
-These tools are run in **parallel** except when looking for the first error in -o llm mode:
+These tools are run in **parallel** except:
+When running '-o llm', we run sequentially and exit early at the first error.
 
 | Order | Tool | Measures |
 |----------|------|----------|
@@ -81,6 +82,13 @@ cq check . --clear-cache   # Clear cached results before running (rarely needed)
 cq config path/to/project/ # Show effective tool configuration
 ```
 
+**Exit codes:** `cq check` exits with code `1` if any tool metric falls below its `error_threshold`, making it suitable as a CI gate:
+
+```bash
+cq check . && deploy        # block deploy on errors
+cq check . -o score         # print score, exit 1 on errors
+```
+
 ## Table output
 
 ```bash
@@ -92,9 +100,9 @@ cq config path/to/project/ # Show effective tool configuration
 ┃ Tool             ┃     Time ┃                    Metric ┃ Score   ┃ Status   ┃
 ┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━┩
 │ compile          │    0.42s │                   compile │ 1.000   │ OK       │
-│ bandit           │    0.56s │                  security │ 1.000   │ OK       │
 │ ruff             │    0.17s │                      lint │ 1.000   │ OK       │
 │ ty               │    0.33s │                type_check │ 1.000   │ OK       │
+│ bandit           │    0.56s │                  security │ 1.000   │ OK       │
 │ pytest           │    0.91s │                     tests │ 1.000   │ OK       │
 │ coverage         │    1.26s │                  coverage │ 0.910   │ OK       │
 │ radon cc         │    0.32s │                simplicity │ 0.982   │ OK       │
@@ -138,7 +146,7 @@ cq config path/to/project/ # Show effective tool configuration
 
 ## Raw output
 ```bash
-> cq check -o raw
+> cq check . -o raw
 ```
 
 ```json
