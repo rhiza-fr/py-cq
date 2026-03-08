@@ -46,16 +46,15 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
         return ""
     import re
     pattern = re.compile(rf"^(\s*)(?:async\s+)?def\s+{re.escape(func_name)}\s*\(")
-    start_idx = None
-    baseline_indent = None
+    match_result: tuple[int, int] | None = None
     for i, line in enumerate(all_lines):
         m = pattern.match(line)
         if m:
-            start_idx = i
-            baseline_indent = len(m.group(1))
+            match_result = (i, len(m.group(1)))
             break
-    if start_idx is None:
+    if match_result is None:
         return ""
+    start_idx, baseline_indent = match_result
     collected = [all_lines[start_idx]]
     for line in all_lines[start_idx + 1 :]:
         stripped = line.lstrip()
