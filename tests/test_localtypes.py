@@ -72,3 +72,31 @@ def test_aggregate_metrics_returns_combined():
 def test_aggregate_metrics_empty():
     result = aggregate_metrics(".", [])
     assert result.score == 0.0
+
+
+def test_toolconfig_parser_config_defaults_to_empty_dict():
+    from py_cq.localtypes import ToolConfig
+    tc = ToolConfig(name="x", command="cmd", parser_class=object)
+    assert tc.parser_config == {}
+
+
+def test_abstract_parser_stores_parser_config():
+    from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+
+    class MyParser(AbstractParser):
+        def parse(self, raw: RawResult) -> ToolResult:
+            return ToolResult()
+
+    p = MyParser({"scale_factor": 10})
+    assert p.parser_config == {"scale_factor": 10}
+
+
+def test_abstract_parser_defaults_config_to_empty():
+    from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+
+    class MyParser(AbstractParser):
+        def parse(self, raw: RawResult) -> ToolResult:
+            return ToolResult()
+
+    p = MyParser()
+    assert p.parser_config == {}

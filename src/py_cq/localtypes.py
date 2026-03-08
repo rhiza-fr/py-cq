@@ -21,6 +21,7 @@ class ToolConfig:
     error_threshold: float = 0.5  # Red error if below this
     run_in_target_env: bool = False  # If True, run in target project's env via uv
     extra_deps: list[str] = field(default_factory=list)  # Extra deps to inject via uv --with
+    parser_config: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -118,6 +119,9 @@ class AbstractParser(ABC):
     """Base class for parsers that transform raw tool output into structured `ToolResult` objects.
 
     Subclasses must implement `parse` to convert a `RawResult` into a `ToolResult`. An optional `provide_help` can be overridden to supply contextual guidance for a parsed result."""
+
+    def __init__(self, parser_config: dict | None = None):
+        self.parser_config = parser_config or {}
 
     @abstractmethod
     def parse(self, raw_result: RawResult) -> ToolResult:
