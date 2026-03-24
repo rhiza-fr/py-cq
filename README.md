@@ -89,6 +89,39 @@ cq check . && deploy        # block deploy on errors
 cq check . -o score         # print score, exit 1 on errors
 ```
 
+## Claude Code Integration
+
+Add a stop hook to your project's `.claude/settings.json` so Claude automatically checks quality after each session and loops until clean:
+
+```json
+{
+  "hooks": {
+    "Stop": [{
+      "matcher": "",
+      "hooks": [{"type": "command", "command": "cq check . -o score && echo 'CQ: all clear' || cq check . -o llm"}]
+    }]
+  }
+}
+```
+
+When the score passes, Claude sees `CQ: all clear` (~5 tokens). When it fails, Claude receives the targeted fix prompt and continues working. This automates the `cq check . -o llm | claude -p "fix this"` loop.
+
+> **Note:** Use project-level `.claude/settings.json`, not global settings — this hook only makes sense in Python projects.
+
+### As a slash command (skill)
+
+For manual invocation, create `.claude/commands/cq-fix.md`:
+
+```markdown
+$(cq check . -o llm)
+```
+
+Then invoke it with `/cq-fix` in Claude Code. The `$(...)` embeds the live `cq` output directly into the prompt before Claude starts, so it sees the issue immediately without an extra tool call.
+
+**Hook vs skill:**
+- **Stop hook** — automatic, runs after every session, best for unattended loops
+- **Skill** — manual `/cq-fix`, gives you explicit control over when to check
+
 ## Table output
 
 ```bash
