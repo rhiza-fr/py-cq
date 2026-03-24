@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Run tests
+        run: uv run pytest --cov --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.14'
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+
+      - name: CQ quality gate
+        if: matrix.python-version == '3.14'
+        run: |
+          score=$(uv run cq check . -o score)
+          echo "CQ Score: $score"
+          python -c "import sys; score=float('$score'); print(f'Score: {score}'); sys.exit(0 if score >= 70 else 1)"
