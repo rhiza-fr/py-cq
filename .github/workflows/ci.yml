@@ -36,4 +36,4 @@ jobs:
         run: |
           score=$(uv run cq check . -o score)
           echo "CQ Score: $score"
-          python -c "import sys; score=float('$score'); print(f'Score: {score}'); sys.exit(0 if score >= 70 else 1)"
+          python -c "import sys; score=float('$score'); print(f'Score: {score}'); sys.exit(0 if score >= 0.7 else 1)"
