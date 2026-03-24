@@ -2,8 +2,8 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/rhiza-fr/py-cq/ci.yml?label=CI)](https://github.com/rhiza-fr/py-cq/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/rhiza-fr/py-cq/graph/badge.svg)](https://codecov.io/gh/rhiza-fr/py-cq)
-[![PyPI version](https://img.shields.io/pypi/v/python-code-quality)](https://pypi.org/project/python-code-quality/)
-[![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality)](https://pypi.org/project/python-code-quality/)
+[![PyPI version](https://img.shields.io/pypi/v/python-code-quality?)](https://pypi.org/project/python-code-quality/)
+[![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality?)](https://pypi.org/project/python-code-quality/)
 [![License](https://img.shields.io/github/license/rhiza-fr/py-cq)](LICENSE)
 
 Feed the results from 11+ code quality tools to an LLM. Minimal tokens.
