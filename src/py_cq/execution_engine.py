@@ -41,6 +41,18 @@ def _find_project_root(path: Path) -> Path | None:
     return None
 
 
+def _dep_in_venv(dep: str, project_root: Path) -> bool:
+    """Return True if `dep` is installed in the project's .venv."""
+    venv = project_root / ".venv"
+    if not venv.exists():
+        return False
+    for subdir in ("Scripts", "bin"):
+        for suffix in ("", ".exe", ".cmd"):
+            if (venv / subdir / f"{dep}{suffix}").exists():
+                return True
+    return False
+
+
 def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
@@ -72,7 +84,9 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
                 project_root = _find_project_root(resolved)
                 abs_dir = str(project_root) if project_root else str(resolved.parent)
                 path = str(resolved)
-            with_flags = " ".join(f"--with {dep}" for dep in tool_config.extra_deps)
+            project_root_path = Path(abs_dir)
+            missing_deps = [d for d in tool_config.extra_deps if not _dep_in_venv(d, project_root_path)]
+            with_flags = " ".join(f"--with {dep}" for dep in missing_deps)
             python = f'"{uv}" run --directory "{abs_dir}" {with_flags}'.rstrip()
     abs_context_path = str(Path(context_path).resolve())
     input_path_posix = Path(context_path).as_posix().rstrip("/")
