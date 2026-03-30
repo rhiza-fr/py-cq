@@ -61,6 +61,7 @@ cq check . -o raw          # Raw tool output for debug
 cq check path/to/file.py   # Just one file (skips pytest and coverage)
 cq check . --only ruff,ty  # Run only specific tools
 cq check . --skip bandit   # Skip specific tools
+cq check . --exclude demo  # Exclude paths from all tools
 cq check . --workers 1     # Run sequentially if you like things slow
 cq check . --clear-cache   # Clear cached results before running (rarely needed)
 cq config path/to/project/ # Show effective tool configuration
@@ -80,10 +81,17 @@ Add a stop hook to your project's `.claude/settings.json` so Claude automaticall
 ```json
 {
   "hooks": {
-    "Stop": [{
-      "matcher": "",
-      "hooks": [{"type": "command", "command": "cq check . -o score && echo 'CQ: all clear' || cq check . -o llm"}]
-    }]
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cq check . -o score && echo 'CQ: all clear' || cq check . -o llm; true"
+          }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -199,6 +207,9 @@ Add a `[tool.cq]` section to your project's `pyproject.toml`:
 # Skip tools that are slow or not relevant to your project
 disable = ["coverage", "interrogate"]
 
+# Exclude paths from all tools (merged with --exclude CLI flag)
+exclude = ["demo", "docs"]
+
 # Lines of source context shown around each defect in LLM output (default: 15)
 context_lines = 15
 
@@ -217,21 +228,23 @@ Tool IDs match the keys in `config/config.yaml`: `compile`, `ruff`, `ty`, `bandi
 python:
 
   compile:
-    command: "{python} -m compileall -r 10 -j 8 {context_path} -x .*venv"
+    command: "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv"
     parser: "CompileParser"
     order: 1
     warning_threshold: 0.9999
     error_threshold: 0.9999
 
   ruff:
-    command: "{python} -m ruff check --output-format concise --no-cache {context_path}"
+    command: "{python} -m ruff check --output-format concise --no-cache \"{context_path}\"{exclude}"
+    exclude_format: " --exclude {path}"
     parser: "RuffParser"
     order: 2
     warning_threshold: 0.9999
     error_threshold: 0.9
 
   ty:
-    command: "{python} -m ty check --output-format concise --color never {context_path}"
+    command: "{python} -m ty check --output-format concise --color never \"{context_path}\"{exclude}"
+    exclude_format: " --exclude {path}"
     parser: "TyParser"
     order: 3
     warning_threshold: 0.9999
@@ -241,22 +254,26 @@ python:
       - ty
 
   bandit:
-    command: "{python} -m bandit -r {context_path} -f json -q -s B101 --severity-level medium --exclude {input_path_posix}/.venv,{input_path_posix}/tests"
+    command: "{python} -m bandit -r \"{context_path}\" -f json -q -s B101 --severity-level medium --exclude \"{input_path_posix}/.venv,{input_path_posix}/tests{exclude}\""
+    exclude_format: ",{input_path_posix}/{path}"
     parser: "BanditParser"
     order: 4
     warning_threshold: 0.9999
     error_threshold: 0.8
 
   pytest:
-    command: "{python} -m pytest -v {context_path}"
+    command: "{python} -m pytest -v \"{context_path}\"{exclude}"
+    exclude_format: " --ignore {path}"
     parser: "PytestParser"
     order: 5
     warning_threshold: 1.0
     error_threshold: 1.0
     run_in_target_env: true
+    extra_deps:
+      - pytest
 
   coverage:
-    command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest {context_path} && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
+    command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
     parser: "CoverageParser"
     order: 6
     warning_threshold: 0.9
@@ -267,40 +284,41 @@ python:
       - pytest
 
   radon-cc:
-    command: "{python} -m radon cc --json {context_path}"
+    command: "{python} -m radon cc --json \"{context_path}\""
     parser: "ComplexityParser"
     order: 7
     warning_threshold: 0.6
     error_threshold: 0.4
 
   radon-mi:
-    command: "{python} -m radon mi -s --json {context_path}"
+    command: "{python} -m radon mi -s --json \"{context_path}\""
     parser: "MaintainabilityParser"
     order: 8
     warning_threshold: 0.6
     error_threshold: 0.4
 
   radon-hal:
-    command: "{python} -m radon hal -f --json {context_path}"
+    command: "{python} -m radon hal -f --json \"{context_path}\""
     parser: "HalsteadParser"
     order: 9
     warning_threshold: 0.5
     error_threshold: 0.3
 
   vulture:
-    command: "{python} -m vulture {context_path} --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git"
+    command: "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git{exclude}"
+    exclude_format: ",{path}"
     parser: "VultureParser"
     order: 10
     warning_threshold: 0.9999
     error_threshold: 0.8
 
   interrogate:
-    command: "{python} -m interrogate {context_path} -v --fail-under 0"
+    command: "{python} -m interrogate \"{context_path}\" -e tests{exclude} -v --fail-under 0"
+    exclude_format: " -e {path}"
     parser: "InterrogateParser"
     order: 11
     warning_threshold: 0.8
     error_threshold: 0.3
-
 ```
 
 ## Respect
