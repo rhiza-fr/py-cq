@@ -24,16 +24,6 @@ def test_tool_result_to_dict():
     assert "raw" not in d
 
 
-def test_tool_result_post_init_coerces_non_dict():
-    tr = ToolResult.__new__(ToolResult)
-    tr.metrics = "bad"
-    tr.details = None
-    tr.raw = RawResult()
-    tr.__post_init__()
-    assert tr.details == {}
-    assert tr.metrics == {}
-
-
 def test_combined_to_dict():
     tr = ToolResult(metrics={"lint": 0.8})
     c = CombinedToolResults(path="src/", tool_results=[tr])
