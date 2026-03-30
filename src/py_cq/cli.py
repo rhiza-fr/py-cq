@@ -17,6 +17,7 @@ import logging
 import tomllib
 from enum import Enum
 from importlib import import_module
+from importlib.metadata import requires, version
 from pathlib import Path
 
 import typer
@@ -100,8 +101,36 @@ class OutputMode(str, Enum):
     RAW = "raw"
 
 
+def _version_callback(value: bool) -> None:
+    if not value:
+        return
+    import re
+    import sys
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+    pkg = "python-code-quality"
+    pkg_version = version(pkg)
+    dep_versions: list[tuple[str, str]] = []
+    for req in (requires(pkg) or []):
+        if "; extra ==" in req:
+            continue
+        dep_name = re.split(r"[>=<!;\s\[]", req)[0]
+        try:
+            dep_versions.append((dep_name, version(dep_name)))
+        except Exception:
+            pass
+    typer.echo(f"{pkg} v{pkg_version}")
+    for dep_name, dep_ver in sorted(dep_versions):
+        typer.echo(f"\u251c\u2500\u2500 {dep_name} v{dep_ver}")
+    raise typer.Exit()
+
+
 @app.callback()
-def callback():
+def callback(
+    show_version: bool = typer.Option(
+        False, "--version", "-V", callback=_version_callback, is_eager=True, help="Show version and dependencies"
+    ),
+) -> None:
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""
 console = Console()
 
