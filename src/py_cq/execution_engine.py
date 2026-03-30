@@ -97,7 +97,8 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
             project_root_path = Path(abs_dir)
             missing_deps = [d for d in tool_config.extra_deps if not _dep_in_venv(d, project_root_path)]
             with_flags = " ".join(f"--with {dep}" for dep in missing_deps)
-            python = f'"{uv}" run --no-sync --directory "{abs_dir}" {with_flags}'.rstrip()
+            no_sync = "--no-sync" if sys.executable.startswith(abs_dir) else ""
+            python = f'"{uv}" run {no_sync} --directory "{abs_dir}" {with_flags}'.strip()
     abs_context_path = str(Path(context_path).resolve())
     input_path_posix = Path(context_path).as_posix().rstrip("/")
     exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix)

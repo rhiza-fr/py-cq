@@ -45,7 +45,7 @@ cq = "py_cq.main:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-norecursedirs = ["demo", ".venv", "dist"]
+norecursedirs = [".venv", "dist"]
 
 [tool.cq]
 exclude = ["demo"]
