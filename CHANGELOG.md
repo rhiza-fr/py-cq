@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.14] - 2026-03-30
+
+### Added
+
+- `--exclude <path1,path2>` flag to exclude paths from all tools for a single run.
+- `exclude = [...]` key in `[tool.cq]` pyproject.toml config for persistent exclusions (merged with CLI flag).
+
 ## [0.1.13] - 2026-03-30
 
 ### Added
