@@ -35,7 +35,8 @@ python:
     error_threshold: 0.8
 
   pytest:
-    command: "{python} -m pytest -v \"{context_path}\""
+    command: "{python} -m pytest -v \"{context_path}\"{exclude}"
+    exclude_format: " --ignore {path}"
     parser: "PytestParser"
     order: 5
     warning_threshold: 1.0
