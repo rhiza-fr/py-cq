@@ -15,7 +15,49 @@ The LLM fixes it, the user re-runs, and repeats until all tools pass. CQ runs
 tests → coverage → complexity → dead code → style) and aggregates results into
 a single score.
 
-## Commands
+## CLI Usage
+
+```bash
+cq check .                 # Table overview of scores
+cq check . -o llm          # Top defect as markdown for LLMs (primary use case)
+cq check . -o score        # Numeric score only (for CI gates)
+cq check . -o json         # Detailed parsed JSON output
+cq check . -o raw          # Raw tool output for debug
+cq check path/to/file.py   # Single file (skips pytest and coverage)
+cq check . --only ruff,ty  # Run only specific tools
+cq check . --skip bandit   # Skip specific tools
+cq check . --workers 1     # Run sequentially
+cq check . --clear-cache   # Clear cached results before running
+cq config path/to/project/ # Show effective tool configuration
+```
+
+**Exit codes:** exits with `1` if any tool metric falls below its `error_threshold`.
+
+```bash
+cq check . && deploy        # block deploy on errors
+cq check . -o score         # print score, exit 1 on errors
+```
+
+**LLM loop:**
+```bash
+cq check . -o llm | claude -p "fix this"
+```
+
+**Stop hook** (`.claude/settings.json`) — auto-checks after each session:
+```json
+{
+  "hooks": {
+    "Stop": [{"matcher": "", "hooks": [{"type": "command", "command": "cq check . -o score && echo 'CQ: all clear' || cq check . -o llm"}]}]
+  }
+}
+```
+
+**Slash command** (`.claude/commands/cq-fix.md`) — manual invocation via `/cq-fix`:
+```markdown
+$(cq check . -o llm)
+```
+
+## Dev Commands
 
 ```bash
 # Run tests
@@ -23,12 +65,6 @@ uv run pytest
 
 # Run a single test
 uv run pytest tests/test_common.py::test_score_logistic_variant
-
-# Run the CLI
-uv run cq check              # table output, current directory
-uv run cq check -o llm       # LLM markdown, primary use case
-uv run cq check -o score     # numeric score
-uv run cq check path/to/project/
 
 # Lint
 uv run ruff check src/

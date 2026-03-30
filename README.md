@@ -6,39 +6,15 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality?)](https://pypi.org/project/python-code-quality/)
 [![License](https://img.shields.io/github/license/rhiza-fr/py-cq)](LICENSE)
 
-Feed the results from 11+ code quality tools to an LLM. Minimal tokens.
-
-Why? It removes the mental burden of understanding all these tools and parsing their results.
-
-The primary workflow is:
+Run 11+ code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
 
 ```bash
-# get the single most critical defect as markdown
-cq check . -o llm
+cq check . -o llm     # top defect as markdown, pipe to an LLM
+cq check .            # table overview of all scores
+cq check . -o score   # numeric score only, exits 1 on errors (CI gate)
 ```
 
-```python
-`data/problems/travelling_salesman/ts_bad.py:21` — **F841**: Local variable `unused_variable` is assigned to but never used
-
-18:     min_dist = float("inf")
-19:     nearest_city = None
-20:     for city in cities:
-21:         unused_variable = 67
-22:         dist = calc_dist(current_city, city)
-23:         if dist < min_dist:
-24:             min_dist = dist
-25:             nearest_city = city
-
-Please fix only this issue. After fixing, run `cq check . -o llm` to verify.
-```
-Feed to an LLM with edit tools and repeat until there are no issues, e.g.
-
-```python
-cq check . -o llm | claude -p "fix this"
-# or
-cq check . -o llm | ollama run gpt-oss:20b "Explain how to fix this"
-```
-
+<!-- TODO: add asciinema / GIF demo of `cq check .` table output here -->
 
 ## Install
 
