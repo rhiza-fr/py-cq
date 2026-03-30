@@ -359,3 +359,35 @@ def test_check_unknown_dir_still_errors(tmp_path):
     """A directory with no recognised markers still produces an error."""
     result = runner.invoke(app, ["check", str(tmp_path)])
     assert result.exit_code != 0
+
+
+# --- check: --only and --skip ---
+
+def test_check_only_filters_tools(project_dir):
+    tr = _fake_tr()
+    combined = _fake_combined(str(project_dir))
+    with patch("py_cq.cli.run_tools", return_value=[tr]) as mock_run, \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        runner.invoke(app, ["check", str(project_dir), "--only", "ruff,ty"])
+    passed = list(mock_run.call_args[0][0])
+    assert all(tc.name in {"ruff", "ty"} for tc in passed)
+
+
+def test_check_skip_excludes_tools(project_dir):
+    tr = _fake_tr()
+    combined = _fake_combined(str(project_dir))
+    with patch("py_cq.cli.run_tools", return_value=[tr]) as mock_run, \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        runner.invoke(app, ["check", str(project_dir), "--skip", "bandit,vulture"])
+    passed = list(mock_run.call_args[0][0])
+    assert all(tc.name not in {"bandit", "vulture"} for tc in passed)
+
+
+def test_check_only_unknown_tool_runs_nothing(project_dir):
+    tr = _fake_tr()
+    combined = _fake_combined(str(project_dir))
+    with patch("py_cq.cli.run_tools", return_value=[tr]) as mock_run, \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        runner.invoke(app, ["check", str(project_dir), "--only", "nonexistent"])
+    passed = list(mock_run.call_args[0][0])
+    assert passed == []

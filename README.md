@@ -83,6 +83,8 @@ cq check . -o score        # Numeric score only for CI
 cq check . -o json         # Detailed parsed JSON output for jq
 cq check . -o raw          # Raw tool output for debug
 cq check path/to/file.py   # Just one file (skips pytest and coverage)
+cq check . --only ruff,ty  # Run only specific tools
+cq check . --skip bandit   # Skip specific tools
 cq check . --workers 1     # Run sequentially if you like things slow
 cq check . --clear-cache   # Clear cached results before running (rarely needed)
 cq config path/to/project/ # Show effective tool configuration
@@ -200,6 +202,16 @@ Then invoke it with `/cq-fix` in Claude Code. The `$(...)` embeds the live `cq` 
   }
   ...
 ]
+```
+
+Both `json` and `raw` output pipe cleanly to `jq`:
+
+```bash
+# Get the coverage section
+cq check . -o raw | jq '.[] | select(.tool_name == "coverage")'
+
+# Get parsed coverage metrics only
+cq check . -o json | jq '.[] | select(.tool_name == "coverage") | .metrics'
 ```
 
 ## Configuration

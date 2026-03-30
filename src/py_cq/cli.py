@@ -125,6 +125,12 @@ def check(
     language: str | None = typer.Option(
         None, "--language", "-l", help="Override language detection (e.g. python, typescript, rust)"
     ),
+    only: str | None = typer.Option(
+        None, "--only", help="Comma-separated tool IDs to run (e.g. ruff,ty,pytest)"
+    ),
+    skip: str | None = typer.Option(
+        None, "--skip", help="Comma-separated tool IDs to skip (e.g. bandit,vulture)"
+    ),
 ):
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm""" # --help
     path_obj = Path(path)
@@ -153,6 +159,12 @@ def check(
     user_cfg = load_user_config(path_obj)
     context_lines: int = int(user_cfg.get("context_lines", 15))
     effective_registry = _apply_user_config(tool_registry, user_cfg)
+    if only:
+        keep = set(only.split(","))
+        effective_registry = {k: v for k, v in effective_registry.items() if k in keep}
+    if skip:
+        drop = set(skip.split(","))
+        effective_registry = {k: v for k, v in effective_registry.items() if k not in drop}
     if clear_cache:
         tool_cache.clear()
     tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output == OutputMode.LLM))
@@ -162,9 +174,9 @@ def check(
     if output == OutputMode.SCORE:
         console.print(combined_metrics.score)
     elif output == OutputMode.JSON:
-        console.print(json.dumps([tr.to_dict() for tr in tool_results], indent=2))
+        print(json.dumps([tr.to_dict() for tr in tool_results], indent=2))
     elif output == OutputMode.RAW:
-        console.print(json.dumps([tr.raw.to_dict() for tr in tool_results], indent=2))
+        print(json.dumps([tr.raw.to_dict() for tr in tool_results], indent=2))
     elif output == OutputMode.LLM:
         # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
