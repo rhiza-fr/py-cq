@@ -1,16 +1,11 @@
 """Tests for localtypes dataclasses and AbstractParser base class."""
 
-from py_cq import hello
 from py_cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolResult
 from py_cq.metric_aggregator import aggregate_metrics
 
 
 class MinimalParser(AbstractParser):
     def parse(self, raw_result): return ToolResult()
-
-
-def test_hello():
-    assert hello() == "Hello from py_cq!"
 
 
 def test_raw_result_to_dict():

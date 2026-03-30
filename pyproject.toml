@@ -47,8 +47,5 @@ cq = "py_cq.main:main"
 testpaths = ["tests"]
 norecursedirs = ["demo", ".venv", "dist"]
 
-[tool.ty]
-exclude = ["demo"]
-
 [tool.cq]
 exclude = ["demo"]

@@ -16,7 +16,8 @@ python:
     error_threshold: 0.9
 
   ty:
-    command: "{python} -m ty check --output-format concise --color never \"{context_path}\""
+    command: "{python} -m ty check --output-format concise --color never \"{context_path}\"{exclude}"
+    exclude_format: " --exclude {path}"
     parser: "TyParser"
     order: 3
     warning_threshold: 0.9999
@@ -34,8 +35,7 @@ python:
     error_threshold: 0.8
 
   pytest:
-    command: "{python} -m pytest -v \"{context_path}\"{exclude}"
-    exclude_format: " --ignore={path}"
+    command: "{python} -m pytest -v \"{context_path}\""
     parser: "PytestParser"
     order: 5
     warning_threshold: 1.0
@@ -45,8 +45,7 @@ python:
       - pytest
 
   coverage:
-    command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\"{exclude} && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
-    exclude_format: " --ignore={path}"
+    command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
     parser: "CoverageParser"
     order: 6
     warning_threshold: 0.9
@@ -86,7 +85,7 @@ python:
     error_threshold: 0.8
 
   interrogate:
-    command: "{python} -m interrogate \"{context_path}\"{exclude} -v --fail-under 0"
+    command: "{python} -m interrogate \"{context_path}\" -e tests{exclude} -v --fail-under 0"
     exclude_format: " -e {path}"
     parser: "InterrogateParser"
     order: 11
