@@ -1,5 +1,5 @@
 
-## Create an asciinemo recording 
+## Create an asciinema recording 
 bash demo/run.sh
 
 ## View the result
