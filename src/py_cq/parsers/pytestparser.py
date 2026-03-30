@@ -13,6 +13,58 @@ import re as _re
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
 
+def _last_call_line_for_test(stdout: str, test_name: str) -> str:
+    """Return the last source line before E-lines in a test's failure section.
+
+    Captures both indented context lines and pytest's ``>``-prefixed
+    current-executing-line marker.
+    """
+    lines = stdout.splitlines()
+    pattern = _re.compile(rf"_{{4,}}\s+{_re.escape(test_name)}\s+_{{4,}}")
+    in_section = False
+    last_src = ""
+    for line in lines:
+        if not in_section:
+            if pattern.search(line):
+                in_section = True
+        else:
+            stripped = line.strip()
+            if stripped.startswith(("_", "=")):
+                break
+            if stripped.startswith("E ") or stripped == "E":
+                break
+            if line.startswith(("    ", "\t", ">")):
+                src = line.lstrip("> \t")
+                if src:
+                    last_src = src
+    return last_src
+
+
+_COLLECTION_FILE_RE = _re.compile(r'E\s+File "([^"]+)", line (\d+)')
+_COLLECTION_ERROR_RE = _re.compile(r"E\s+(\w+(?:Error|Warning|Exception)):\s*(.*)")
+
+
+def _extract_collection_error(stdout: str) -> dict | None:
+    """Return {file, line, type, help} if pytest stdout contains a collection error."""
+    file_match = None
+    error_match = None
+    for line in stdout.splitlines():
+        m = _COLLECTION_FILE_RE.search(line)
+        if m:
+            file_match = m
+        m = _COLLECTION_ERROR_RE.search(line)
+        if m:
+            error_match = m
+    if file_match and error_match:
+        return {
+            "file": file_match.group(1).replace("\\", "/"),
+            "line": int(file_match.group(2)),
+            "type": error_match.group(1),
+            "help": error_match.group(2).strip(),
+        }
+    return None
+
+
 def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
     """Extract the failure section for test_name from pytest stdout."""
     lines = stdout.splitlines()
@@ -102,8 +154,12 @@ class PytestParser(AbstractParser):
         return tr
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
-        """Return the first failing test with function body and failure output."""
-        from py_cq.parsers.common import find_function_source
+        """Return the first failing test with function body, failure output, and callee signature."""
+        from py_cq.parsers.common import (
+            extract_callee_name,
+            find_function_source,
+            format_callee_context,
+        )
         for file, tests in tr.details.items():
             if not isinstance(tests, dict):
                 continue
@@ -111,13 +167,22 @@ class PytestParser(AbstractParser):
                 if status != "FAILED":
                     continue
                 header = f"`{file}::{test_name}` — test **FAILED**"
-                body = find_function_source(file, test_name, max_lines=context_lines)
+                bare_name = test_name.split("[")[0]
+                body = find_function_source(file, bare_name, max_lines=context_lines)
                 failure = _extract_failure(tr.raw.stdout, test_name, max_lines=context_lines)
+                callee = ""
+                call_line = _last_call_line_for_test(tr.raw.stdout, test_name)
+                if call_line:
+                    func_name = extract_callee_name(call_line)
+                    if func_name and func_name != bare_name:
+                        callee = format_callee_context(func_name, file)
                 parts = [header]
                 if body:
                     parts.append(body)
                 if failure:
                     parts.append(failure)
+                if callee:
+                    parts.append(callee)
                 return "\n".join(parts)
         if "no tests ran" in tr.raw.stdout:
             return (
@@ -125,7 +190,29 @@ class PytestParser(AbstractParser):
                 "Add a `tests/` directory with at least one test file (e.g. `tests/test_basic.py`) "
                 "and write a first test covering a core function."
             )
-        output = (tr.raw.stdout + tr.raw.stderr).strip()
+        from py_cq.parsers.common import (
+            extract_callee_name,
+            format_callee_context,
+            format_source_context,
+        )
+        combined = tr.raw.stdout + tr.raw.stderr
+        err = _extract_collection_error(combined)
+        if err:
+            file, line, typ, help_msg = err["file"], err["line"], err["type"], err["help"]
+            code_block = format_source_context(file, line, count=context_lines) or ""
+            callee = ""
+            # try to find callee from the offending source line via format_source_context result
+            src_line = ""
+            for ln in (tr.raw.stdout + tr.raw.stderr).splitlines():
+                m = _re.match(r"E\s{6,}(\S.*)", ln)
+                if m:
+                    src_line = m.group(1)
+            if src_line:
+                func_name = extract_callee_name(src_line)
+                if func_name:
+                    callee = format_callee_context(func_name, file)
+            return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}{callee}"
+        output = combined.strip()
         if output:
             tail = "\n".join(output.splitlines()[-30:])
             return f"pytest reported failures:\n\n```\n{tail}\n```"

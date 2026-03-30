@@ -125,4 +125,11 @@ class CompileParser(AbstractParser):
         typ = info.get("type", "Error")
         help_msg = info.get("help", "")
         code_block = format_source_context(file, line, count=context_lines) or (f"\n```python\n{info['src']}\n```" if info.get("src") else "")
-        return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}"
+        callee = ""
+        src_line = info.get("src", "")
+        if src_line:
+            from py_cq.parsers.common import extract_callee_name, format_callee_context
+            func_name = extract_callee_name(src_line)
+            if func_name:
+                callee = format_callee_context(func_name, file)
+        return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}{callee}"

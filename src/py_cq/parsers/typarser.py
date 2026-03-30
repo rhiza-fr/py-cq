@@ -18,6 +18,16 @@ from py_cq.parsers.common import format_source_context, score_logistic_variant
 
 _DIAG_RE = re.compile(r"^(.+):(\d+):\d+:\s+(error|warning)\[([^\]]+)\] (.+)$")
 
+_CALL_CODES = frozenset([
+    "call-non-callable",
+    "missing-argument",
+    "unexpected-keyword",
+    "argument-type",
+    "too-many-positional-arguments",
+    "invalid-argument-type",
+    "no-matching-overload",
+])
+
 
 class TyParser(AbstractParser):
     """Parses raw output from ``ty check`` into a structured ToolResult."""
@@ -58,4 +68,12 @@ class TyParser(AbstractParser):
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")
-        return f"`{file}:{line}` — **{code}**: {message}{format_source_context(file, line, count=context_lines)}"
+        src_ctx = format_source_context(file, line, count=context_lines)
+        callee = ""
+        if code in _CALL_CODES and isinstance(line, int):
+            from py_cq.parsers.common import extract_callee_name, format_callee_context, read_source_lines
+            src_line = read_source_lines(file, line, count=1)
+            func_name = extract_callee_name(src_line)
+            if func_name:
+                callee = format_callee_context(func_name, file)
+        return f"`{file}:{line}` — **{code}**: {message}{src_ctx}{callee}"

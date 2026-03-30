@@ -12,6 +12,7 @@ performance metrics or error scores:
 Both functions return a float and can be used directly in downstream analytics,
 visualisation or decision-making pipelines."""
 
+from pathlib import Path
 
 
 def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
@@ -26,15 +27,116 @@ def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
 
 
 def format_source_context(file: str, line: int | str, context: int = 3, count: int = 8) -> str:
-    """Return a fenced python code block for the source around `line`, or '' if unavailable."""
+    """Return a fenced python code block for the source around `line`, or '' if unavailable.
+
+    Stops before spilling into the next top-level ``def`` or ``class`` definition.
+    """
     if not isinstance(line, int):
         return ""
     context_start = max(1, line - context)
     raw_lines = read_source_lines(file, context_start, count=count).splitlines()
     if not raw_lines:
         return ""
-    src = "\n".join(f"{context_start + i}: {rline}" for i, rline in enumerate(raw_lines))
+    error_offset = line - context_start  # 0-based index of the error line in raw_lines
+    collected = []
+    for i, rline in enumerate(raw_lines):
+        if i > error_offset and (
+            rline.startswith("def ")
+            or rline.startswith("async def ")
+            or rline.startswith("class ")
+        ):
+            break
+        collected.append(f"{context_start + i}: {rline}")
+    src = "\n".join(collected)
     return f"\n```python\n{src}\n```"
+
+
+_PYTHON_KEYWORDS = frozenset([
+    "if", "elif", "else", "for", "while", "with", "assert", "return",
+    "raise", "import", "from", "class", "def", "lambda", "yield",
+    "del", "pass", "break", "continue", "not", "and", "or", "in", "is",
+    "print", "super", "type", "len", "range",
+])
+
+
+def extract_callee_name(source_line: str) -> str | None:
+    """Extract the primary callee function name from a source line, or None.
+
+    Prefers the RHS of an assignment so that ``result = func(...)`` returns
+    ``func`` rather than the variable on the left.  Python keywords and
+    built-ins listed in ``_PYTHON_KEYWORDS`` are excluded.
+    """
+    import re
+    stripped = source_line.strip()
+    rhs = stripped
+    if "=" in stripped and not stripped.startswith(("assert", "return")):
+        rhs = stripped.split("=", 1)[1].strip()
+    m = re.search(r"\b([a-zA-Z_]\w*)\s*\(", rhs)
+    if m and m.group(1) not in _PYTHON_KEYWORDS:
+        return m.group(1)
+    return None
+
+
+def _find_project_root(hint_file: str) -> Path:
+    from pathlib import Path
+    root = Path(hint_file).resolve().parent
+    current = root
+    for _ in range(8):
+        if (current / "pyproject.toml").exists() or (current / "setup.py").exists():
+            return current
+        parent = current.parent
+        if parent == current:
+            break
+        current = parent
+    return root
+
+
+def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tuple[str, str]:
+    """Find func_name definition in project files; same file first, then project-wide.
+
+    Returns ``(file_path, code_block)`` for the first match, or ``("", "")`` if not found.
+    """
+    from pathlib import Path
+    result = find_function_source(hint_file, func_name, max_lines=max_lines)
+    if result:
+        return hint_file, result
+    root = _find_project_root(hint_file)
+    for py_file in sorted(root.rglob("*.py")):
+        if py_file.resolve() == Path(hint_file).resolve():
+            continue
+        r = find_function_source(str(py_file), func_name, max_lines=max_lines)
+        if r:
+            return str(py_file), r
+    return "", ""
+
+
+def _relative_path(path: str) -> str:
+    """Return path relative to cwd, normalised to forward slashes."""
+    from pathlib import Path
+    try:
+        return str(Path(path).relative_to(Path.cwd())).replace("\\", "/")
+    except ValueError:
+        return path.replace("\\", "/")
+
+
+def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -> str:
+    """Return a labelled callee definition block, or '' if not found in project.
+
+    Output format::
+
+        Callee `func_name` — `relative/path/to/file.py`
+        ```python
+        N: def func_name(...):
+        ...
+        ```
+    """
+    import re
+    callee_file, code_block = find_in_project(func_name, hint_file, max_lines=max_lines)
+    if not code_block:
+        return ""
+    m = re.search(r"```python\n(\d+):", code_block)
+    line_ref = f":{m.group(1)}" if m else ""
+    return f"\n`{func_name}` is defined at: `{_relative_path(callee_file)}{line_ref}`{code_block}"
 
 
 def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
@@ -64,6 +166,8 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
         collected.append(line)
         if len(collected) >= max_lines:
             break
+    while collected and not collected[-1].strip():
+        collected.pop()
     numbered = "\n".join(f"{start_idx + 1 + i}: {ln}" for i, ln in enumerate(collected))
     return f"\n```python\n{numbered}\n```"
 

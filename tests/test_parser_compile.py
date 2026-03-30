@@ -54,6 +54,25 @@ def test_compile_parse_empty():
     assert tr.metrics["compile"] == 1.0
 
 
+def test_compile_format_llm_message_includes_callee(tmp_path):
+    """When the error src line calls a project function, its definition is appended."""
+    (tmp_path / "pyproject.toml").write_text("[project]\n")
+    bad_file = tmp_path / "bad.py"
+    bad_file.write_text("def make_thing(a, b):\n    return a + b\n\nresult = make_thing(oink=2)\n")
+    compile_output = (
+        f"Compiling '{bad_file}'...\n"
+        f'***   File "{bad_file}", line 4\n'
+        "    result = make_thing(oink=2)\n"
+        "             ^^^^^^^^^^^^^^^^^\n"
+        "\n"
+        "SyntaxError: invalid syntax\n"
+        "\n"
+    )
+    tr = CompileParser().parse(raw(compile_output, return_code=1))
+    msg = CompileParser().format_llm_message(tr)
+    assert "def make_thing" in msg
+
+
 def test_compile_parse_short_error_block():
     tr = CompileParser().parse(raw(COMPILE_SHORT_ERROR, return_code=1))
     assert "failed_files" in tr.details

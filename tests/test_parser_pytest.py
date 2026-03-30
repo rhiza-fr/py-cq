@@ -102,6 +102,70 @@ def test_format_llm_message_no_details_shows_stderr():
     assert "No module named pytest" in msg
 
 
+PYTEST_PARAMETERIZED_FAILURE = """\
+tests/test_foo.py::test_bar[a-b] FAILED    [100%]
+
+=================================== FAILURES ===================================
+__________________________ test_bar[a-b] __________________________
+
+    def test_bar(x):
+>       assert helper(x) == 2
+E       AssertionError: assert 1 == 2
+
+tests/test_foo.py:3: AssertionError
+"""
+
+
+def test_format_llm_message_parameterized_finds_body(tmp_path):
+    """Parameterized test names have [params] stripped before looking up function body."""
+    test_file = tmp_path / "tests" / "test_foo.py"
+    test_file.parent.mkdir()
+    test_file.write_text("def test_bar(x):\n    assert helper(x) == 2\n")
+    stdout = PYTEST_PARAMETERIZED_FAILURE.replace("tests/test_foo.py", str(test_file))
+    tr = PytestParser().parse(raw(stdout, return_code=1))
+    msg = PytestParser().format_llm_message(tr, context_lines=15)
+    assert "def test_bar" in msg
+
+
+def test_last_call_line_for_test():
+    from py_cq.parsers.pytestparser import _last_call_line_for_test
+    stdout = """\
+________ test_foo ________
+
+    def test_foo():
+>       result = make_thing(bad=1)
+E       TypeError: make_thing() got unexpected keyword argument 'bad'
+
+tests/test_foo.py:2: TypeError
+"""
+    line = _last_call_line_for_test(stdout, "test_foo")
+    assert "make_thing" in line
+
+
+def test_format_llm_message_includes_callee(tmp_path):
+    """When the failing line calls a project function, its definition is appended."""
+    (tmp_path / "pyproject.toml").write_text("[project]\n")
+    test_file = tmp_path / "test_foo.py"
+    helper_file = tmp_path / "helpers.py"
+    helper_file.write_text("def make_thing(x, y):\n    return x + y\n")
+    test_file.write_text("def test_foo():\n    result = make_thing(bad=1)\n    assert result == 2\n")
+    stdout = f"""\
+{test_file}::test_foo FAILED    [100%]
+
+=================================== FAILURES ===================================
+________ test_foo ________
+
+    def test_foo():
+>       result = make_thing(bad=1)
+E       TypeError: make_thing() got unexpected keyword argument 'bad'
+
+{test_file}:2: TypeError
+"""
+    tr = PytestParser().parse(raw(stdout, return_code=1))
+    msg = PytestParser().format_llm_message(tr, context_lines=15)
+    assert "def make_thing" in msg
+
+
 def test_format_llm_message_no_body_fallback():
     """When test file doesn't exist, header is returned without function body."""
     tr = PytestParser().parse(raw(
