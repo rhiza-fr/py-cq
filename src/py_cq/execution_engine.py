@@ -53,7 +53,17 @@ def _dep_in_venv(dep: str, project_root: Path) -> bool:
     return False
 
 
-def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
+def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: str) -> str:
+    if not exclude_format or not excludes:
+        return ""
+    parts = []
+    for exc in excludes:
+        abs_posix_path = Path(exc).resolve().as_posix()
+        parts.append(exclude_format.format(path=exc, abs_posix_path=abs_posix_path, **extra_vars))
+    return "".join(parts)
+
+
+def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | None = None) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
     Args:
@@ -72,7 +82,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
         >>> result.return_code
         0"""
     python = sys.executable
-    path = context_path
+    path = str(Path(context_path))
     if tool_config.run_in_target_env:
         uv = shutil.which("uv")
         if uv:
@@ -87,10 +97,11 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
             project_root_path = Path(abs_dir)
             missing_deps = [d for d in tool_config.extra_deps if not _dep_in_venv(d, project_root_path)]
             with_flags = " ".join(f"--with {dep}" for dep in missing_deps)
-            python = f'"{uv}" run --directory "{abs_dir}" {with_flags}'.rstrip()
+            python = f'"{uv}" run --no-sync --directory "{abs_dir}" {with_flags}'.rstrip()
     abs_context_path = str(Path(context_path).resolve())
     input_path_posix = Path(context_path).as_posix().rstrip("/")
-    command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, input_path_posix=input_path_posix, python=python)
+    exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix)
+    command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, input_path_posix=input_path_posix, python=python, exclude=exclude)
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
         log.info(f"Cache hit: {command}")
@@ -110,7 +121,7 @@ def run_tool(tool_config: ToolConfig, context_path: str) -> RawResult:
     return raw_result
 
 
-def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int = 0, early_exit: bool = False) -> list[ToolResult]:
+def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int = 0, early_exit: bool = False, excludes: list[str] | None = None) -> list[ToolResult]:
     """Run multiple tools and return their parsed results.
 
     Runs each tool specified in *tool_configs* on the file or directory at
@@ -152,7 +163,7 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
         >>> results = run_tools(configs, '/path/to/project', parallel=True)"""
     def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
         t0 = time.perf_counter()
-        raw_result = run_tool(tool_config, path)
+        raw_result = run_tool(tool_config, path, excludes)
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr

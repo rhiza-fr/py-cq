@@ -30,6 +30,7 @@ def load_tool_configs() -> dict[str, ToolConfig]:
             run_in_target_env=tool_data.get("run_in_target_env", False),
             extra_deps=tool_data.get("extra_deps", []),
             parser_config=tool_data.get("parser_config", {}),
+            exclude_format=tool_data.get("exclude_format", ""),
         )
     return registry
 

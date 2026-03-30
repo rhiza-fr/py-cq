@@ -84,6 +84,7 @@ def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str,
                 run_in_target_env=tool_data.get("run_in_target_env", False),
                 extra_deps=tool_data.get("extra_deps", []),
                 parser_config=tool_data.get("parser_config", {}),
+                exclude_format=tool_data.get("exclude_format", ""),
             )
         except KeyError as e:
             raise typer.BadParameter(f"[tool.cq.tools.{tool_id}] missing required field {e}")
@@ -131,6 +132,9 @@ def check(
     skip: str | None = typer.Option(
         None, "--skip", help="Comma-separated tool IDs to skip (e.g. bandit,vulture)"
     ),
+    exclude: str | None = typer.Option(
+        None, "--exclude", help="Comma-separated paths to exclude (e.g. demo,docs)"
+    ),
 ):
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm""" # --help
     path_obj = Path(path)
@@ -165,9 +169,12 @@ def check(
     if skip:
         drop = set(skip.split(","))
         effective_registry = {k: v for k, v in effective_registry.items() if k not in drop}
+    config_excludes: list[str] = user_cfg.get("exclude", [])
+    cli_excludes: list[str] = [e.strip() for e in exclude.split(",")] if exclude else []
+    excludes = list(dict.fromkeys(config_excludes + cli_excludes))
     if clear_cache:
         tool_cache.clear()
-    tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output == OutputMode.LLM))
+    tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output == OutputMode.LLM), excludes=excludes)
     # for tr in tool_results:
     #     log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)

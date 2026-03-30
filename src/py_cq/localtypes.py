@@ -22,6 +22,7 @@ class ToolConfig:
     run_in_target_env: bool = False  # If True, run in target project's env via uv
     extra_deps: list[str] = field(default_factory=list)  # Extra deps to inject via uv --with
     parser_config: dict[str, Any] = field(default_factory=dict)
+    exclude_format: str = ""  # Per-path template for --exclude injection, e.g. " --exclude {path}"
 
 
 @dataclass

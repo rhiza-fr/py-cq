@@ -42,3 +42,13 @@ module-name = "py_cq"
 
 [project.scripts]
 cq = "py_cq.main:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["demo", ".venv", "dist"]
+
+[tool.ty]
+exclude = ["demo"]
+
+[tool.cq]
+exclude = ["demo"]

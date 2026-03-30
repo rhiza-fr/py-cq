@@ -61,7 +61,7 @@ def test_run_tools_sorted_by_order():
     fake_raw_low = RawResult(tool_name="low", stdout="")
     fake_raw_high = RawResult(tool_name="high", stdout="")
 
-    def fake_run_tool(config, path):
+    def fake_run_tool(config, path, excludes=None):
         return fake_raw_low if config.name == "low" else fake_raw_high
 
     with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
@@ -105,7 +105,7 @@ def test_run_tools_early_exit_stops_on_error():
     cfg3 = _fake_config_with_score("third", order=3, score=1.0)   # ok
 
     called = []
-    def fake_run_tool(config, path):
+    def fake_run_tool(config, path, excludes=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -123,7 +123,7 @@ def test_run_tools_early_exit_continues_past_warning():
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
-    def fake_run_tool(config, path):
+    def fake_run_tool(config, path, excludes=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -140,7 +140,7 @@ def test_run_tools_early_exit_false_runs_all_despite_error():
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
-    def fake_run_tool(config, path):
+    def fake_run_tool(config, path, excludes=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -189,7 +189,7 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
 
     from py_cq.context_hash import get_context_hash
     input_path_posix = Path(str(tmp_path)).as_posix().rstrip("/")
-    command = cfg.command.format(context_path=str(tmp_path), abs_context_path=str(tmp_path), input_path_posix=input_path_posix, python=sys.executable)
+    command = cfg.command.format(context_path=str(tmp_path), abs_context_path=str(tmp_path), input_path_posix=input_path_posix, python=sys.executable, exclude="")
     cache_key = f"{command}:{get_context_hash(str(tmp_path))}"
     fake_cache = {cache_key: cached.to_dict()}
 

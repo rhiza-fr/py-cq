@@ -6,24 +6,22 @@ from py_cq.localtypes import RawResult, ToolResult
 from py_cq.parsers.interrogateparser import InterrogateParser
 
 INTERROGATE_OUTPUT = """\
------------- Interrogate Results -------------------
-| Name                     |  Total |  Miss | Cover |
-|---------------------------------------------------|
-| src/foo.py               |      5 |     2 |   60% |
-| src/bar.py               |      3 |     0 |  100% |
-|---------------------------------------------------|
-| TOTAL                    |      8 |     2 |   75% |
+| Name         |  Total |  Miss |  Cover |  Cover% |
+|--------------|--------|-------|--------|---------|
+| src/foo.py   |      5 |     2 |      3 |     60% |
+| src/bar.py   |      3 |     0 |      3 |    100% |
+|--------------|--------|-------|--------|---------|
+| TOTAL        |      8 |     2 |      6 |   75.0% |
 RESULT: your code scored 75.0% on the interrogate score.
 Status: FAILED ☒
 """
 
 INTERROGATE_CLEAN = """\
------------- Interrogate Results -------------------
-| Name                     |  Total |  Miss | Cover |
-|---------------------------------------------------|
-| src/foo.py               |      5 |     0 |  100% |
-|---------------------------------------------------|
-| TOTAL                    |      5 |     0 |  100% |
+| Name         |  Total |  Miss |  Cover |  Cover% |
+|--------------|--------|-------|--------|---------|
+| src/foo.py   |      5 |     0 |      5 |    100% |
+|--------------|--------|-------|--------|---------|
+| TOTAL        |      5 |     0 |      5 |  100.0% |
 RESULT: your code scored 100.0% on the interrogate score.
 Status: PASSED ☑
 """
