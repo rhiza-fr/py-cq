@@ -16,3 +16,4 @@ analysis_results.json
 .cq.json
 
 docs/
+demo/output/*.cast

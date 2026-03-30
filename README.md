@@ -14,7 +14,7 @@ cq check .            # table overview of all scores
 cq check . -o score   # numeric score only, exits 1 on errors (CI gate)
 ```
 
-<!-- TODO: add asciinema / GIF demo of `cq check .` table output here -->
+![cq demo](demo/output/demo.gif)
 
 ## Install
 

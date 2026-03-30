@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
-# Build the image and record the demo.
-# Output: demo/output/demo.cast
-#
-# To upload:  asciinema upload demo/output/demo.cast
-# To convert to GIF: docker run --rm -v "$(pwd):/data" asciinema/agg \
-#     /data/demo/output/demo.cast /data/demo/output/demo.gif
+# Build the image, record the demo, and convert to GIF.
+# Output: demo/output/demo.cast, demo/output/demo.gif
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,8 +9,12 @@ mkdir -p "$SCRIPT_DIR/output"
 
 docker build -t cq-demo "$SCRIPT_DIR"
 
-docker run --rm \
-  -v "$SCRIPT_DIR/output:/output" \
+# Use Windows-style host path so Docker Desktop accepts it;
+# MSYS_NO_PATHCONV=1 prevents Git Bash from translating /output (container path).
+HOST_OUTPUT="$(cd "$SCRIPT_DIR/output" && pwd -W 2>/dev/null || pwd)"
+
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -v "$HOST_OUTPUT:/output" \
   cq-demo \
   asciinema rec /output/demo.cast \
     --command "bash /demo.sh" \
@@ -23,6 +23,11 @@ docker run --rm \
     --rows 30 \
     --overwrite
 
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -v "$HOST_OUTPUT:/output" \
+  cq-demo \
+  agg /output/demo.cast /output/demo.gif
+
 echo ""
 echo "Saved: demo/output/demo.cast"
-echo "Upload: asciinema upload demo/output/demo.cast"
+echo "Saved: demo/output/demo.gif"

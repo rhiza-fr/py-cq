@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y python3 python3-pip pv curl \
 
 RUN pip3 install asciinema --break-system-packages
 
+# Install agg (asciinema gif generator)
+RUN curl -fsSL https://github.com/asciinema/agg/releases/latest/download/agg-x86_64-unknown-linux-musl \
+    -o /usr/local/bin/agg && chmod +x /usr/local/bin/agg
+
 # Install uv
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
