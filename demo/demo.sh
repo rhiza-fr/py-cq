@@ -28,17 +28,17 @@ sleep 0.5
 # ── LLM output: top defect ────────────────────────────────────────────────────
 
 pei "cq check . -o llm"
-sleep 4
+sleep 8
 
 # ── Table: full overview ──────────────────────────────────────────────────────
 
 pei "cq check ."
-sleep 6
+sleep 8
 
 # ── JSON output:  ──────────────────────────────────────────────────────
 
 pei "cq check . --only interrogate -o json"
-sleep 6
+sleep 8
 
 
 
