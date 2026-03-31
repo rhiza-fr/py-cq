@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.15] - 2026-03-31
+
+### Added
+
+- `--version` flag to print the current CQ version.
+
+### Changed
+
+- LLM output now shows the callee context for cleaner defect reporting.
+- Type fixes and demo script improvements.
+
 ## [0.1.14] - 2026-03-30
 
 ### Added
