@@ -8,6 +8,10 @@
 
 Run 11+ code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
 
+This can dramatically reduce the amount of noise for LLMs (and humans) and remove the need for them to know about these tools.
+
+Note: It never edits your files. This is a job for you or an LLM. You may wish to run `ruff check --fix` and `ruff format` first.
+
 ```bash
 cq check . -o llm     # top defect as markdown, pipe to an LLM
 cq check .            # table overview of all scores
@@ -146,7 +150,7 @@ Then invoke it with `/cq-fix` in Claude Code. The `$(...)` embeds the live `cq` 
 ```bash
 > cq check . -o score
 ```
-```python
+```
 0.9662730667181059 # this is designed to approach but not reach 1.0
 ```
 
