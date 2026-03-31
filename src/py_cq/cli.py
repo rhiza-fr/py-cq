@@ -10,8 +10,8 @@ analysis.
 Helper functions such as `format_as_table` convert the aggregated tool
 results into a Rich Table for convenient console display.
 """
-
 import copy
+import io
 import json
 import logging
 import tomllib
@@ -106,7 +106,7 @@ def _version_callback(value: bool) -> None:
         return
     import re
     import sys
-    if hasattr(sys.stdout, "reconfigure"):
+    if isinstance(sys.stdout,  io.TextIOWrapper):  
         sys.stdout.reconfigure(encoding="utf-8")
     pkg = "python-code-quality"
     pkg_version = version(pkg)
@@ -127,7 +127,7 @@ def _version_callback(value: bool) -> None:
 
 @app.callback()
 def callback(
-    show_version: bool = typer.Option(
+    _: bool = typer.Option(
         False, "--version", "-V", callback=_version_callback, is_eager=True, help="Show version and dependencies"
     ),
 ) -> None:
