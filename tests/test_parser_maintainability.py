@@ -72,3 +72,26 @@ def test_maintainability_higher_mi_higher_score():
     tr_high = MaintainabilityParser().parse(raw(high))
     tr_low = MaintainabilityParser().parse(raw(low))
     assert tr_high.metrics["maintainability"] > tr_low.metrics["maintainability"]
+
+
+def test_maintainability_format_llm_message_uses_base_fallback():
+    tr = MaintainabilityParser().parse(raw(_NORMAL))
+    msg = MaintainabilityParser().format_llm_message(tr)
+    assert isinstance(msg, str)
+    assert len(msg) > 0
+
+
+def test_maintainability_unknown_keys_skipped():
+    """File entry with neither 'error' nor 'mi' is ignored — branch 54->47."""
+    data = json.dumps({
+        "src/foo.py": {"mi": 70.0, "rank": "B"},
+        "src/weird.py": {"some_other_key": 42},
+    })
+    tr = MaintainabilityParser().parse(raw(data))
+    assert "src/weird.py" not in tr.details
+    assert "src/foo.py" in tr.details
+
+
+def test_maintainability_non_dict_json_returns_zero():
+    tr = MaintainabilityParser().parse(raw(json.dumps([1, 2, 3])))
+    assert tr.metrics["maintainability"] == 0.0

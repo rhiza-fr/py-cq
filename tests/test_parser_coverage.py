@@ -1,5 +1,6 @@
 """Tests for CoverageParser."""
 
+import pytest
 from conftest import raw
 
 from py_cq.localtypes import RawResult, ToolResult
@@ -57,3 +58,42 @@ def test_coverage_format_llm_message_no_details():
     tr = ToolResult(metrics={"coverage": 0.95}, details={}, raw=RawResult())
     msg = CoverageParser().format_llm_message(tr)
     assert "0.950" in msg
+
+
+def test_coverage_total_100_with_partial_files():
+    """TOTAL 100% wins even when individual files are below 100%."""
+    output = (
+        "src/foo.py            20      5    75%\n"
+        "src/bar.py            10      0   100%\n"
+        "TOTAL                 30      0   100%\n"
+    )
+    tr = CoverageParser().parse(raw(output))
+    assert tr.metrics["coverage"] == 1.0
+    assert tr.details["src/foo.py"]["coverage"] == pytest.approx(0.75)
+
+
+def test_coverage_non_numeric_miss_count_scores_zero_does_not_crash():
+    """Non-numeric miss count does not crash; coverage still parsed from percentage."""
+    output = "src/foo.py  10  bad  0%\nTOTAL  10  bad  0%\n"
+    tr = CoverageParser().parse(raw(output))
+    assert tr.metrics["coverage"] == pytest.approx(0.0)
+
+
+def test_coverage_format_llm_message_at_warning_threshold():
+    """format_llm_message with file at exactly the warning threshold still reports the file."""
+    output = (
+        "src/threshold.py          10      1    90%\n"
+        "TOTAL                     10      1    90%\n"
+    )
+    tr = CoverageParser().parse(raw(output))
+    msg = CoverageParser().format_llm_message(tr)
+    assert "src/threshold.py" in msg
+    assert "90%" in msg
+    assert "1 uncovered" in msg
+
+
+def test_coverage_parse_single_token_percent_line():
+    """A line with only one token ending in % is skipped — branch 53->51 (len(parts) < 2)."""
+    output = "80%\nTOTAL  30  2  93%\n"
+    tr = CoverageParser().parse(raw(output))
+    assert abs(tr.metrics["coverage"] - 0.93) < 0.01

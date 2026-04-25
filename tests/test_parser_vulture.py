@@ -49,3 +49,15 @@ def test_vulture_format_llm_with_issue():
     assert "src/foo.py:10" in msg
     assert "bar" in msg
     assert "80%" in msg
+
+
+def test_vulture_parse_ignores_non_matching_lines():
+    """Lines that don't match _LINE_RE are silently skipped — branch 27->25."""
+    output = (
+        "Note: 3 items unused (run with --min-confidence 0 to see all)\n"
+        "src/foo.py:10: unused function 'bar' (80% confidence)\n"
+        "\n"
+        "-- summary --\n"
+    )
+    tr = VultureParser().parse(raw(output, return_code=1))
+    assert tr.details == {"src/foo.py": [{"line": 10, "type": "unused function", "name": "bar", "confidence": 80}]}

@@ -40,3 +40,9 @@ def test_llm_message_shows_first_match():
     )
     msg = _parser(r"^ERROR").format_llm_message(tr, context_lines=5)
     assert "ERROR: first" in msg
+
+
+def test_format_llm_message_no_violations():
+    from py_cq.localtypes import RawResult, ToolResult
+    tr = ToolResult(metrics={"violations": 1.0}, raw=RawResult(), details={"count": 0, "matches": []})
+    assert _parser(r"^ERROR").format_llm_message(tr) == "No violations found"

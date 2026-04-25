@@ -85,3 +85,62 @@ def test_abstract_parser_defaults_config_to_empty():
 
     p = MyParser()
     assert p.parser_config == {}
+
+
+def test_tool_result_coerces_none_details():
+    tr = ToolResult(metrics=None, details=None, raw=RawResult())
+    assert tr.metrics == {}
+    assert tr.details == {}
+
+
+def test_tool_result_coerces_list_metrics():
+    tr = ToolResult(metrics=[], details={}, raw=RawResult())
+    assert tr.metrics == {}
+
+
+# --- json.dumps serializability ---
+
+def test_raw_result_to_dict_json_serializable():
+    import json
+    r = RawResult(tool_name="ruff", command="ruff check .", stdout="out", stderr="err", return_code=1)
+    assert json.dumps(r.to_dict()) is not None
+
+
+def test_tool_result_to_dict_json_serializable_empty():
+    import json
+    tr = ToolResult()
+    assert json.dumps(tr.to_dict()) is not None
+
+
+def test_tool_result_to_dict_json_serializable_typical():
+    import json
+    tr = ToolResult(
+        metrics={"lint": 0.9},
+        details={"src/foo.py": [{"line": 1, "code": "E501", "message": "too long"}]},
+        raw=RawResult(tool_name="ruff"),
+        duration_s=0.0,
+    )
+    assert json.dumps(tr.to_dict()) is not None
+
+
+def test_tool_result_to_dict_json_serializable_multi_metric():
+    import json
+    tr = ToolResult(
+        metrics={"coverage": 0.8, "tests": 1.0},
+        details={"src/a.py": {"coverage": 0.7, "missing": 5}},
+        raw=RawResult(tool_name="coverage"),
+    )
+    assert json.dumps(tr.to_dict()) is not None
+
+
+def test_combined_to_dict_json_serializable():
+    import json
+    tr = ToolResult(metrics={"lint": 0.8}, raw=RawResult(tool_name="ruff"))
+    c = CombinedToolResults(path="src/", tool_results=[tr])
+    assert json.dumps(c.to_dict()) is not None
+
+
+def test_combined_to_dict_json_serializable_empty():
+    import json
+    c = CombinedToolResults(path=".", tool_results=[])
+    assert json.dumps(c.to_dict()) is not None

@@ -174,3 +174,188 @@ def test_format_llm_message_no_body_fallback():
     msg = PytestParser().format_llm_message(tr, context_lines=15)
     assert "FAILED" in msg
     assert "def test_missing" not in msg  # no body since file doesn't exist
+
+
+PYTEST_COLLECTION_ERROR = """\
+ERROR collecting tests/test_bad.py
+...
+E   File "tests/test_bad.py", line 3
+E       ImportError: cannot import name 'foo' from 'mymodule'
+"""
+
+
+def test_collection_error_returns_error_not_generic_failure():
+    """format_llm_message reports the collection error, not a generic failure."""
+    tr = PytestParser().parse(raw(PYTEST_COLLECTION_ERROR, return_code=2))
+    msg = PytestParser().format_llm_message(tr)
+    assert "ImportError" in msg
+    assert "tests/test_bad.py" in msg
+
+
+def test_last_call_line_breaks_on_separator_line():
+    """_last_call_line_for_test stops and doesn't include the trailing === separator."""
+    from py_cq.parsers.pytestparser import _last_call_line_for_test
+    stdout = """\
+____ test_foo ____
+
+    def test_foo():
+>       do_something()
+
+==============================================
+"""
+    line = _last_call_line_for_test(stdout, "test_foo")
+    assert "do_something" in line
+    assert "=" not in line
+
+
+def test_extract_failure_max_lines():
+    """_extract_failure truncates at max_lines."""
+    from py_cq.parsers.pytestparser import _extract_failure
+    stdout = """\
+____test_long____
+line1
+line2
+line3
+line4
+line5
+"""
+    result = _extract_failure(stdout, "test_long", max_lines=2)
+    # Should contain only up to 2 lines of content
+    content_lines = [ln for ln in result.strip().split("\n") if ln not in ("```", "")]
+    assert len(content_lines) <= 2
+
+
+def test_format_llm_message_skips_non_dict_test_entry():
+    """format_llm_message skips details entries that are not dicts."""
+    from py_cq.localtypes import RawResult
+    raw_result = RawResult(tool_name="pytest", stdout="", stderr="", return_code=1)
+    from py_cq.parsers.pytestparser import PytestParser
+    from py_cq.localtypes import ToolResult
+    tr = ToolResult(
+        metrics={"tests": 0.0},
+        details={"tests/test_foo.py": "not-a-dict"},
+        raw=raw_result,
+    )
+    msg = PytestParser().format_llm_message(tr)
+    # Falls through to the generic fallback since no dict test entries
+    assert "pytest" in msg.lower() or "no details" in msg.lower() or "failure" in msg.lower()
+
+
+def test_format_llm_message_collection_error_with_callee(tmp_path):
+    """format_llm_message extracts callee from a collection error src line."""
+    src_file = tmp_path / "mymodule.py"
+    src_file.write_text("def my_func(x):\n    return x\n")
+    stdout = (
+        f'E   File "{src_file}", line 1\n'
+        "E   ImportError: cannot import 'my_func'\n"
+        "E         my_func(bad_arg)\n"
+    )
+    from py_cq.localtypes import RawResult, ToolResult
+    raw_result = RawResult(tool_name="pytest", stdout=stdout, stderr="", return_code=2)
+    tr = PytestParser().parse(raw_result)
+    msg = PytestParser().format_llm_message(tr)
+    assert "ImportError" in msg or "my_func" in msg
+
+
+def test_skipped_tests_do_not_reduce_pass_rate():
+    """SKIPPED tests are counted but do not lower the pass rate."""
+    stdout = (
+        "tests/test_foo.py::test_one PASSED    [ 50%]\n"
+        "tests/test_foo.py::test_two SKIPPED   [100%]\n"
+    )
+    tr = PytestParser().parse(raw(stdout, return_code=0))
+    # 1 passed, 1 skipped → 2 total, 1 passed → 0.5, not 1.0
+    # The key assertion: skipped != failed, so score should not be 0.0
+    assert tr.metrics["tests"] > 0.0
+
+
+def test_extract_failure_truncates_at_max_lines():
+    """_extract_failure stops collecting at max_lines (line 85 coverage)."""
+    from py_cq.parsers.pytestparser import _extract_failure
+    body = "\n".join(f"    line_{i} = {i}" for i in range(10))
+    stdout = f"____ test_foo ____\n{body}\n=== short test summary ===\n"
+    result = _extract_failure(stdout, "test_foo", max_lines=3)
+    content_lines = [ln for ln in result.strip().split("\n") if ln not in ("```", "")]
+    assert len(content_lines) <= 3
+
+
+def test_format_llm_message_skips_passed_tests():
+    """format_llm_message skips PASSED tests and returns info on the first FAILED one."""
+    stdout = (
+        "tests/test_foo.py::test_pass PASSED    [ 50%]\n"
+        "tests/test_foo.py::test_fail FAILED    [100%]\n"
+    )
+    tr = PytestParser().parse(raw(stdout, return_code=1))
+    msg = PytestParser().format_llm_message(tr)
+    assert "test_fail" in msg
+    assert "test_pass" not in msg
+
+
+def test_last_call_line_whitespace_only_line():
+    """_last_call_line_for_test ignores lines that strip to empty — branch 38->26."""
+    from py_cq.parsers.pytestparser import _last_call_line_for_test
+    stdout = """\
+________ test_foo ________
+
+    def test_foo():
+>
+>       result = make_thing(bad=1)
+E       TypeError: unexpected keyword
+
+tests/test_foo.py:2: TypeError
+"""
+    line = _last_call_line_for_test(stdout, "test_foo")
+    assert "make_thing" in line
+
+
+def test_format_llm_message_all_passed_then_failed():
+    """Inner for-loop exhausts on first file (all PASSED) before finding FAILED — branch 166->163."""
+    stdout = (
+        "tests/test_a.py::test_one PASSED    [ 50%]\n"
+        "tests/test_b.py::test_fail FAILED    [100%]\n"
+    )
+    tr = PytestParser().parse(raw(stdout, return_code=1))
+    msg = PytestParser().format_llm_message(tr)
+    assert "test_fail" in msg
+    assert "test_one" not in msg
+
+
+def test_format_llm_message_collection_error_no_src_line():
+    """Collection error with no deeply-indented E source line — branch 210->214 (src_line empty)."""
+    from py_cq.localtypes import RawResult
+    stdout = (
+        "ERROR collecting tests/test_bad.py\n"
+        'E   File "tests/test_bad.py", line 3\n'
+        "E   ImportError: cannot import name 'foo'\n"
+    )
+    raw_result = RawResult(tool_name="pytest", stdout=stdout, stderr="", return_code=2)
+    tr = PytestParser().parse(raw_result)
+    msg = PytestParser().format_llm_message(tr)
+    assert "ImportError" in msg
+    assert "tests/test_bad.py" in msg
+
+
+# Realistic multi-line collection error matching both _COLLECTION_FILE_RE and _COLLECTION_ERROR_RE
+REALISTIC_COLLECTION_ERROR = """\
+ERRORS
+collecting tests/test_conftest_bad.py
+E   Traceback (most recent call last):
+E     File "tests/conftest.py", line 7
+E   ImportError: cannot import name 'setup_db' from 'mymodule' (mymodule/__init__.py)
+"""
+
+
+def test_realistic_collection_error_details_populated():
+    """A realistic multi-line conftest ImportError populates failed_files correctly."""
+    from py_cq.localtypes import RawResult
+    raw_result = RawResult(
+        tool_name="pytest",
+        stdout=REALISTIC_COLLECTION_ERROR,
+        stderr="",
+        return_code=2,
+    )
+    tr = PytestParser().parse(raw_result)
+    msg = PytestParser().format_llm_message(tr)
+    # The _COLLECTION_FILE_RE / _COLLECTION_ERROR_RE patterns should have matched
+    assert "ImportError" in msg
+    assert "conftest.py" in msg or "line 7" in msg

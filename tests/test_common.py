@@ -1,14 +1,11 @@
 import pytest
 
 from py_cq.parsers.common import (
-    extract_callee_name,
+    _find_project_root,
     find_function_source,
-    find_in_project,
-    format_callee_context,
     format_source_context,
     inv_normalize,
     read_source_lines,
-    score_logistic_variant,
 )
 
 
@@ -33,6 +30,10 @@ def test_format_source_context_non_int_line():
     assert format_source_context("any_file.py", "not-an-int") == ""
 
 
+def test_format_source_context_non_int_line_with_context():
+    assert format_source_context("any_file.py", "not-an-int", context=2) == ""
+
+
 def test_format_source_context_valid(tmp_path):
     f = tmp_path / "foo.py"
     f.write_text("line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\n")
@@ -45,6 +46,34 @@ def test_format_source_context_missing_file():
     result = format_source_context("/nonexistent/path.py", 5)
     assert result == ""
 
+
+def test_format_source_context_stops_at_next_def(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text(
+        "def test_one():\n"
+        "    x = bad_call(oink=1)\n"
+        "\n"
+        "def test_two():\n"
+        "    pass\n"
+    )
+    result = format_source_context(str(f), 2, context=0, count=10)
+    assert "bad_call" in result
+    assert "test_two" not in result
+
+
+def test_format_source_context_includes_def_containing_error(tmp_path):
+    f = tmp_path / "foo.py"
+    f.write_text(
+        "def test_one():\n"
+        "    x = bad_call(oink=1)\n"
+        "\n"
+        "def test_two():\n"
+        "    pass\n"
+    )
+    result = format_source_context(str(f), 2, context=3, count=10)
+    assert "test_one" in result
+    assert "bad_call" in result
+    assert "test_two" not in result
 
 
 def test_find_function_source_basic(tmp_path):
@@ -92,128 +121,49 @@ def test_find_function_source_async(tmp_path):
     assert "async def test_async" in result
 
 
-def test_extract_callee_name_assignment():
-    assert extract_callee_name("    result = make_registry(oink=2)") == "make_registry"
+def test_find_project_root_no_pyproject_returns_hint_root(tmp_path):
+    """_find_project_root returns the hint file's parent when no pyproject.toml is found."""
+    # Use a deeply isolated tmp_path; no pyproject.toml anywhere near it
+    isolated = tmp_path / "isolated_subdir"
+    isolated.mkdir()
+    hint_file = str(isolated / "dummy.py")
+    root = _find_project_root(hint_file)
+    # Should return the hint file's parent (isolated) without crashing
+    assert root is not None
+    assert root == isolated
 
 
-def test_extract_callee_name_plain_call():
-    assert extract_callee_name("    make_registry(a, b)") == "make_registry"
+def test_find_project_root_reaches_filesystem_root(tmp_path, monkeypatch):
+    """_find_project_root breaks at the filesystem root (parent == current)."""
+    from pathlib import Path
+    import py_cq.parsers.common as common_mod
+
+    fake_file = tmp_path / "orphan.py"
+    fake_file.write_text("")
+
+    # Monkeypatch Path.parent to return the same path after the first call,
+    # simulating a filesystem root within 1 traversal step.
+    _original_parent = Path.parent.fget  # type: ignore[attr-defined]
+    call_count = {"n": 0}
+
+    def _fake_parent(self):
+        call_count["n"] += 1
+        if call_count["n"] > 1:
+            return self  # simulate filesystem root: parent == self
+        return _original_parent(self)
+
+    monkeypatch.setattr(Path, "parent", property(_fake_parent))
+    root = common_mod._find_project_root(str(fake_file))
+    assert root is not None
 
 
-def test_extract_callee_name_method_call():
-    # Returns the method name, not the object
-    assert extract_callee_name("    result = obj.do_thing()") == "do_thing"
-
-
-def test_extract_callee_name_keyword_skipped():
-    assert extract_callee_name("    assert something()") is None or \
-           extract_callee_name("    assert something()") == "something"
-
-
-def test_extract_callee_name_no_call():
-    assert extract_callee_name("    x = 1 + 2") is None
-
-
-def test_find_in_project_same_file(tmp_path):
+def test_find_in_project_not_found_multiple_files(tmp_path):
+    """Loop visits other project files but find_function_source returns '' — branch 105->101."""
+    from py_cq.parsers.common import find_in_project
     (tmp_path / "pyproject.toml").write_text("[project]\n")
-    f = tmp_path / "module.py"
-    f.write_text("def my_func(a, b):\n    return a + b\n")
-    path, block = find_in_project("my_func", str(f))
-    assert "def my_func" in block
-    assert path != ""
-
-
-def test_find_in_project_other_file(tmp_path):
-    (tmp_path / "pyproject.toml").write_text("[project]\n")
-    src = tmp_path / "utils.py"
-    src.write_text("def helper(x):\n    return x * 2\n")
-    caller = tmp_path / "test_module.py"
-    caller.write_text("from utils import helper\n")
-    path, block = find_in_project("helper", str(caller))
-    assert "def helper" in block
-    assert path != ""
-
-
-def test_find_in_project_not_found(tmp_path):
-    (tmp_path / "pyproject.toml").write_text("[project]\n")
-    f = tmp_path / "module.py"
-    f.write_text("x = 1\n")
-    assert find_in_project("nonexistent_func", str(f)) == ("", "")
-
-
-def test_format_callee_context_includes_label(tmp_path):
-    (tmp_path / "pyproject.toml").write_text("[project]\n")
-    f = tmp_path / "module.py"
-    f.write_text("def my_func(a, b):\n    return a + b\n")
-    result = format_callee_context("my_func", str(f))
-    assert "`my_func` is defined at:" in result
-    assert "module.py:1" in result
-    assert "def my_func" in result
-
-
-def test_format_callee_context_not_found(tmp_path):
-    (tmp_path / "pyproject.toml").write_text("[project]\n")
-    f = tmp_path / "module.py"
-    f.write_text("x = 1\n")
-    assert format_callee_context("missing", str(f)) == ""
-
-
-def test_format_source_context_stops_at_next_def(tmp_path):
-    f = tmp_path / "foo.py"
-    f.write_text(
-        "def test_one():\n"       # line 1
-        "    x = bad_call(oink=1)\n"  # line 2  ← error line
-        "\n"                      # line 3
-        "def test_two():\n"       # line 4  ← should stop here
-        "    pass\n"
-    )
-    # error at line 2, context=0 → starts at line 2, count=10
-    result = format_source_context(str(f), 2, context=0, count=10)
-    assert "bad_call" in result
-    assert "test_two" not in result
-
-
-def test_format_source_context_includes_def_containing_error(tmp_path):
-    f = tmp_path / "foo.py"
-    f.write_text(
-        "def test_one():\n"       # line 1
-        "    x = bad_call(oink=1)\n"  # line 2  ← error line
-        "\n"
-        "def test_two():\n"       # line 4
-        "    pass\n"
-    )
-    # context=3 → starts at line 1 (max(1, 2-3)=1), error at offset 1
-    result = format_source_context(str(f), 2, context=3, count=10)
-    assert "test_one" in result   # def before error — included
-    assert "bad_call" in result
-    assert "test_two" not in result  # def after error — excluded
-
-
-def test_score_logistic_large_base():
-    # base > 709/steepness triggers float("inf") branch
-    assert score_logistic_variant(1e300, scale_factor=1.0) == 0.0
-
-
-@pytest.mark.parametrize(
-    "errors,scale_factor,steepness,expected",
-    [
-        # (errors, scale_factor, steepness) → expected output
-        (5, 10, 2, 0.8),
-        (-3, 30, 2, 1.0),  # negative error is treated as 0
-        (10, 0, 2, 0.0),  # scale_factor == 0 → only 0 error gives 1.0
-        (0, 0, 2, 1.0),  # scale_factor == 0 & errors == 0 → 1.0
-        (0, 30, 2, 1.0),  # zero error → 1.0
-        (30, 30, 2, 0.5),  # 1/(1+1^2) → 0.5
-        (60, 30, 2, 0.2),  # 1/(1+2^2) → 0.2
-        (100, 30, 2, 1 / (1 + (100 / 30) ** 2)),  # 1/(1+(10/3)^2)
-        (1000, 30, 2, 1 / (1 + (1000 / 30) ** 2)),  # 1/(1+(1000/30)^2)
-        (0, 30, 1, 1.0),  # zero error → 1.0
-        (30, 30, 1, 0.5),  # 1/(1+1^1) → 0.5
-        (30, 30, 3, 0.5),  # 1/(1+1^3) → 0.5
-    ],
-)
-def test_score_logistic_variant(errors, scale_factor, steepness, expected):
-    """Test that ``score_logistic_variant`` returns the values that match its
-    implementation for a variety of inputs."""
-    result = score_logistic_variant(errors, scale_factor, steepness)
-    assert result == expected
+    hint = tmp_path / "module.py"
+    hint.write_text("def known(): pass\n")
+    other = tmp_path / "other.py"
+    other.write_text("def also_known(): pass\n")
+    result = find_in_project("nonexistent_func", str(hint))
+    assert result == ("", "")

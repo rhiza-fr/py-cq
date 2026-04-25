@@ -77,6 +77,32 @@ def test_apply_thresholds():
     assert result["coverage"].warning_threshold == 0.7  # unchanged
 
 
+def test_load_tools_key(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        "[tool.cq.tools.mycheck]\n"
+        'parser = "RuffParser"\n'
+        'command = "ruff check {context_path}"\n'
+        "order = 99\n"
+        "warning_threshold = 0.8\n"
+        "error_threshold = 0.6\n"
+    )
+    cfg = load_user_config(tmp_path)
+    assert "tools" in cfg
+    assert "mycheck" in cfg["tools"]
+    assert cfg["tools"]["mycheck"]["parser"] == "RuffParser"
+    assert cfg["tools"]["mycheck"]["order"] == 99
+
+
+def test_load_context_lines(tmp_path):
+    (tmp_path / "pyproject.toml").write_text("[tool.cq]\ncontext_lines = 5\n")
+    assert load_user_config(tmp_path) == {"context_lines": 5}
+
+
+def test_load_exclude(tmp_path):
+    (tmp_path / "pyproject.toml").write_text('[tool.cq]\nexclude = ["demo", "docs"]\n')
+    assert load_user_config(tmp_path) == {"exclude": ["demo", "docs"]}
+
+
 def test_apply_does_not_mutate_base():
     base = _base()
     _apply_user_config(base, {"disable": ["ruff"], "thresholds": {"coverage": {"warning": 0.99}}})

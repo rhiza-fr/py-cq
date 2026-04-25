@@ -78,3 +78,94 @@ def test_compile_parse_short_error_block():
     assert "failed_files" in tr.details
     info = next(iter(tr.details["failed_files"].values()))
     assert info["type"] == "Unknown"
+
+
+COMPILE_TWO_ERRORS_SAME_FILE = """\
+Compiling '.\\src\\a.py'...
+Compiling '.\\src\\b.py'...
+***   File ".\\src\\a.py", line 5
+    x = bad {
+    ^^^^^^^^
+SyntaxError: invalid syntax
+
+***   File ".\\src\\b.py", line 10
+    y = also_bad {
+    ^^^^^^^^^^^
+SyntaxError: invalid syntax
+
+"""
+
+
+def test_compile_parse_two_errors_different_files():
+    """Two errors in different files are both captured in details."""
+    tr = CompileParser().parse(raw(COMPILE_TWO_ERRORS_SAME_FILE, return_code=1))
+    assert "failed_files" in tr.details
+    assert "./src/a.py" in tr.details["failed_files"]
+    assert "./src/b.py" in tr.details["failed_files"]
+    assert tr.metrics["compile"] < 1.0
+
+
+def test_compile_format_llm_message_short_error_fallback():
+    """format_llm_message with Unknown type still produces a non-empty message."""
+    tr = CompileParser().parse(raw(COMPILE_SHORT_ERROR, return_code=1))
+    msg = CompileParser().format_llm_message(tr)
+    assert "Unknown" in msg or "src/bad.py" in msg
+
+
+# Error header without ", line N" — branch 82->87 (line_in_header False)
+COMPILE_NO_LINE_NUMBER = """\
+Compiling '.\\src\\bad.py'...
+***   File ".\\src\\bad.py"
+    bad_code
+    ^^^^^^^^
+SyntaxError: invalid syntax
+
+"""
+
+
+def test_compile_no_line_number_in_header():
+    tr = CompileParser().parse(raw(COMPILE_NO_LINE_NUMBER, return_code=1))
+    assert "failed_files" in tr.details
+    info = next(iter(tr.details["failed_files"].values()))
+    assert "line" not in info
+
+
+# Error block with exactly 1 line — branch 87->89 (len > 1 False)
+COMPILE_ONE_LINE_ERROR = """\
+Compiling '.\\src\\bad.py'...
+***   File ".\\src\\bad.py", line 5
+
+"""
+
+
+def test_compile_one_line_error_block():
+    tr = CompileParser().parse(raw(COMPILE_ONE_LINE_ERROR, return_code=1))
+    assert "failed_files" in tr.details
+    info = next(iter(tr.details["failed_files"].values()))
+    assert "src" not in info
+    assert info["type"] == "Unknown"
+
+
+# 4-line error block where line[3] has no "Error:" — branch 90->101
+COMPILE_FOUR_LINES_NO_ERROR_KEYWORD = """\
+Compiling '.\\src\\bad.py'...
+***   File ".\\src\\bad.py", line 5
+    bad_code
+    ^^^^^^^^
+    ^ (hint: check syntax here)
+
+"""
+
+
+def test_compile_four_lines_no_error_keyword():
+    tr = CompileParser().parse(raw(COMPILE_FOUR_LINES_NO_ERROR_KEYWORD, return_code=1))
+    assert "failed_files" in tr.details
+    info = next(iter(tr.details["failed_files"].values()))
+    assert "type" not in info
+
+
+def test_compile_format_llm_message_no_src():
+    """format_llm_message with no 'src' key in info — branch 130->135 (src_line falsy)."""
+    tr = CompileParser().parse(raw(COMPILE_ONE_LINE_ERROR, return_code=1))
+    msg = CompileParser().format_llm_message(tr)
+    assert msg  # non-empty, no crash

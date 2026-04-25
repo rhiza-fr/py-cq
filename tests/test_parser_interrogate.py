@@ -68,3 +68,20 @@ def test_interrogate_format_llm_with_missing():
     msg = InterrogateParser().format_llm_message(tr)
     assert "src/foo.py" in msg
     assert "2 undocumented" in msg
+
+
+def test_interrogate_parse_zero_total_file():
+    """File rows with total=0 are skipped — branch 36->26 (elif total > 0 False)."""
+    output = """\
+| Name         |  Total |  Miss |  Cover |  Cover% |
+|--------------|--------|-------|--------|---------|
+| src/empty.py |      0 |     0 |      0 |     0% |
+| src/foo.py   |      5 |     1 |      4 |     80% |
+|--------------|--------|-------|--------|---------|
+| TOTAL        |      5 |     1 |      4 |   80.0% |
+RESULT: your code scored 80.0% on the interrogate score.
+Status: FAILED ☒
+"""
+    tr = InterrogateParser().parse(raw(output, return_code=1))
+    assert "src/empty.py" not in tr.details
+    assert "src/foo.py" in tr.details

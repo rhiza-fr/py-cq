@@ -1,25 +1,14 @@
-"""Tests for cli module."""
+"""Tests for cli check command."""
 
-import json
 from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
 
-from py_cq.cli import _apply_user_config, app, format_as_table
-from py_cq.localtypes import CombinedToolResults, RawResult, ToolConfig, ToolResult
+from py_cq.cli import app
+from py_cq.localtypes import RawResult, ToolResult, CombinedToolResults
 
 runner = CliRunner()
-
-
-def _tc(name="ruff", order=3):
-    class FakeParser:
-        def parse(self, raw):
-            return ToolResult(metrics={"score": 1.0}, raw=raw)
-        def format_llm_message(self, tr):
-            return "no issues"
-    return ToolConfig(name=name, command="", parser_class=FakeParser, order=order,
-                      warning_threshold=0.7, error_threshold=0.5)
 
 
 def _fake_tr(score=0.9):
@@ -37,53 +26,18 @@ def project_dir(tmp_path):
     return tmp_path
 
 
-# --- _apply_user_config ---
+# --- --version flag ---
 
-def test_apply_user_config_empty():
-    cfg = {"ruff": _tc()}
-    result = _apply_user_config(cfg, {})
-    assert "ruff" in result
-    assert result["ruff"].warning_threshold == 0.7
-
-
-def test_apply_user_config_disable():
-    cfg = {"ruff": _tc(), "bandit": _tc("bandit", 2)}
-    result = _apply_user_config(cfg, {"disable": ["ruff"]})
-    assert "ruff" not in result
-    assert "bandit" in result
+def test_version_flag_exits_zero():
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert "python-code-quality" in result.output
 
 
-def test_apply_user_config_disable_unknown_tool():
-    cfg = {"ruff": _tc()}
-    result = _apply_user_config(cfg, {"disable": ["nonexistent"]})
-    assert "ruff" in result
-
-
-def test_apply_user_config_threshold_warning():
-    cfg = {"ruff": _tc()}
-    result = _apply_user_config(cfg, {"thresholds": {"ruff": {"warning": 0.8}}})
-    assert result["ruff"].warning_threshold == 0.8
-    assert result["ruff"].error_threshold == 0.5  # unchanged
-
-
-def test_apply_user_config_threshold_error():
-    cfg = {"ruff": _tc()}
-    result = _apply_user_config(cfg, {"thresholds": {"ruff": {"error": 0.6}}})
-    assert result["ruff"].error_threshold == 0.6
-    assert result["ruff"].warning_threshold == 0.7  # unchanged
-
-
-def test_apply_user_config_threshold_unknown_tool():
-    cfg = {"ruff": _tc()}
-    result = _apply_user_config(cfg, {"thresholds": {"unknown": {"warning": 0.9}}})
-    assert result["ruff"].warning_threshold == 0.7
-
-
-def test_apply_user_config_does_not_mutate_original():
-    tc = _tc()
-    cfg = {"ruff": tc}
-    _apply_user_config(cfg, {"thresholds": {"ruff": {"warning": 0.99}}})
-    assert tc.warning_threshold == 0.7
+def test_version_flag_lists_deps():
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert "ruff" in result.output
 
 
 # --- check: validation ---
@@ -122,6 +76,7 @@ def test_check_score_output(project_dir):
 
 
 def test_check_json_output(project_dir):
+    import json
     result = _mock_check(project_dir, "-o", "json")
     assert result.exit_code == 0
     data = json.loads(result.output.strip())
@@ -138,11 +93,18 @@ def test_check_raw_output(project_dir):
 def test_check_table_output(project_dir):
     result = _mock_check(project_dir)
     assert result.exit_code == 0
+    assert "ruff" in result.output
+    assert "0.9" in result.output
 
 
 def test_check_llm_output(project_dir):
-    result = _mock_check(project_dir, "-o", "llm")
+    tr = _fake_tr(score=1.0)
+    combined = _fake_combined(str(project_dir), score=1.0)
+    with patch("py_cq.cli.run_tools", return_value=[tr]), \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        result = runner.invoke(app, ["check", str(project_dir), "-o", "llm"])
     assert result.exit_code == 0
+    assert "No issues found" in result.output
 
 
 def test_check_clear_cache(project_dir):
@@ -165,156 +127,6 @@ def test_check_py_file(tmp_path):
          patch("py_cq.cli.aggregate_metrics", return_value=combined):
         result = runner.invoke(app, ["check", str(py_file), "-o", "score"])
     assert result.exit_code == 0
-
-
-# --- config command ---
-
-def test_config_no_pyproject(tmp_path):
-    result = runner.invoke(app, ["config", str(tmp_path)])
-    assert result.exit_code == 0
-    assert "not found" in result.output
-
-
-def test_config_no_cq_section(tmp_path):
-    (tmp_path / "pyproject.toml").write_text("[tool.pytest.ini_options]\n")
-    result = runner.invoke(app, ["config", str(tmp_path)])
-    assert result.exit_code == 0
-    assert "no" in result.output and "section" in result.output
-
-
-def test_config_with_cq_section(tmp_path):
-    (tmp_path / "pyproject.toml").write_text('[tool.cq]\ndisable = ["vulture"]\n')
-    result = runner.invoke(app, ["config", str(tmp_path)])
-    assert result.exit_code == 0
-    assert "merged" in result.output
-
-
-def test_config_py_file_input(tmp_path):
-    (tmp_path / "pyproject.toml").write_text("")
-    py_file = tmp_path / "foo.py"
-    py_file.write_text("x = 1")
-    result = runner.invoke(app, ["config", str(py_file)])
-    assert result.exit_code == 0
-
-
-def test_config_shows_user_defined_tool(tmp_path):
-    toml = (
-        "[tool.cq.tools.mycheck]\n"
-        'command = "mycheck {context_path}"\n'
-        'parser = "ExitCodeParser"\n'
-        "order = 99\n"
-        "warning_threshold = 0.9\n"
-        "error_threshold = 0.5\n"
-    )
-    (tmp_path / "pyproject.toml").write_text(toml)
-    result = runner.invoke(app, ["config", str(tmp_path)])
-    assert result.exit_code == 0
-    assert "mycheck" in result.output
-
-
-def test_apply_user_config_missing_required_field_raises():
-    import typer
-    user_cfg = {
-        "tools": {
-            "mycheck": {
-                "command": "mycheck {context_path}",
-                "parser": "ExitCodeParser",
-                # missing order, warning_threshold, error_threshold
-            }
-        }
-    }
-    with pytest.raises(typer.BadParameter) as exc_info:
-        _apply_user_config({}, user_cfg)
-    assert "mycheck" in str(exc_info.value)
-
-
-# --- format_as_table ---
-
-def _registry(name="ruff", warning=0.7, error=0.5):
-    return {name: ToolConfig(name=name, command="", parser_class=object, order=3,
-                             warning_threshold=warning, error_threshold=error)}
-
-
-def test_format_as_table_ok_status():
-    tr = ToolResult(metrics={"coverage": 0.9}, raw=RawResult(tool_name="ruff"))
-    combined = CombinedToolResults(path=".", tool_results=[tr])
-    table = format_as_table(combined, _registry())
-    from rich.table import Table
-    assert isinstance(table, Table)
-
-
-def test_format_as_table_warning_status():
-    tr = ToolResult(metrics={"coverage": 0.65}, raw=RawResult(tool_name="ruff"))
-    combined = CombinedToolResults(path=".", tool_results=[tr])
-    table = format_as_table(combined, _registry())
-    from rich.table import Table
-    assert isinstance(table, Table)
-
-
-def test_format_as_table_error_status():
-    tr = ToolResult(metrics={"coverage": 0.3}, raw=RawResult(tool_name="ruff"))
-    combined = CombinedToolResults(path=".", tool_results=[tr])
-    table = format_as_table(combined, _registry())
-    from rich.table import Table
-    assert isinstance(table, Table)
-
-
-def test_apply_user_config_adds_user_tool():
-    """User can declare a new tool under [tool.cq.tools]."""
-    cfg = {"ruff": _tc()}
-    user_cfg = {
-        "tools": {
-            "mycheck": {
-                "command": "mycheck {context_path}",
-                "parser": "ExitCodeParser",
-                "order": 99,
-                "warning_threshold": 0.9,
-                "error_threshold": 0.5,
-            }
-        }
-    }
-    result = _apply_user_config(cfg, user_cfg)
-    assert "mycheck" in result
-    assert result["mycheck"].order == 99
-    assert result["mycheck"].warning_threshold == 0.9
-    assert result["mycheck"].command == "mycheck {context_path}"
-
-
-def test_apply_user_config_user_tool_parser_config():
-    """parser_config is threaded through to the ToolConfig."""
-    cfg = {}
-    user_cfg = {
-        "tools": {
-            "mychecker": {
-                "command": "cmd {context_path}",
-                "parser": "LineCountParser",
-                "order": 5,
-                "warning_threshold": 0.8,
-                "error_threshold": 0.5,
-                "parser_config": {"scale_factor": 20},
-            }
-        }
-    }
-    result = _apply_user_config(cfg, user_cfg)
-    assert result["mychecker"].parser_config == {"scale_factor": 20}
-
-
-def test_apply_user_config_user_tool_overrides_builtin():
-    """A user tool entry with the same key replaces the built-in."""
-    cfg = {"ruff": _tc("ruff", order=2)}
-    user_cfg = {
-        "tools": {
-            "ruff": {
-                "command": "custom-ruff {context_path}",
-                "parser": "ExitCodeParser",
-                "order": 2,
-                "warning_threshold": 0.5,
-                "error_threshold": 0.3,
-            }
-        }
-    }
-    result = _apply_user_config(cfg, user_cfg)
-    assert result["ruff"].command == "custom-ruff {context_path}"
 
 
 # --- check: language detection and --language flag ---
@@ -383,6 +195,19 @@ def test_check_skip_excludes_tools(project_dir):
     assert all(tc.name not in {"bandit", "vulture"} for tc in passed)
 
 
+def test_check_only_and_skip_combined(project_dir):
+    """--only then --skip: only runs tools in both sets (only ∩ ¬skip)."""
+    tr = _fake_tr()
+    combined = _fake_combined(str(project_dir))
+    with patch("py_cq.cli.run_tools", return_value=[tr]) as mock_run, \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        runner.invoke(app, ["check", str(project_dir), "--only", "ruff,ty,bandit", "--skip", "ty"])
+    passed = list(mock_run.call_args[0][0])
+    names = {tc.name for tc in passed}
+    assert "ty" not in names
+    assert names <= {"ruff", "bandit"}
+
+
 def test_check_only_unknown_tool_runs_nothing(project_dir):
     tr = _fake_tr()
     combined = _fake_combined(str(project_dir))
@@ -391,3 +216,68 @@ def test_check_only_unknown_tool_runs_nothing(project_dir):
         runner.invoke(app, ["check", str(project_dir), "--only", "nonexistent"])
     passed = list(mock_run.call_args[0][0])
     assert passed == []
+
+
+def test_check_exclude_merge(project_dir):
+    """TOML exclude + CLI --exclude are merged and both passed to run_tools."""
+    (project_dir / "pyproject.toml").write_text('[tool.cq]\nexclude = ["demo"]\n')
+    tr = _fake_tr()
+    combined = _fake_combined(str(project_dir))
+    with patch("py_cq.cli.run_tools", return_value=[tr]) as mock_run, \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        runner.invoke(app, ["check", str(project_dir), "--exclude", "tests", "-o", "score"])
+    excludes = mock_run.call_args.kwargs["excludes"]
+    assert "demo" in excludes
+    assert "tests" in excludes
+
+
+def test_check_py_file_passes_full_registry(tmp_path):
+    """When invoked on a .py file, run_tools receives the full (unfiltered) registry."""
+    py_file = tmp_path / "foo.py"
+    py_file.write_text("x = 1")
+    tr = _fake_tr()
+    combined = _fake_combined(str(py_file))
+    with patch("py_cq.cli.run_tools", return_value=[tr]) as mock_run, \
+         patch("py_cq.cli.aggregate_metrics", return_value=combined):
+        runner.invoke(app, ["check", str(py_file), "-o", "score"])
+    passed_tools = list(mock_run.call_args[0][0])
+    # All tools from the registry are passed — CLAUDE.md says pytest/coverage are skipped,
+    # but the source has no such filter; this test documents the actual behaviour.
+    from py_cq.tool_registry import tool_registry
+    assert len(passed_tools) == len(tool_registry)
+
+
+def test_main_entry_point():
+    from py_cq.main import main
+    with patch("py_cq.main.app") as mock_app:
+        main()
+        mock_app.assert_called_once()
+
+
+def test_log_level_valid_debug(project_dir):
+    """--log-level DEBUG is accepted and exits 0."""
+    result = _mock_check(project_dir, "--log-level", "DEBUG")
+    assert result.exit_code == 0
+
+
+def test_log_level_valid_warning(project_dir):
+    """--log-level WARNING is accepted and exits 0."""
+    result = _mock_check(project_dir, "--log-level", "WARNING")
+    assert result.exit_code == 0
+
+
+def test_log_level_invalid_exits_nonzero(project_dir):
+    """An unrecognised --log-level value produces a non-zero exit."""
+    result = runner.invoke(app, ["check", str(project_dir), "--log-level", "NONSENSE"])
+    assert result.exit_code != 0
+
+
+def test_version_skips_extras_and_unknown_deps():
+    """_version_callback handles extras markers and missing packages without crashing."""
+    from importlib.metadata import PackageNotFoundError
+    fake_reqs = ["requests>=2.0; extra == 'dev'", "nonexistent-pkg>=1.0"]
+    with patch("py_cq.cli.requires", return_value=fake_reqs), \
+         patch("py_cq.cli.version", side_effect=["1.0.0", PackageNotFoundError("nonexistent-pkg")]):
+        result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert "nonexistent-pkg" not in result.output

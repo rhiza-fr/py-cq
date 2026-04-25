@@ -40,3 +40,9 @@ def test_llm_message_shows_first_line():
     )
     msg = LineCountParser().format_llm_message(tr, context_lines=5)
     assert "first error" in msg
+
+
+def test_format_llm_message_no_violations():
+    from py_cq.localtypes import RawResult, ToolResult
+    tr = ToolResult(metrics={"violations": 1.0}, raw=RawResult(), details={"lines": []})
+    assert LineCountParser().format_llm_message(tr) == "No violations found"

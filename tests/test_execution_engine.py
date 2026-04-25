@@ -1,8 +1,9 @@
 """Tests for execution_engine."""
 
+import sys
 from unittest.mock import MagicMock, patch
 
-from py_cq.execution_engine import _find_project_root, run_tools
+from py_cq.execution_engine import _build_exclude_str, _dep_in_venv, _find_project_root, run_tools
 from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 
@@ -36,12 +37,20 @@ def test_find_project_root_nested(tmp_path):
     assert _find_project_root(py_file) == tmp_path
 
 
-def test_find_project_root_not_found(tmp_path):
-    py_file = tmp_path / "foo.py"
+def test_find_project_root_not_found(tmp_path, monkeypatch):
+    sub = tmp_path / "orphan"
+    sub.mkdir()
+    py_file = sub / "foo.py"
     py_file.write_text("")
-    # tmp_path has no pyproject.toml; parents likely don't either
+    # Patch Path.parents so the walk never escapes tmp_path into the real project tree
+    from pathlib import Path
+    real_parents = Path.parents.fget
+    monkeypatch.setattr(
+        Path, "parents",
+        property(lambda self: [p for p in real_parents(self) if str(p).startswith(str(tmp_path))]),
+    )
     result = _find_project_root(py_file)
-    assert result is None or (result / "pyproject.toml").exists()
+    assert result is None
 
 
 # --- run_tools ---
@@ -132,6 +141,26 @@ def test_run_tools_early_exit_continues_past_warning():
 
     assert called == ["first", "second"]
     assert len(results) == 2
+
+
+def test_run_tools_early_exit_exception_breaks_loop():
+    """An exception from _run_and_parse during early_exit stops the loop."""
+    cfg1 = _fake_config_with_score("first", order=1, score=1.0)
+    cfg2 = _fake_config_with_score("second", order=2, score=1.0)
+
+    call_count = [0]
+    def fake_run_tool(config, path, excludes=None):
+        call_count[0] += 1
+        if call_count[0] == 2:
+            raise RuntimeError("parser exploded")
+        return RawResult(tool_name=config.name, stdout="")
+
+    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
+        with patch("py_cq.execution_engine.log"):
+            results = run_tools([cfg1, cfg2], ".", early_exit=True)
+
+    assert len(results) == 1
+    assert results[0].raw.tool_name == "first"
 
 
 def test_run_tools_early_exit_false_runs_all_despite_error():
@@ -291,3 +320,167 @@ def test_run_tool_target_env_with_extra_deps(tmp_path):
     called_cmd = mock_sub.call_args[0][0]
     assert "--with pytest" in called_cmd
     assert "--with coverage" in called_cmd
+
+
+# --- parallel execution ---
+
+def test_run_tools_parallel_returns_all_results_sorted():
+    """Parallel execution returns all results sorted by .order."""
+    configs = [_fake_config(f"t{i}", order=i) for i in range(4, 0, -1)]  # order 4,3,2,1
+
+    def fake_run_tool(config, path, excludes=None):
+        return RawResult(tool_name=config.name, stdout="")
+
+    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
+        results = run_tools(configs, ".", max_workers=4)
+
+    assert len(results) == 4
+    orders = [r.raw.tool_name for r in results]
+    assert orders == ["t1", "t2", "t3", "t4"]
+
+
+# --- _dep_in_venv Windows/Unix path ---
+
+
+def test_dep_in_venv_scripts_dir(tmp_path):
+    """On Windows, Scripts/ subdir is checked."""
+    venv = tmp_path / ".venv"
+    scripts = venv / "Scripts"
+    scripts.mkdir(parents=True)
+    (scripts / "ruff.exe").write_text("")
+    assert _dep_in_venv("ruff", tmp_path)
+
+
+def test_dep_in_venv_bin_dir(tmp_path):
+    """On Unix, bin/ subdir is checked."""
+    venv = tmp_path / ".venv"
+    bin_dir = venv / "bin"
+    bin_dir.mkdir(parents=True)
+    (bin_dir / "ruff").write_text("")
+    assert _dep_in_venv("ruff", tmp_path)
+
+
+def test_dep_in_venv_not_present(tmp_path):
+    """Returns False when venv does not exist."""
+    assert not _dep_in_venv("ruff", tmp_path)
+
+
+def test_dep_in_venv_venv_exists_but_dep_absent(tmp_path):
+    """Returns False when .venv exists but the executable is not inside it."""
+    venv = tmp_path / ".venv" / "Scripts"
+    venv.mkdir(parents=True)
+    assert not _dep_in_venv("notreal", tmp_path)
+
+
+# --- _build_exclude_str ---
+
+def test_build_exclude_str_single_entry():
+    result = _build_exclude_str(" --exclude {path}", ["src/bad.py"])
+    assert "--exclude src/bad.py" in result
+
+
+def test_build_exclude_str_multiple_entries():
+    result = _build_exclude_str(" --exclude {path}", ["a.py", "b.py"])
+    assert "--exclude a.py" in result
+    assert "--exclude b.py" in result
+
+
+def test_build_exclude_str_empty_excludes():
+    assert _build_exclude_str(" --exclude {path}", []) == ""
+
+
+def test_build_exclude_str_no_format():
+    assert _build_exclude_str("", ["a.py"]) == ""
+
+
+def test_run_tool_exclude_appears_in_command(tmp_path):
+    """Excludes passed to run_tool are injected into the subprocess command string."""
+    from py_cq.execution_engine import run_tool
+    cfg = ToolConfig(
+        name="check", command="mytool {context_path} {exclude}",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+        exclude_format=" --ignore {path}",
+    )
+    mock_result = MagicMock(stdout="", stderr="", returncode=0)
+    mock_cache = MagicMock()
+    mock_cache.__contains__ = MagicMock(return_value=False)
+    with patch("py_cq.execution_engine._cache", mock_cache), \
+         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+        run_tool(cfg, str(tmp_path), excludes=["demo"])
+    called_cmd = mock_sub.call_args[0][0]
+    assert "--ignore demo" in called_cmd
+
+
+# --- run_tool real subprocess invocation ---
+
+def test_run_tool_captures_stdout(tmp_path):
+    """run_tool actually invokes subprocess and captures stdout."""
+    from diskcache import Cache, JSONDisk
+    from py_cq.execution_engine import run_tool
+    cfg = ToolConfig(
+        name="fake", command="{python} -c \"print('hello')\"",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+    )
+    test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
+    with patch("py_cq.execution_engine._cache", test_cache):
+        result = run_tool(cfg, str(tmp_path))
+    assert result.stdout.strip() == "hello"
+    assert result.return_code == 0
+    assert result.tool_name == "fake"
+    assert result.timestamp != ""
+
+
+def test_run_tool_captures_nonzero_exit(tmp_path):
+    """run_tool records non-zero exit codes."""
+    from diskcache import Cache, JSONDisk
+    from py_cq.execution_engine import run_tool
+    cfg = ToolConfig(
+        name="fake", command="{python} -c \"import sys; sys.exit(42)\"",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+    )
+    test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
+    with patch("py_cq.execution_engine._cache", test_cache):
+        result = run_tool(cfg, str(tmp_path))
+    assert result.return_code == 42
+
+
+def test_run_tool_result_is_cached(tmp_path):
+    """Second call with identical inputs returns cached result (same timestamp)."""
+    from diskcache import Cache, JSONDisk
+    from py_cq.execution_engine import run_tool
+    cfg = ToolConfig(
+        name="fake", command="echo hi",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+    )
+    test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
+    with patch("py_cq.execution_engine._cache", test_cache):
+        r1 = run_tool(cfg, str(tmp_path))
+        r2 = run_tool(cfg, str(tmp_path))
+    assert r1.timestamp == r2.timestamp
+
+
+def test_run_tool_cache_invalidated_on_content_change(tmp_path):
+    """Changing file content (size) changes the cache key and forces a new subprocess call."""
+    import subprocess as real_subprocess
+    from diskcache import Cache, JSONDisk
+    from py_cq.execution_engine import run_tool
+    py_file = tmp_path / "module.py"
+    py_file.write_text("x = 1")
+    cfg = ToolConfig(
+        name="fake", command="echo check",
+        parser_class=MagicMock, order=1,
+        warning_threshold=0.7, error_threshold=0.5,
+    )
+    test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
+    with patch("py_cq.execution_engine._cache", test_cache), \
+         patch("py_cq.execution_engine.subprocess.run", wraps=real_subprocess.run) as mock_sub:
+        run_tool(cfg, str(py_file))
+        # Write different-length content so size changes → new hash → cache miss
+        py_file.write_text("x = 2\ny = 3\n")
+        run_tool(cfg, str(py_file))
+    # Two subprocess calls prove both were cache misses
+    assert mock_sub.call_count == 2

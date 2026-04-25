@@ -65,3 +65,16 @@ def test_ty_format_llm_no_callee_for_non_call_code(tmp_path):
 def test_ty_format_llm_no_details():
     tr = ToolResult(metrics={"type_check": 0.5}, details={}, raw=RawResult())
     assert "no details" in TyParser().format_llm_message(tr).lower()
+
+
+def test_ty_format_llm_call_code_no_func_name(tmp_path):
+    """Call-code error on a line with no callable — branch 77->79 (func_name falsy)."""
+    src_file = tmp_path / "module.py"
+    src_file.write_text("x = 1\n")
+    tr = TyParser().parse(raw(
+        f"{src_file}:1:1: error[unexpected-keyword] unexpected keyword argument 'bad'\n"
+        "Found 1 diagnostic.\n",
+        return_code=1,
+    ))
+    msg = TyParser().format_llm_message(tr)
+    assert "unexpected-keyword" in msg

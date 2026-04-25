@@ -74,3 +74,31 @@ def test_complexity_multiple_files_averaged():
     tr = ComplexityParser().parse(raw(output))
     assert "src/a.py" in tr.details
     assert "src/b.py" in tr.details
+
+
+def test_complexity_format_llm_message_uses_base_fallback():
+    tr = ComplexityParser().parse(raw(_ONE_FILE))
+    msg = ComplexityParser().format_llm_message(tr)
+    assert "simplicity" in msg   # base fallback emits metric name
+    assert "0." in msg            # base fallback emits formatted score
+
+
+def test_complexity_parse_valid_json_non_dict():
+    """Valid JSON that isn't a dict (list, scalar) returns simplicity=0.0."""
+    for payload in ("[]", "[1, 2]", '"string"', "42", "null", "true"):
+        tr = ComplexityParser().parse(raw(payload))
+        assert tr.metrics["simplicity"] == 0.0
+        assert tr.details == {}
+
+
+def test_complexity_parse_duplicate_file_key():
+    """Duplicate file key (after backslash normalization) merges into existing entry — branch 73->75."""
+    # "src\\foo.py" and "src/foo.py" both normalize to "src/foo.py"
+    output = json.dumps({
+        "src/foo.py": [{"name": "f", "complexity": 3, "rank": "A"}],
+        "src\\foo.py": [{"name": "g", "complexity": 5, "rank": "B"}],
+    })
+    tr = ComplexityParser().parse(raw(output))
+    assert "src/foo.py" in tr.details
+    assert "f" in tr.details["src/foo.py"]
+    assert "g" in tr.details["src/foo.py"]

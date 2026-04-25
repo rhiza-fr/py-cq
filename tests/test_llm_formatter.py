@@ -1,6 +1,10 @@
 """Tests for llm_formatter pipeline and each parser's format_llm_message."""
 
-from py_cq.llm_formatter import format_for_llm
+import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
+from py_cq.llm_formatter import _severity, format_for_llm
 from py_cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolConfig, ToolResult
 from py_cq.parsers.compileparser import CompileParser
 from py_cq.parsers.halsteadparser import HalsteadParser
@@ -35,6 +39,82 @@ def make_combined(tool_results: list[ToolResult]) -> CombinedToolResults:
 
 def make_registry(*configs: ToolConfig) -> dict:
     return {tc.name: tc for tc in configs}
+
+
+# --- _severity ---
+
+def test_severity_ok_returns_2():
+    cfg = make_config("tool", 1)
+    assert _severity(1.0, cfg) == 2
+
+
+def test_severity_error_returns_0():
+    cfg = make_config("tool", 1)  # error_threshold=0.5
+    assert _severity(0.3, cfg) == 0
+
+
+def test_severity_warning_returns_1():
+    cfg = make_config("tool", 1)  # error_threshold=0.5, warning_threshold=0.7
+    assert _severity(0.6, cfg) == 1
+
+
+def test_severity_at_error_threshold_returns_warning():
+    cfg = make_config("tool", 1)  # error_threshold=0.5 (strict <)
+    assert _severity(0.5, cfg) == 1  # exactly at boundary → not error
+
+
+def test_severity_at_warning_threshold_returns_ok():
+    cfg = make_config("tool", 1)  # warning_threshold=0.7 (strict <)
+    assert _severity(0.7, cfg) == 2  # exactly at boundary → ok
+
+
+@pytest.mark.parametrize("score,warn,err,expected", [
+    (0.0, 0.8, 0.6, 0),   # deep error
+    (0.5, 0.8, 0.6, 0),   # below error
+    (0.6, 0.8, 0.6, 1),   # exactly at error_threshold → warning
+    (0.7, 0.8, 0.6, 1),   # between thresholds → warning
+    (0.8, 0.8, 0.6, 2),   # exactly at warning_threshold → ok
+    (1.0, 0.8, 0.6, 2),   # perfect → ok
+    (0.3, 0.3, 0.3, 2),   # equal thresholds, score at both → ok
+    (0.29, 0.3, 0.3, 0),  # below both equal thresholds → error
+])
+def test_severity_parametrized_custom_thresholds(score, warn, err, expected):
+    cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
+                     warning_threshold=warn, error_threshold=err)
+    assert _severity(score, cfg) == expected
+
+
+@given(
+    score=st.floats(min_value=0.0, max_value=1.0),
+    error_threshold=st.floats(min_value=0.0, max_value=1.0),
+    warning_threshold=st.floats(min_value=0.0, max_value=1.0),
+)
+@settings(max_examples=300)
+def test_severity_correct_region(score, error_threshold, warning_threshold):
+    cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
+                     error_threshold=error_threshold, warning_threshold=warning_threshold)
+    result = _severity(score, cfg)
+    assert result in (0, 1, 2)
+    if score < error_threshold:
+        assert result == 0
+    elif score < warning_threshold:
+        assert result == 1
+    else:
+        assert result == 2
+
+
+@given(
+    score_lo=st.floats(min_value=0.0, max_value=1.0),
+    delta=st.floats(min_value=0.0, max_value=1.0),
+    error_threshold=st.floats(min_value=0.0, max_value=1.0),
+    warning_threshold=st.floats(min_value=0.0, max_value=1.0),
+)
+@settings(max_examples=300)
+def test_severity_monotone(score_lo, delta, error_threshold, warning_threshold):
+    score_hi = min(score_lo + delta, 1.0)
+    cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
+                     error_threshold=error_threshold, warning_threshold=warning_threshold)
+    assert _severity(score_lo, cfg) <= _severity(score_hi, cfg)
 
 
 # --- order ordering ---
@@ -224,6 +304,129 @@ def test_default_fallback_metric():
     assert "0.400" in msg
 
 
+def test_format_for_llm_passing_exact_format():
+    """Passing case produces the exact expected string."""
+    registry = make_registry(make_config("ruff", 3))
+    combined = make_combined([make_tr("ruff", 1.0)])
+    result = format_for_llm(registry, combined, cq_invocation=CQ)
+    assert result == "# No issues found\n\nOverall score: **1.000 / 1.0**"
+
+
+def test_format_for_llm_defect_footer_exact():
+    """Defect output ends with the exact footer template."""
+    registry = make_registry(make_config("ruff", 3))
+    result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation=CQ)
+    assert result.endswith(f"Please fix only this issue. After fixing, run `{CQ}` to verify.")
+
+
+def test_format_for_llm_context_lines_forwarded():
+    """context_lines is forwarded to parser.format_llm_message."""
+    received: dict = {}
+
+    class RecordingParser(AbstractParser):
+        def parse(self, raw_result): return ToolResult()
+        def format_llm_message(self, tr, *, context_lines=15):
+            received["context_lines"] = context_lines
+            return "recorded"
+
+    cfg = ToolConfig(name="tool", command="", parser_class=RecordingParser, order=1)
+    tr = make_tr("tool", 0.3)
+    combined = make_combined([tr])
+    format_for_llm({"tool": cfg}, combined, cq_invocation=CQ, context_lines=5)
+    assert received.get("context_lines") == 5
+
+
+@given(st.lists(st.floats(min_value=0.0, max_value=1.0), min_size=1, max_size=5))
+@settings(max_examples=50)
+def test_format_for_llm_output_starts_with_heading(scores):
+    configs = [make_config(f"tool{i}", i + 1) for i in range(len(scores))]
+    registry = make_registry(*configs)
+    trs = [make_tr(f"tool{i}", s) for i, s in enumerate(scores)]
+    result = format_for_llm(registry, make_combined(trs), cq_invocation="cq check .")
+    # Every output is either the passing header or a defect with the footer
+    assert result.startswith("# No issues found") or "Please fix only this issue" in result
+
+
+@given(st.lists(st.floats(min_value=0.0, max_value=1.0), min_size=0, max_size=5))
+@settings(max_examples=100)
+def test_format_for_llm_never_raises(scores):
+    """format_for_llm does not raise for arbitrary valid inputs."""
+    configs = [make_config(f"tool{i}", i + 1) for i in range(len(scores))]
+    registry = make_registry(*configs)
+    trs = [make_tr(f"tool{i}", s) for i, s in enumerate(scores)]
+    result = format_for_llm(registry, make_combined(trs), cq_invocation=CQ)
+    assert isinstance(result, str)
+
+
+def test_format_for_llm_unknown_tool_name_in_result():
+    """format_for_llm with a result whose tool_name is absent from the registry does not raise."""
+    # Empty registry — result's tool name has no matching config
+    tr = make_tr("unknown_tool", 0.3)
+    combined = make_combined([tr])
+    result = format_for_llm({}, combined, cq_invocation=CQ)
+    # The unknown tool is filtered out by the walrus operator (cfg := by_name.get(...))
+    assert isinstance(result, str)
+    assert result.startswith("# No issues found")
+
+
+def test_format_for_llm_partial_registry_unknown_tool():
+    """format_for_llm skips results whose tool_name is not in the provided registry."""
+    registry = make_registry(make_config("known_tool", 3))
+    tr_unknown = make_tr("unknown_tool", 0.1)
+    tr_known = make_tr("known_tool", 0.5)
+    combined = make_combined([tr_unknown, tr_known])
+    result = format_for_llm(registry, combined, cq_invocation=CQ)
+    # unknown_tool has no config so it is ignored; known_tool (0.5) is selected
+    assert isinstance(result, str)
+    assert "0.500" in result
+
+
+@given(st.permutations([0, 1, 2, 3]))
+@settings(max_examples=50)
+def test_format_for_llm_selection_is_shuffle_invariant(perm):
+    """The tool selected by format_for_llm is the same regardless of input list order."""
+    configs = [
+        make_config("compile", 1),
+        make_config("ruff", 3),
+        make_config("ty", 4),
+        make_config("interrogate", 5),
+    ]
+    trs = [
+        make_tr("compile", 0.90),   # ok — not in failing list
+        make_tr("ruff", 0.42),      # error, order 3 — lowest order among errors → selected
+        make_tr("ty", 0.31),        # error, order 4
+        make_tr("interrogate", 0.45),  # error, order 5
+    ]
+    registry = make_registry(*configs)
+    shuffled = [trs[i] for i in perm]
+    result = format_for_llm(registry, make_combined(shuffled), cq_invocation=CQ)
+    # ruff (order 3) should always be selected: its metric "0.420" appears; others should not
+    assert "0.420" in result
+    assert "0.310" not in result
+    assert "0.450" not in result
+
+
+def test_context_lines_affects_output_length(tmp_path):
+    """context_lines controls how many source lines appear; more lines → longer output."""
+    test_file = tmp_path / "test_long.py"
+    # Write a function with 20 body lines so context_lines=1 vs context_lines=10 differ visibly
+    body_lines = "\n".join(f"    x{i} = {i}" for i in range(20))
+    test_file.write_text(f"def test_long():\n{body_lines}\n")
+
+    stdout = "________ test_long ________\nE   AssertionError\n"
+    cfg = ToolConfig(name="pytest", command="", parser_class=PytestParser, order=5)
+    tr = ToolResult(
+        metrics={"tests": 0.0},
+        details={str(test_file): {"test_long": "FAILED"}},
+        raw=RawResult(tool_name="pytest", stdout=stdout),
+    )
+    combined = CombinedToolResults(".", [tr])
+
+    r_small = format_for_llm({"pytest": cfg}, combined, cq_invocation=CQ, context_lines=1)
+    r_large = format_for_llm({"pytest": cfg}, combined, cq_invocation=CQ, context_lines=10)
+    assert len(r_large) > len(r_small)
+
+
 def test_format_for_llm_default_invocation():
     config = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
     registry = {"ruff": config}
@@ -235,3 +438,6 @@ def test_format_for_llm_default_invocation():
     combined = CombinedToolResults(path=".", tool_results=[tr])
     result = format_for_llm(registry, combined)  # no cq_invocation → uses sys.argv
     assert "cq" in result
+    assert "src/foo.py" in result  # file from ruff details
+    assert "E501" in result         # specific violation code
+    assert "Please fix" in result   # LLM formatter footer
