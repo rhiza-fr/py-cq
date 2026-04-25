@@ -138,7 +138,7 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
     """Return a fenced python block for the body of func_name, or '' if unavailable."""
     try:
         all_lines = Path(file).read_text(encoding="utf-8").splitlines()
-    except OSError:
+    except (OSError, ValueError):
         return ""
     pattern = re.compile(rf"^(\s*)(?:async\s+)?def\s+{re.escape(func_name)}\s*\(")
     match_result: tuple[int, int] | None = None

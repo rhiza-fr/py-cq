@@ -213,7 +213,6 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
     )
     cached = RawResult(tool_name="echo", stdout="cached!")
     # Build the cache key the same way run_tool does
-    import sys
     from pathlib import Path
 
     from py_cq.context_hash import get_context_hash
@@ -248,7 +247,6 @@ def test_run_tool_target_env_uv_not_found(tmp_path):
          patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
         run_tool(cfg, str(tmp_path))
     # uv not found → python stays as sys.executable
-    import sys
     called_cmd = mock_sub.call_args[0][0]
     assert sys.executable in called_cmd
 

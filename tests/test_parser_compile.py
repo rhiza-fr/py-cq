@@ -169,3 +169,38 @@ def test_compile_format_llm_message_no_src():
     tr = CompileParser().parse(raw(COMPILE_ONE_LINE_ERROR, return_code=1))
     msg = CompileParser().format_llm_message(tr)
     assert msg  # non-empty, no crash
+
+
+# *** File line with no quotes — len(parts) < 2 → continue (line 69)
+COMPILE_FILE_LINE_NO_QUOTES = """\
+Compiling '.\\src\\bad.py'...
+***   File no-quotes-here
+    bad_code
+
+"""
+
+
+def test_compile_file_line_without_quotes_is_skipped():
+    """A '*** File' header without quotes is skipped without crashing."""
+    tr = CompileParser().parse(raw(COMPILE_FILE_LINE_NO_QUOTES, return_code=1))
+    # No valid error block extracted — details should be empty or have no failed_files
+    assert "failed_files" not in tr.details or tr.details["failed_files"] == {}
+
+
+# *** File line with non-integer line number — ValueError branch (lines 90-91)
+COMPILE_BAD_LINE_NUMBER = """\
+Compiling '.\\src\\bad.py'...
+***   File ".\\src\\bad.py", line NaN
+    bad_code
+    ^^^^^^^^
+SyntaxError: invalid syntax
+
+"""
+
+
+def test_compile_non_integer_line_number_does_not_crash():
+    """Non-integer line number in error header is silently ignored."""
+    tr = CompileParser().parse(raw(COMPILE_BAD_LINE_NUMBER, return_code=1))
+    assert "failed_files" in tr.details
+    info = next(iter(tr.details["failed_files"].values()))
+    assert "line" not in info  # line key absent because int() raised ValueError

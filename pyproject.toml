@@ -47,6 +47,10 @@ cq = "py_cq.main:main"
 testpaths = ["tests"]
 norecursedirs = [".venv", "dist"]
 
+[[tool.ty.overrides]]
+include = ["demo/**"]
+rules = {unresolved-import = "ignore"}
+
 [tool.cq]
 exclude = ["demo"]
 

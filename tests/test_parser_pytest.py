@@ -250,7 +250,7 @@ def test_format_llm_message_collection_error_with_callee(tmp_path):
         "E   ImportError: cannot import 'my_func'\n"
         "E         my_func(bad_arg)\n"
     )
-    from py_cq.localtypes import RawResult, ToolResult
+    from py_cq.localtypes import RawResult
     raw_result = RawResult(tool_name="pytest", stdout=stdout, stderr="", return_code=2)
     tr = PytestParser().parse(raw_result)
     msg = PytestParser().format_llm_message(tr)

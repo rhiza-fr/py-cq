@@ -88,13 +88,13 @@ def test_abstract_parser_defaults_config_to_empty():
 
 
 def test_tool_result_coerces_none_details():
-    tr = ToolResult(metrics=None, details=None, raw=RawResult())
+    tr = ToolResult(metrics=None, details=None, raw=RawResult())  # ty: ignore[invalid-argument-type]
     assert tr.metrics == {}
     assert tr.details == {}
 
 
 def test_tool_result_coerces_list_metrics():
-    tr = ToolResult(metrics=[], details={}, raw=RawResult())
+    tr = ToolResult(metrics=[], details={}, raw=RawResult())  # ty: ignore[invalid-argument-type]
     assert tr.metrics == {}
 
 

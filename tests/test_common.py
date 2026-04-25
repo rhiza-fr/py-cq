@@ -1,4 +1,3 @@
-import pytest
 
 from py_cq.parsers.common import (
     _find_project_root,

@@ -9,17 +9,18 @@ from py_cq.table_formatter import format_as_table
 COL_TOOL, COL_TIME, COL_METRIC, COL_SCORE, COL_STATUS = 0, 1, 2, 3, 4
 
 
-def _make_registry(**overrides) -> dict:
-    defaults = dict(
+def _make_registry(
+    warning_threshold: float = 0.7,
+    error_threshold: float = 0.5,
+) -> dict[str, ToolConfig]:
+    return {"tool": ToolConfig(
         name="tool",
         command="cmd",
         parser_class=object,
         order=1,
-        warning_threshold=0.7,
-        error_threshold=0.5,
-    )
-    defaults.update(overrides)
-    return {"tool": ToolConfig(**defaults)}
+        warning_threshold=warning_threshold,
+        error_threshold=error_threshold,
+    )}
 
 
 def _combined(metrics: dict, tool_name: str = "tool") -> CombinedToolResults:
@@ -31,7 +32,7 @@ def _combined(metrics: dict, tool_name: str = "tool") -> CombinedToolResults:
     return CombinedToolResults(path=".", tool_results=[tr])
 
 
-def _status_cells(table: Table) -> list[str]:
+def _status_cells(table: Table) -> list:
     """Return non-empty cells from the Status column."""
     return [c for c in table.columns[COL_STATUS]._cells if c]
 
