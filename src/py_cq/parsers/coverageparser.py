@@ -76,13 +76,13 @@ class CoverageParser(AbstractParser):
         score = tr.metrics.get("coverage", 0)
         uncovered = sorted(
             [(f, d) for f, d in tr.details.items() if isinstance(d, dict) and d.get("missing")],
-            key=lambda x: x[1]["coverage"],
+            key=lambda x: x[1].get("coverage", 0.0),
         )[:5]
         if not uncovered:
             return f"**coverage** score: {score:.3f}"
         lines = [f"**coverage** score: {score:.3f} — files with lowest coverage:"]
         for path, data in uncovered:
-            pct = data["coverage"]
-            miss = data["missing"]
+            pct = data.get("coverage", 0.0)
+            miss = data.get("missing", 0)
             lines.append(f"- `{path}`: {pct:.0%} ({miss} uncovered statements)")
         return "\n".join(lines)

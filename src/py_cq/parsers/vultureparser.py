@@ -40,7 +40,11 @@ class VultureParser(AbstractParser):
         if not tr.details:
             return "vulture reported issues (no details available)"
         file, issues = next(iter(tr.details.items()))
+        if not isinstance(issues, list) or not issues:
+            return "vulture reported issues (no details available)"
         issue = issues[0]
+        if not isinstance(issue, dict):
+            return "vulture reported issues (no details available)"
         line = issue.get("line", "?")
         kind = issue.get("type", "unused")
         name = issue.get("name", "")

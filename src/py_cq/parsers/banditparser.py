@@ -22,6 +22,8 @@ class BanditParser(AbstractParser):
             data = json.loads(raw_result.stdout)
         except (json.JSONDecodeError, ValueError):
             return ToolResult(raw=raw_result, metrics={"security": 1.0})
+        if not isinstance(data, dict):
+            return ToolResult(raw=raw_result, metrics={"security": 1.0})
 
         files: dict[str, list] = {}
         weighted = 0
@@ -46,7 +48,11 @@ class BanditParser(AbstractParser):
         if not tr.details:
             return "bandit reported issues (no details available)"
         file, issues = next(iter(tr.details.items()))
+        if not isinstance(issues, list) or not issues:
+            return "bandit reported issues (no details available)"
         issue = issues[0]
+        if not isinstance(issue, dict):
+            return "bandit reported issues (no details available)"
         line = issue.get("line", "?")
         code = issue.get("code", "")
         severity = issue.get("severity", "")

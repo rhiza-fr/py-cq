@@ -64,7 +64,14 @@ class ComplexityParser(AbstractParser):
             >>> result.metrics["simplicity"]
             0.4"""
         tr = ToolResult(raw=raw_result)
-        data = json.loads(raw_result.stdout)
+        try:
+            data = json.loads(raw_result.stdout)
+        except (json.JSONDecodeError, ValueError):
+            tr.metrics["simplicity"] = 0.0
+            return tr
+        if not isinstance(data, dict):
+            tr.metrics["simplicity"] = 0.0
+            return tr
         score = 0
         num_items = 0
         max_complexity = 30

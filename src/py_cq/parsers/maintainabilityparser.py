@@ -41,7 +41,14 @@ class MaintainabilityParser(AbstractParser):
                 * ``details`` - a mapping from each file name (converted to use forward slashes) to a dictionary with keys ``mi``, ``rank``, and optionally ``error``.
                 * ``details['return_code']`` - the tool's exit code."""
         tr = ToolResult(raw=raw_result)
-        data = json.loads(raw_result.stdout)
+        try:
+            data = json.loads(raw_result.stdout)
+        except (json.JSONDecodeError, ValueError):
+            tr.metrics["maintainability"] = 0.0
+            return tr
+        if not isinstance(data, dict):
+            tr.metrics["maintainability"] = 0.0
+            return tr
         num_items = 0
         score = 0
         for file, values in data.items():

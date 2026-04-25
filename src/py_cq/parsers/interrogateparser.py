@@ -45,14 +45,14 @@ class InterrogateParser(AbstractParser):
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
         score = tr.metrics.get("doc_coverage", 0)
         uncovered = sorted(
-            [(f, d) for f, d in tr.details.items() if d.get("missing", 0) > 0],
-            key=lambda x: x[1]["coverage"],
+            [(f, d) for f, d in tr.details.items() if isinstance(d, dict) and d.get("missing", 0) > 0],
+            key=lambda x: x[1].get("coverage", 0.0),
         )[:5]
         if not uncovered:
             return f"**doc_coverage** score: {score:.3f}"
         lines = [f"**doc coverage** {score:.1%} — files with most missing docstrings:"]
         for path, data in uncovered:
-            miss = data["missing"]
-            pct = data["coverage"]
+            miss = data.get("missing", 0)
+            pct = data.get("coverage", 0.0)
             lines.append(f"- `{path}`: {pct:.0%} ({miss} undocumented)")
         return "\n".join(lines)

@@ -49,3 +49,8 @@ norecursedirs = [".venv", "dist"]
 
 [tool.cq]
 exclude = ["demo"]
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.151.10",
+]

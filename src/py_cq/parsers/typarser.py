@@ -64,7 +64,11 @@ class TyParser(AbstractParser):
         if not tr.details:
             return "ty reported issues (no details available)"
         file, issues = next(iter(tr.details.items()))
+        if not isinstance(issues, list) or not issues:
+            return "ty reported issues (no details available)"
         issue = issues[0]
+        if not isinstance(issue, dict):
+            return "ty reported issues (no details available)"
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")

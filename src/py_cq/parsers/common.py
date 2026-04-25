@@ -12,17 +12,17 @@ performance metrics or error scores:
 Both functions return a float and can be used directly in downstream analytics,
 visualisation or decision-making pipelines."""
 
+import re
 from pathlib import Path
 
 
 def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
     """Return up to `count` source lines starting at the given 1-based line number."""
-    from pathlib import Path
     try:
         all_lines = Path(file_path).read_text(encoding="utf-8").splitlines()
         start = max(0, line - 1)
         return "\n".join(all_lines[start : start + count])
-    except OSError:
+    except (OSError, ValueError):
         return ""
 
 
@@ -66,7 +66,6 @@ def extract_callee_name(source_line: str) -> str | None:
     ``func`` rather than the variable on the left.  Python keywords and
     built-ins listed in ``_PYTHON_KEYWORDS`` are excluded.
     """
-    import re
     stripped = source_line.strip()
     rhs = stripped
     if "=" in stripped and not stripped.startswith(("assert", "return")):
@@ -78,7 +77,6 @@ def extract_callee_name(source_line: str) -> str | None:
 
 
 def _find_project_root(hint_file: str) -> Path:
-    from pathlib import Path
     root = Path(hint_file).resolve().parent
     current = root
     for _ in range(8):
@@ -96,7 +94,6 @@ def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tupl
 
     Returns ``(file_path, code_block)`` for the first match, or ``("", "")`` if not found.
     """
-    from pathlib import Path
     result = find_function_source(hint_file, func_name, max_lines=max_lines)
     if result:
         return hint_file, result
@@ -112,7 +109,6 @@ def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tupl
 
 def _relative_path(path: str) -> str:
     """Return path relative to cwd, normalised to forward slashes."""
-    from pathlib import Path
     try:
         return str(Path(path).relative_to(Path.cwd())).replace("\\", "/")
     except ValueError:
@@ -130,7 +126,6 @@ def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -
         ...
         ```
     """
-    import re
     callee_file, code_block = find_in_project(func_name, hint_file, max_lines=max_lines)
     if not code_block:
         return ""
@@ -141,12 +136,10 @@ def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -
 
 def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
     """Return a fenced python block for the body of func_name, or '' if unavailable."""
-    from pathlib import Path
     try:
         all_lines = Path(file).read_text(encoding="utf-8").splitlines()
     except OSError:
         return ""
-    import re
     pattern = re.compile(rf"^(\s*)(?:async\s+)?def\s+{re.escape(func_name)}\s*\(")
     match_result: tuple[int, int] | None = None
     for i, line in enumerate(all_lines):

@@ -50,7 +50,11 @@ class RuffParser(AbstractParser):
         if not tr.details:
             return "ruff reported issues (no details available)"
         file, issues = next(iter(tr.details.items()))
+        if not isinstance(issues, list) or not issues:
+            return "ruff reported issues (no details available)"
         issue = issues[0]
+        if not isinstance(issue, dict):
+            return "ruff reported issues (no details available)"
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")

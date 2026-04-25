@@ -29,8 +29,9 @@ from py_cq.config import load_user_config
 from py_cq.execution_engine import _cache as tool_cache
 from py_cq.execution_engine import run_tools
 from py_cq.language_detector import detect_language
-from py_cq.localtypes import CombinedToolResults, ToolConfig
+from py_cq.localtypes import ToolConfig
 from py_cq.metric_aggregator import aggregate_metrics
+from py_cq.table_formatter import format_as_table
 from py_cq.tool_registry import tool_registry
 
 logging.basicConfig(
@@ -106,7 +107,7 @@ def _version_callback(value: bool) -> None:
         return
     import re
     import sys
-    if isinstance(sys.stdout,  io.TextIOWrapper):  
+    if isinstance(sys.stdout,  io.TextIOWrapper):  # pragma: no branch
         sys.stdout.reconfigure(encoding="utf-8")
     pkg = "python-code-quality"
     pkg_version = version(pkg)
@@ -185,7 +186,7 @@ def check(
     if path_obj.is_file():
         if path_obj.suffix != ".py":
             raise typer.BadParameter(f"File must be a Python file (.py): {path}")
-    elif path_obj.is_dir():
+    elif path_obj.is_dir():  # pragma: no branch
         if not (path_obj / "pyproject.toml").exists():
             raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
     log.setLevel(log_level)
@@ -284,41 +285,3 @@ def config(
     console.print(table)
 
 
-def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig]):
-    """Format combined tool results into a Rich Table.
-
-    Args:
-        data (CombinedToolResults): Aggregated tool results, including the path,
-            individual tool results, and the overall score.
-
-    Returns:
-        rich.table.Table: A Rich table with columns ``Tool``, ``Metric``, ``Score`` and
-        ``Status``. Each metric row displays a status icon based on thresholds from
-        the tool's configuration. The table is titled with the data path and ends
-        with a row showing the overall score.
-
-    Example:
-        >>> table = format_as_table(combined_results)
-        >>> console.print(table)
-    """
-    table = Table(width=80)
-    table.add_column("Tool", justify="left", no_wrap=True)
-    table.add_column("Time", justify="right", style="dim")
-    table.add_column("Metric", justify="right", style="cyan", no_wrap=True)
-    table.add_column("Score", style="magenta")
-    table.add_column("Status")
-    for tr in data.tool_results:
-        tool_name = tr.raw.tool_name
-        config = next((t for t in registry.values() if t.name == tool_name))
-        for i, (name, value) in enumerate(tr.metrics.items()):
-            status = ""
-            if value < config.error_threshold:
-                status = "[bold red]Error[/]"
-            elif value < config.warning_threshold:
-                status = "[yellow]Warning[/]"
-            else:
-                status = "[green]OK[/]"
-            time_str = f"{tr.duration_s:.2f}s" if i == 0 else ""
-            table.add_row(tool_name, time_str, name, f"{value:0.3f}", status)
-    table.add_row("", "", "[bold]Score[/]", f"[bold]{data.score:0.3f}[/]", "")
-    return table

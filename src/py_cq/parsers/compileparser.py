@@ -64,7 +64,10 @@ class CompileParser(AbstractParser):
                     compilations += 1
                 elif line.startswith("***   File "):
                     # This indicates a compilation error
-                    file_path = line.split('"')[1]
+                    parts = line.split('"')
+                    if len(parts) < 2:
+                        continue
+                    file_path = parts[1]
                     current_error = {"file": file_path, "error": line}
                 elif current_error and line.strip():
                     # Append additional error context
@@ -80,17 +83,21 @@ class CompileParser(AbstractParser):
                     error_info = {}
                     # Extract line number if present
                     if "line " in error_lines[0]:
-                        error_info["line"] = int(
-                            error_lines[0].split("line ")[1].split(",")[0]
-                        )
+                        try:
+                            error_info["line"] = int(
+                                error_lines[0].split("line ")[1].split(",")[0]
+                            )
+                        except ValueError:
+                            pass
                     # Get source code context if available
                     if len(error_lines) > 1:
                         error_info["src"] = error_lines[1].strip()
                     if len(error_lines) > 3:
                         if "Error:" in error_lines[3]:
                             error_parts = error_lines[3].split(":")
+                            type_tokens = error_parts[0].strip().split()
                             error_info["type"] = (
-                                error_parts[0].strip().split()[-1]
+                                type_tokens[-1] if type_tokens else "Unknown"
                             )  # Gets "SyntaxError"
                             error_info["help"] = ",".join(
                                 error_parts[1:]
