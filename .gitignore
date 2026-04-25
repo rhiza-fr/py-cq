@@ -11,6 +11,8 @@ wheels/
 profile.prof
 analysis_results.json
 .coverage
+coverage.json
+.hypothesis/
 .aider*
 .claude
 .cq.json
