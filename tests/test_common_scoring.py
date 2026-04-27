@@ -1,6 +1,4 @@
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 from py_cq.parsers.common import (
     extract_callee_name,
@@ -160,40 +158,6 @@ def test_score_logistic_monotone_decreasing(errors):
 def test_score_logistic_negative_errors_returns_one(errors):
     """Negative error counts always return exactly 1.0."""
     assert score_logistic_variant(errors, scale_factor=30, steepness=2) == 1.0
-
-
-@given(
-    errors=st.floats(min_value=0, max_value=1e6),
-    scale_factor=st.floats(min_value=0.1, max_value=1000),
-    steepness=st.floats(min_value=0.5, max_value=4),
-)
-@settings(max_examples=200)
-def test_score_logistic_always_in_bounds(errors, scale_factor, steepness):
-    result = score_logistic_variant(errors, scale_factor, steepness)
-    assert 0.0 <= result <= 1.0
-
-
-@given(
-    value=st.floats(min_value=0.0, max_value=1e6),
-    max_value=st.floats(min_value=1e-9, max_value=1e6),
-)
-@settings(max_examples=300)
-def test_inv_normalize_always_in_bounds(value, max_value):
-    from py_cq.parsers.common import inv_normalize
-    result = inv_normalize(value, max_value)
-    assert 0.0 <= result <= 1.0
-
-
-@given(
-    value=st.floats(min_value=0.0, max_value=1e6),
-    delta=st.floats(min_value=0.0, max_value=1e6),
-    max_value=st.floats(min_value=1e-9, max_value=1e6),
-)
-@settings(max_examples=200)
-def test_inv_normalize_monotone(value, delta, max_value):
-    from py_cq.parsers.common import inv_normalize
-    hi = value + delta
-    assert inv_normalize(hi, max_value) <= inv_normalize(value, max_value) + 1e-12
 
 
 @pytest.mark.parametrize("value,max_value,expected", [

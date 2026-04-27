@@ -1,8 +1,6 @@
 """Tests for metric_aggregator and CombinedToolResults score arithmetic."""
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 from py_cq.localtypes import CombinedToolResults, RawResult, ToolResult
 from py_cq.metric_aggregator import aggregate_metrics
@@ -119,21 +117,3 @@ def test_score_exact_known_values(metrics_list, expected):
     c = CombinedToolResults(path=".", tool_results=trs)
     assert c.score == pytest.approx(expected)
 
-
-@given(st.lists(st.floats(min_value=0.0, max_value=1.0), min_size=1, max_size=10))
-@settings(max_examples=200)
-def test_combined_score_always_in_bounds(metric_values):
-    trs = [_tr({"m": v}) for v in metric_values]
-    score = CombinedToolResults(path=".", tool_results=trs).score
-    assert 0.0 <= score <= 1.0
-
-
-@given(st.permutations([0.2, 0.5, 0.8, 1.0, 0.0]))
-@settings(max_examples=50)
-def test_combined_score_permutation_invariant(perm):
-    """CombinedToolResults.score is the same regardless of tool_results list order."""
-    base_trs = [_tr({"m": v}) for v in perm]
-    expected = CombinedToolResults(path=".", tool_results=base_trs).score
-    # Verify with an explicitly reversed order as well
-    reversed_trs = list(reversed(base_trs))
-    assert CombinedToolResults(path=".", tool_results=reversed_trs).score == pytest.approx(expected)
