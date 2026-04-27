@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.16] - 2026-04-27
+
+### Fixed
+
+- Harden parsers against malformed input.
+- Extend `ValueError` guard to `find_function_source` and handle compile edge cases.
+- Fix output formatting.
+
+### Changed
+
+- Achieve 100% line and branch test coverage.
+- Remove low-value hypothesis tests from scoring and aggregator.
+
 ## [0.1.15] - 2026-03-31
 
 ### Added
