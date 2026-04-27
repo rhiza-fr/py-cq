@@ -217,7 +217,7 @@ def check(
     elif output == OutputMode.LLM:
         # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
-        console.print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines))
+        print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines))
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
         console.print(format_as_table(combined_metrics, effective_registry))
