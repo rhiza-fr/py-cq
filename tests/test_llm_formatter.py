@@ -190,7 +190,7 @@ def test_empty_results_returns_no_issues():
 
 def test_cq_invocation_in_footer():
     registry = make_registry(make_config("ruff", 3))
-    result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation="cq run myfile.py --llm")
+    result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation="cq run myfile.py --llm", hint=True)
     assert "cq run myfile.py --llm" in result
 
 
@@ -313,9 +313,15 @@ def test_format_for_llm_passing_exact_format():
 
 
 def test_format_for_llm_defect_footer_exact():
-    """Defect output ends with the exact footer template."""
+    """Defect output ends with the exact footer (no hint by default)."""
     registry = make_registry(make_config("ruff", 3))
     result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation=CQ)
+    assert result.endswith("Please fix only this issue.")
+
+def test_format_for_llm_defect_footer_hint():
+    """With hint=True the footer includes the run-again instruction."""
+    registry = make_registry(make_config("ruff", 3))
+    result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation=CQ, hint=True)
     assert result.endswith(f"Please fix only this issue. After fixing, run `{CQ}` to verify.")
 
 
@@ -436,7 +442,7 @@ def test_format_for_llm_default_invocation():
         raw=RawResult(tool_name="ruff", command="python -m ruff check src/"),
     )
     combined = CombinedToolResults(path=".", tool_results=[tr])
-    result = format_for_llm(registry, combined)  # no cq_invocation → uses sys.argv
+    result = format_for_llm(registry, combined, hint=True)  # no cq_invocation → uses sys.argv
     assert "cq" in result
     assert "src/foo.py" in result  # file from ruff details
     assert "E501" in result         # specific violation code

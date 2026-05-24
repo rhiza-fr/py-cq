@@ -25,7 +25,7 @@ CQ = "cq run test.py --llm"
 
 RUFF_DEFECT_SNAPSHOT = (
     "`src/bar.py:42` \u2014 **E501**: line too long\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 COMPILE_DEFECT_SNAPSHOT = (
@@ -33,28 +33,28 @@ COMPILE_DEFECT_SNAPSHOT = (
     "```python\n"
     "x = {a = b}\n"
     "```\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 BANDIT_DEFECT_SNAPSHOT = (
     "`src/vuln.py:5` \u2014 **B101** [HIGH]: Use of assert detected\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 COVERAGE_DEFECT_SNAPSHOT = (
     "**coverage** score: 0.600 \u2014 files with lowest coverage:\n"
     "- `src/low.py`: 60% (40 uncovered statements)\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 VULTURE_DEFECT_SNAPSHOT = (
     "`src/dead.py:10` \u2014 **unused function** `old_helper` (80% confidence)\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 TY_DEFECT_SNAPSHOT = (
     "`src/baz.py:7` \u2014 **possibly-unbound**: x may be unbound\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 
@@ -128,29 +128,29 @@ def test_vulture_defect_snapshot():
 
 EXITCODE_DEFECT_SNAPSHOT = (
     "error: command failed\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 HALSTEAD_BUG_DEFECT_SNAPSHOT = (
     "`src/heavy.py` has high estimated bug density (Halstead bug estimate: 2.500)\n\n"
     "Reduce complexity by extracting helper functions or simplifying logic.\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 INTERROGATE_DEFECT_SNAPSHOT = (
     "**doc coverage** 60.0% — files with most missing docstrings:\n"
     "- `src/undoc.py`: 60% (4 undocumented)\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 LINECOUNT_DEFECT_SNAPSHOT = (
     "violation: something wrong\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 REGEXCOUNT_DEFECT_SNAPSHOT = (
     "match: error found here\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 
@@ -210,12 +210,12 @@ def test_regexcount_defect_snapshot():
 
 COMPLEXITY_DEFECT_SNAPSHOT = (
     "**complexity** score: 0.600\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 MAINTAINABILITY_DEFECT_SNAPSHOT = (
     "**maintainability** score: 0.550\n\n"
-    "Please fix only this issue. After fixing, run `cq run test.py --llm` to verify."
+    "Please fix only this issue."
 )
 
 

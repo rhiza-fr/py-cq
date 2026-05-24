@@ -165,6 +165,9 @@ def check(
     exclude: str | None = typer.Option(
         None, "--exclude", help="Comma-separated paths to exclude (e.g. demo,docs)"
     ),
+    hint: bool = typer.Option(
+        False, "--hint", help="Append 'run cq again to verify' to -o llm output"
+    ),
 ):
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm""" # --help
     path_obj = Path(path)
@@ -217,7 +220,7 @@ def check(
     elif output == OutputMode.LLM:
         # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
-        print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines))
+        print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines, hint=hint))
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
         console.print(format_as_table(combined_metrics, effective_registry))

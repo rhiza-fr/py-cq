@@ -68,6 +68,7 @@ cq check . --skip bandit   # Skip specific tools
 cq check . --exclude demo  # Exclude paths from all tools
 cq check . --workers 1     # Run sequentially if you like things slow
 cq check . --clear-cache   # Clear cached results before running (rarely needed)
+cq check . -o llm --hint   # Append "run cq again to verify" (for human workflows)
 cq config path/to/project/ # Show effective tool configuration
 ```
 
