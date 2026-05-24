@@ -106,9 +106,6 @@ def _version_callback(value: bool) -> None:
     if not value:
         return
     import re
-    import sys
-    if isinstance(sys.stdout,  io.TextIOWrapper):  # pragma: no branch
-        sys.stdout.reconfigure(encoding="utf-8")
     pkg = "python-code-quality"
     pkg_version = version(pkg)
     dep_versions: list[tuple[str, str]] = []
@@ -133,6 +130,9 @@ def callback(
     ),
 ) -> None:
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""
+    import sys
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
 console = Console()
 
 
