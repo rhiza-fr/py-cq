@@ -168,6 +168,12 @@ def check(
     hint: bool = typer.Option(
         False, "--hint", help="Append 'run cq again to verify' to -o llm output"
     ),
+    limit: int = typer.Option(
+        1, "--limit", help="Number of issues to show with -o llm (default: 1)"
+    ),
+    silence: list[str] = typer.Option(
+        [], "--silence", "-s", help="Silence issues from -o llm output (e.g. -s src/foo.py or -s src/foo.py:42:E501)"
+    ),
 ):
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm""" # --help
     path_obj = Path(path)
@@ -220,7 +226,7 @@ def check(
     elif output == OutputMode.LLM:
         # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
-        print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines, hint=hint))
+        print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence))
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
         console.print(format_as_table(combined_metrics, effective_registry))
