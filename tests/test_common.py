@@ -1,6 +1,7 @@
 
 from py_cq.parsers.common import (
     _find_project_root,
+    find_enclosing_function,
     find_function_source,
     format_source_context,
     inv_normalize,
@@ -154,6 +155,44 @@ def test_find_project_root_reaches_filesystem_root(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "parent", property(_fake_parent))
     root = common_mod._find_project_root(str(fake_file))
     assert root is not None
+
+
+def test_find_enclosing_function_basic(tmp_path):
+    src = tmp_path / "ex.py"
+    src.write_text(
+        "def outer():\n"
+        "    x = 1\n"
+        "    y = x + 1\n"
+        "    return y\n"
+    )
+    result = find_enclosing_function(str(src), 3)
+    assert "def outer" in result
+    assert "y = x + 1" in result
+
+
+def test_find_enclosing_function_nested(tmp_path):
+    src = tmp_path / "ex.py"
+    src.write_text(
+        "def outer():\n"
+        "    def inner():\n"
+        "        z = 42\n"
+        "    inner()\n"
+    )
+    result = find_enclosing_function(str(src), 3)
+    assert "def inner" in result
+    assert "def outer" not in result
+
+
+def test_find_enclosing_function_module_level(tmp_path):
+    src = tmp_path / "ex.py"
+    src.write_text("x = 1\ny = 2\n")
+    assert find_enclosing_function(str(src), 1) == ""
+
+
+def test_find_enclosing_function_out_of_range(tmp_path):
+    src = tmp_path / "ex.py"
+    src.write_text("def foo():\n    pass\n")
+    assert find_enclosing_function(str(src), 99) == ""
 
 
 def test_find_in_project_not_found_multiple_files(tmp_path):

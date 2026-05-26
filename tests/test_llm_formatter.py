@@ -331,7 +331,7 @@ def test_format_for_llm_context_lines_forwarded():
 
     class RecordingParser(AbstractParser):
         def parse(self, raw_result): return ToolResult()
-        def format_llm_message(self, tr, *, context_lines=15):
+        def format_llm_message(self, tr, *, context_lines=15, limit=1):
             received["context_lines"] = context_lines
             return "recorded"
 
@@ -447,3 +447,42 @@ def test_format_for_llm_default_invocation():
     assert "src/foo.py" in result  # file from ruff details
     assert "E501" in result         # specific violation code
     assert "Please fix" in result   # LLM formatter footer
+
+
+def test_format_for_llm_limit_multiple_issues():
+    config = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
+    registry = {"ruff": config}
+    tr = ToolResult(
+        metrics={"lint": 0.3},
+        details={"src/foo.py": [
+            {"line": 1, "code": "E501", "message": "line too long"},
+            {"line": 2, "code": "F401", "message": "[*] `os` imported but unused"},
+            {"line": 3, "code": "F841", "message": "Local variable `x` is assigned to but never used"},
+        ]},
+        raw=RawResult(tool_name="ruff"),
+    )
+    combined = CombinedToolResults(path=".", tool_results=[tr])
+    result = format_for_llm(registry, combined, limit=2)
+    assert "---" in result          # separator between issues
+    assert "E501" in result
+    assert "F401" in result
+    assert "F841" not in result     # third issue excluded
+    assert "Please fix these 2 issues" in result
+
+
+def test_format_for_llm_limit_1_unchanged():
+    config = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
+    registry = {"ruff": config}
+    tr = ToolResult(
+        metrics={"lint": 0.3},
+        details={"src/foo.py": [
+            {"line": 1, "code": "E501", "message": "line too long"},
+            {"line": 2, "code": "F401", "message": "[*] `os` imported but unused"},
+        ]},
+        raw=RawResult(tool_name="ruff"),
+    )
+    combined = CombinedToolResults(path=".", tool_results=[tr])
+    result = format_for_llm(registry, combined, limit=1)
+    assert "E501" in result
+    assert "F401" not in result
+    assert "Please fix only this issue" in result

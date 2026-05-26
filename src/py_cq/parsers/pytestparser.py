@@ -153,7 +153,7 @@ class PytestParser(AbstractParser):
             tr.details = tests_found
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         """Return the first failing test with function body, failure output, and callee signature."""
         from py_cq.parsers.common import (
             extract_callee_name,
@@ -186,9 +186,8 @@ class PytestParser(AbstractParser):
                 return "\n".join(parts)
         if "no tests ran" in tr.raw.stdout:
             return (
-                "**No tests found.** This project has no pytest test suite.\n\n"
-                "Add a `tests/` directory with at least one test file (e.g. `tests/test_basic.py`) "
-                "and write a first test covering a core function."
+                "**No tests found.** pytest ran but collected nothing.\n\n"
+                "Create `tests/test_basic.py` and write a first test covering a core function."
             )
         from py_cq.parsers.common import (
             extract_callee_name,

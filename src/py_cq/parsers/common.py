@@ -19,7 +19,7 @@ from pathlib import Path
 def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
     """Return up to `count` source lines starting at the given 1-based line number."""
     try:
-        all_lines = Path(file_path).read_text(encoding="utf-8").splitlines()
+        all_lines = Path(file_path).read_text(encoding="utf-8", errors="replace").splitlines()
         start = max(0, line - 1)
         return "\n".join(all_lines[start : start + count])
     except (OSError, ValueError):
@@ -115,6 +115,11 @@ def _relative_path(path: str) -> str:
         return path.replace("\\", "/")
 
 
+def format_issue_header(file: str, line: int, code: str, message: str) -> str:
+    """Return a clean single-line issue header: path:line — CODE: message."""
+    return f"{_relative_path(file)}:{line} — {code}: {message}"
+
+
 def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -> str:
     """Return a labelled callee definition block, or '' if not found in project.
 
@@ -132,6 +137,48 @@ def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -
     m = re.search(r"```python\n(\d+):", code_block)
     line_ref = f":{m.group(1)}" if m else ""
     return f"\n`{func_name}` is defined at: `{_relative_path(callee_file)}{line_ref}`{code_block}"
+
+
+def find_enclosing_function(file: str, line: int, max_lines: int = 50) -> str:
+    """Return a fenced python block for the function enclosing 1-based `line`, or '' if not found."""
+    try:
+        all_lines = Path(file).read_text(encoding="utf-8").splitlines()
+    except (OSError, ValueError):
+        return ""
+    if line < 1 or line > len(all_lines):
+        return ""
+    target_idx = line - 1
+    target_indent = len(all_lines[target_idx]) - len(all_lines[target_idx].lstrip())
+    def_re = re.compile(r"^(\s*)(?:async\s+)?def\s+")
+    start_idx = baseline_indent = None
+    for i in range(target_idx - 1, -1, -1):
+        m = def_re.match(all_lines[i])
+        if m:
+            indent = len(m.group(1))
+            if indent < target_indent:
+                start_idx, baseline_indent = i, indent
+                break
+    if start_idx is None or baseline_indent is None:
+        return ""
+    collected = [all_lines[start_idx]]
+    in_body = ":" in all_lines[start_idx].split("#")[0]
+    for ln in all_lines[start_idx + 1:]:
+        stripped = ln.lstrip()
+        if not in_body:
+            # still in multi-line signature; enter body when we see the colon
+            if ":" in ln.split("#")[0]:
+                in_body = True
+            collected.append(ln)
+        else:
+            if stripped and len(ln) - len(stripped) <= baseline_indent:
+                break
+            collected.append(ln)
+        if len(collected) >= max_lines:
+            break
+    while collected and not collected[-1].strip():
+        collected.pop()
+    numbered = "\n".join(f"{start_idx + 1 + i}: {ln}" for i, ln in enumerate(collected))
+    return f"\n```python\n{numbered}\n```"
 
 
 def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:

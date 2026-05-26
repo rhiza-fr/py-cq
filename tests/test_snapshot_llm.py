@@ -24,7 +24,7 @@ from py_cq.parsers.vultureparser import VultureParser
 CQ = "cq run test.py --llm"
 
 RUFF_DEFECT_SNAPSHOT = (
-    "`src/bar.py:42` \u2014 **E501**: line too long\n\n"
+    "src/bar.py:42 \u2014 E501: line too long\n\n"
     "Please fix only this issue."
 )
 
@@ -53,7 +53,7 @@ VULTURE_DEFECT_SNAPSHOT = (
 )
 
 TY_DEFECT_SNAPSHOT = (
-    "`src/baz.py:7` \u2014 **possibly-unbound**: x may be unbound\n\n"
+    "src/baz.py:7 \u2014 possibly-unbound: x may be unbound\n\n"
     "Please fix only this issue."
 )
 
@@ -138,8 +138,7 @@ HALSTEAD_BUG_DEFECT_SNAPSHOT = (
 )
 
 INTERROGATE_DEFECT_SNAPSHOT = (
-    "**doc coverage** 60.0% — files with most missing docstrings:\n"
-    "- `src/undoc.py`: 60% (4 undocumented)\n\n"
+    "src/undoc.py — 60% doc coverage (4 undocumented)\n\n"
     "Please fix only this issue."
 )
 

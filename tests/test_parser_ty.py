@@ -22,6 +22,17 @@ def test_ty_parse_diagnostics():
     assert issues[1]["severity"] == "warning"
 
 
+def test_ty_parse_deduplicates_same_line_code():
+    """Two diagnostics with identical (file, line, code) should collapse to one."""
+    output = (
+        "src/foo.py:218:10: error[possibly-missing-submodule] Submodule `tokens` might not have been imported\n"
+        "src/foo.py:218:35: error[possibly-missing-submodule] Submodule `tokens` might not have been imported\n"
+        "Found 2 diagnostics.\n"
+    )
+    tr = TyParser().parse(raw(output, return_code=1))
+    assert len(tr.details["src/foo.py"]) == 1
+
+
 def test_ty_parse_clean():
     tr = TyParser().parse(raw("All checks passed!\n", return_code=0))
     assert tr.metrics["type_check"] == 1.0
@@ -65,6 +76,48 @@ def test_ty_format_llm_no_callee_for_non_call_code(tmp_path):
 def test_ty_format_llm_no_details():
     tr = ToolResult(metrics={"type_check": 0.5}, details={}, raw=RawResult())
     assert "no details" in TyParser().format_llm_message(tr).lower()
+
+
+def test_ty_format_call_non_callable(tmp_path):
+    src = tmp_path / "embed.py"
+    src.write_text("tokenizer = AutoTokenizer.from_pretrained('bert')\nresult = tokenizer(text)\n")
+    tr = ToolResult(
+        metrics={"type_check": 0.5},
+        details={str(src): [{"line": 2, "code": "call-non-callable", "severity": "error",
+                              "message": "Object of type `AutoTokenizer` is not callable"}]},
+        raw=RawResult(),
+    )
+    msg = TyParser().format_llm_message(tr)
+    assert "AutoTokenizer" in msg
+    assert "type: ignore" in msg
+
+
+def test_ty_format_possibly_missing_submodule(tmp_path):
+    src = tmp_path / "extract.py"
+    src.write_text("import spacy\nmatcher = spacy.matcher.Matcher(nlp.vocab)\n")
+    tr = ToolResult(
+        metrics={"type_check": 0.5},
+        details={str(src): [{"line": 2, "code": "possibly-missing-submodule", "severity": "error",
+                              "message": "Submodule `matcher` might not have been imported"}]},
+        raw=RawResult(),
+    )
+    msg = TyParser().format_llm_message(tr)
+    assert "matcher" in msg
+    assert "import" in msg.lower()
+
+
+def test_ty_format_unresolved_import(tmp_path):
+    src = tmp_path / "old.py"
+    src.write_text("from mypackage.prepare_data import prepare_contexts\n")
+    tr = ToolResult(
+        metrics={"type_check": 0.5},
+        details={str(src): [{"line": 1, "code": "unresolved-import", "severity": "error",
+                              "message": "Cannot resolve imported module `mypackage.prepare_data`"}]},
+        raw=RawResult(),
+    )
+    msg = TyParser().format_llm_message(tr)
+    assert "mypackage.prepare_data" in msg
+    assert "renamed or deleted" in msg
 
 
 def test_ty_format_llm_call_code_no_func_name(tmp_path):
