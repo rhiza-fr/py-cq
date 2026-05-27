@@ -47,12 +47,12 @@ def get_sigs(path: str):
             if entry.is_file() and entry.name.endswith(".py"):
                 stat_info = entry.stat()
                 items.append(f"{entry.path}:{stat_info.st_size}:{stat_info.st_mtime}")
-            if entry.is_dir() and entry.name not in [".venv", "venv", "__pycache__"]:
+            if entry.is_dir() and entry.name not in [".venv", "venv", "__pycache__", ".git"]:
                 items.extend(get_sigs(entry.path))
     return items
 
 
-def get_context_hash(path: str):
+def get_context_hash(path: str) -> str:
     """Compute an MD5 hash that uniquely identifies a file or directory.
 
     The hash is derived from a signature string. For a file, the signature consists of
@@ -72,10 +72,13 @@ def get_context_hash(path: str):
         >>> get_context_hash('/tmp/example.txt')
         '5d41402abc4b2a76b9719d911017c592'
     """
-    sig = "empty"
+    h = hashlib.md5()  # nosec
     if os.path.isfile(path):
         s = os.stat(path)
-        sig = f"{path}:{s.st_size}:{s.st_mtime}"
+        h.update(f"{path}:{s.st_size}:{s.st_mtime}".encode())
     elif os.path.isdir(path):
-        sig = "".join(get_sigs(path=path))
-    return f"{hashlib.md5(sig.encode('utf-8')).hexdigest()}" # nosec
+        for sig in sorted(get_sigs(path)):
+            h.update(sig.encode())
+    else:
+        h.update(b"empty")
+    return h.hexdigest()
