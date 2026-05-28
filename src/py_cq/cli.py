@@ -35,6 +35,19 @@ from py_cq.metric_aggregator import aggregate_metrics
 from py_cq.table_formatter import format_as_table
 from py_cq.tool_registry import tool_registry
 
+# Known parser class names that are allowed in user tool definitions via
+# pyproject.toml.  This safelist prevents arbitrary code execution through
+# unexpected module imports (H-1).
+_KNOWN_PARSER_CLASSES = frozenset({
+    # Built-in tools (from config.yaml)
+    "CompileParser", "RuffParser", "TyParser", "BanditParser",
+    "PytestParser", "CoverageParser", "ComplexityParser",
+    "MaintainabilityParser", "HalsteadParser", "VultureParser",
+    "InterrogateParser",
+    # Standalone parsers usable by user-defined tools
+    "ExitCodeParser", "LineCountParser", "RegexCountParser",
+})
+
 logging.basicConfig(
     level="INFO",
     format="%(message)s",
@@ -77,8 +90,24 @@ def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str,
             if "error" in thresholds:
                 registry[tool_id].error_threshold = float(thresholds["error"])
     for tool_id, tool_data in user_cfg.get("tools", {}).items():
+        if tool_id in base:
+            available = ", ".join(sorted(base))
+            raise typer.BadParameter(
+                f"[tool.cq.tools.{tool_id}] is a built-in tool and cannot be redefined via pyproject.toml. "
+                f"Use [tool.cq.thresholds.{tool_id}] to adjust thresholds instead. "
+                f"Available: {available}"
+            )
         try:
             parser_name = tool_data["parser"]
+        except KeyError:
+            raise typer.BadParameter(f"[tool.cq.tools.{tool_id}] missing required field 'parser'")
+        if parser_name not in _KNOWN_PARSER_CLASSES:
+            allowed = ", ".join(sorted(_KNOWN_PARSER_CLASSES))
+            raise typer.BadParameter(
+                f"[tool.cq.tools.{tool_id}] unknown parser {parser_name!r}. "
+                f"Allowed parsers: {allowed}"
+            )
+        try:
             module = import_module(f"py_cq.parsers.{parser_name.lower()}")
             parser_class = getattr(module, parser_name)
             registry[tool_id] = ToolConfig(
@@ -93,8 +122,10 @@ def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str,
                 parser_config=tool_data.get("parser_config", {}),
                 exclude_format=tool_data.get("exclude_format", ""),
             )
-        except KeyError as e:
-            raise typer.BadParameter(f"[tool.cq.tools.{tool_id}] missing required field {e}")
+        except (KeyError, ImportError, AttributeError) as e:
+            raise typer.BadParameter(
+                f"[tool.cq.tools.{tool_id}] {e}"
+            )
     return registry
 
 
@@ -395,12 +426,17 @@ def verify(
     fingerprint: str = typer.Argument(..., help="Fingerprint from -o ci output (tool:file:line:code)"),
 ) -> None:
     """Check whether a fingerprinted issue has been fixed."""
-    parts = fingerprint.split(":", 3)
+    # Split from the right to handle Windows drive-letter colons in the
+    # file path (e.g. "ruff:C:/foo/bar.py:42:E501").
+    # rsplit(":", 2) produces e.g. ["ruff:C:/foo/bar.py", "42", "E501"].
+    parts = fingerprint.rsplit(":", 2)
     if len(parts) < 2:
         raise typer.BadParameter(f"Expected tool:file[:line:code], got: {fingerprint!r}")
-    tool_name = parts[0]
-    file_str = parts[1]
-    code = parts[3] if len(parts) == 4 else ""
+    # The first part is "tool:file" — split it on the first colon only
+    tool_parts = parts[0].split(":", 1)
+    tool_name = tool_parts[0]
+    file_str = tool_parts[1] if len(tool_parts) > 1 else ""
+    code = parts[2] if len(parts) == 3 else ""
 
     if tool_name not in tool_registry:
         raise typer.BadParameter(f"Unknown tool: {tool_name!r}")

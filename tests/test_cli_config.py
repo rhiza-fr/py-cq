@@ -130,8 +130,8 @@ def test_apply_user_config_user_tool_parser_config():
     assert result["mychecker"].parser_config == {"scale_factor": 20}
 
 
-def test_apply_user_config_user_tool_overrides_builtin():
-    """A user tool entry with the same key replaces the built-in."""
+def test_apply_user_config_cannot_override_builtin():
+    """A user tool entry with the same key as a built-in tool is rejected."""
     cfg = {"ruff": _tc("ruff", order=2)}
     user_cfg = {
         "tools": {
@@ -144,8 +144,8 @@ def test_apply_user_config_user_tool_overrides_builtin():
             }
         }
     }
-    result = _apply_user_config(cfg, user_cfg)
-    assert result["ruff"].command == "custom-ruff {context_path}"
+    with pytest.raises(typer.BadParameter, match="built-in"):
+        _apply_user_config(cfg, user_cfg)
 
 
 # --- config command ---
@@ -347,12 +347,8 @@ def test_format_as_table_error_status():
     assert "Error" in text
 
 
-def test_apply_user_config_invalid_parser_raises_module_not_found():
-    """Documenting current behavior: an unknown parser name raises ModuleNotFoundError.
-
-    The KeyError branch in _apply_user_config only catches missing required fields.
-    A bad parser *name* triggers import_module which raises ModuleNotFoundError uncaught.
-    """
+def test_apply_user_config_invalid_parser_is_rejected():
+    """An unknown parser name is rejected by the safelist."""
     user_cfg = {
         "tools": {
             "mycheck": {
@@ -364,7 +360,7 @@ def test_apply_user_config_invalid_parser_raises_module_not_found():
             }
         }
     }
-    with pytest.raises(ModuleNotFoundError):
+    with pytest.raises(typer.BadParameter, match="NonExistentParser123"):
         _apply_user_config({"ruff": _tc()}, user_cfg)
 
 
