@@ -208,14 +208,11 @@ def test_check_only_and_skip_combined(project_dir):
     assert names <= {"ruff", "bandit"}
 
 
-def test_check_only_unknown_tool_runs_nothing(project_dir):
-    tr = _fake_tr()
-    combined = _fake_combined(str(project_dir))
-    with patch("py_cq.cli.run_tools", return_value=[tr]) as mock_run, \
-         patch("py_cq.cli.aggregate_metrics", return_value=combined):
-        runner.invoke(app, ["check", str(project_dir), "--only", "nonexistent"])
-    passed = list(mock_run.call_args[0][0])
-    assert passed == []
+def test_check_only_unknown_tool_errors(project_dir):
+    result = runner.invoke(app, ["check", str(project_dir), "--only", "nonexistent"])
+    assert result.exit_code != 0
+    assert "nonexistent" in result.output
+    assert "Available" in result.output
 
 
 def test_check_exclude_merge(project_dir):

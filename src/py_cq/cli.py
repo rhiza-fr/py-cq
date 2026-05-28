@@ -20,6 +20,7 @@ from importlib import import_module
 from importlib.metadata import requires, version
 from pathlib import Path
 
+import tomlkit
 import typer
 from rich.console import Console
 from rich.logging import RichHandler
@@ -45,11 +46,15 @@ app = typer.Typer(
     epilog=(
         "Examples:\n\n"
         "  cq check .          # full table with all metrics (default)\n\n"
-        "  cq check . -o llm   # top defect as markdown (primary LLM workflow)\n\n"
-        "  cq check . -o score # numeric score only\n\n"
-        "  cq check . -o json  # parsed metrics as json\n\n"
-        "  cq check . -o raw   # unprocessed tool output as json\n\n"
-        "  cq config .         # show effective tool configuration"
+        "  cq check . -o llm      # top defect as markdown (primary LLM workflow)\n\n"
+        "  cq check . -o llm-json # top defect as JSON with fingerprint for automation\n\n"
+        "  cq check . -o score    # numeric score only\n\n"
+        "  cq check . -o json     # parsed metrics as json\n\n"
+        "  cq check . -o raw      # unprocessed tool output as json\n\n"
+        "  cq config              # show effective tool configuration\n"
+        "  cq config --path .     # show configuration for current project\n\n"
+        "  cq config set radon-hal --warning 0.45 --error 0.25  # set thresholds\n\n"
+        "  cq config set radon-hal --error 0.25 --path .        # set with path"
     ),
 )
 
@@ -99,6 +104,7 @@ class OutputMode(str, Enum):
     SCORE = "score"
     JSON = "json"
     LLM = "llm"
+    LLM_JSON = "llm-json"
     RAW = "raw"
 
 
@@ -204,16 +210,24 @@ def check(
     effective_registry = _apply_user_config(tool_registry, user_cfg)
     if only:
         keep = set(only.split(","))
+        unknown = keep - set(effective_registry)
+        if unknown:
+            available = ", ".join(sorted(effective_registry))
+            raise typer.BadParameter(f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {available}")
         effective_registry = {k: v for k, v in effective_registry.items() if k in keep}
     if skip:
         drop = set(skip.split(","))
+        unknown = drop - set(effective_registry)
+        if unknown:
+            available = ", ".join(sorted(effective_registry))
+            raise typer.BadParameter(f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {available}")
         effective_registry = {k: v for k, v in effective_registry.items() if k not in drop}
     config_excludes: list[str] = user_cfg.get("exclude", [])
     cli_excludes: list[str] = [e.strip() for e in exclude.split(",")] if exclude else []
     excludes = list(dict.fromkeys(config_excludes + cli_excludes))
     if clear_cache:
         tool_cache.clear()
-    tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output == OutputMode.LLM), excludes=excludes)
+    tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output in (OutputMode.LLM, OutputMode.LLM_JSON)), excludes=excludes)
     # for tr in tool_results:
     #     log.debug(json.dumps(tr.to_dict(), indent=2))
     combined_metrics = aggregate_metrics(path=path, metrics=tool_results)
@@ -227,6 +241,9 @@ def check(
         # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
         print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence))
+    elif output == OutputMode.LLM_JSON:
+        from py_cq.llm_formatter import format_for_llm_json
+        print(json.dumps(format_for_llm_json(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence)))
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
         console.print(format_as_table(combined_metrics, effective_registry))
@@ -240,11 +257,18 @@ def check(
         raise typer.Exit(code=1)
 
 
-@app.command()
+config_app = typer.Typer(help="Show or modify tool configuration")
+app.add_typer(config_app, name="config")
+
+
+@config_app.callback(invoke_without_command=True)
 def config(
-    path: str = typer.Argument(".", help="Path to Python file or project directory"),
+    ctx: typer.Context,
+    path: str = typer.Option(".", "--path", "-p", help="Path to Python file or project directory"),
 ) -> None:
     """Show the effective tool configuration for a project."""
+    if ctx.invoked_subcommand is not None:
+        return
     path_obj = Path(path).resolve()
     toml_path = (
         path_obj.parent / "pyproject.toml"
@@ -294,3 +318,121 @@ def config(
     console.print(table)
 
 
+@config_app.command("set")
+def config_set(
+    tool_id: str = typer.Argument(..., help="Tool ID (e.g. radon-hal, ruff)"),
+    warning: float | None = typer.Option(None, "--warning", "-w", help="Warning threshold (0-1)"),
+    error: float | None = typer.Option(None, "--error", "-e", help="Error threshold (0-1)"),
+    path: str = typer.Option(".", "--path", "-p", help="Path to project directory"),
+) -> None:
+    """Set warning/error thresholds for a tool in pyproject.toml."""
+    if warning is None and error is None:
+        raise typer.BadParameter("At least one of --warning or --error is required")
+
+    if tool_id not in tool_registry:
+        available = ", ".join(sorted(tool_registry))
+        raise typer.BadParameter(
+            f"Unknown tool: {tool_id!r}. Available tools: {available}"
+        )
+
+    path_obj = Path(path).resolve()
+    if not path_obj.is_dir():
+        raise typer.BadParameter(f"Path must be a directory: {path}")
+
+    toml_path = path_obj / "pyproject.toml"
+    if not toml_path.exists():
+        raise typer.BadParameter(f"No pyproject.toml found at {toml_path}")
+
+    # Read, modify, write
+    with toml_path.open("r", encoding="utf-8") as f:
+        doc = tomlkit.parse(f.read())
+
+    # Ensure nested tables exist
+    if "tool" not in doc:
+        doc["tool"] = tomlkit.table()
+    tool_tbl = doc["tool"]
+    if "cq" not in tool_tbl:
+        tool_tbl["cq"] = tomlkit.table()
+    cq_tbl = tool_tbl["cq"]
+    if "thresholds" not in cq_tbl:
+        cq_tbl["thresholds"] = tomlkit.table()
+    thresholds = cq_tbl["thresholds"]
+
+    # Build or update the inline table for this tool
+    if tool_id in thresholds:
+        entry = thresholds[tool_id]
+    else:
+        entry = tomlkit.inline_table()
+
+    if warning is not None:
+        entry["warning"] = warning
+    if error is not None:
+        entry["error"] = error
+    thresholds[tool_id] = entry
+
+    with toml_path.open("w", encoding="utf-8") as f:
+        f.write(tomlkit.dumps(doc))
+
+    # Report what was set
+    parts = []
+    if warning is not None:
+        parts.append(f"warning={warning}")
+    if error is not None:
+        parts.append(f"error={error}")
+    console.print(
+        f"[green]Set {tool_id} thresholds ({', '.join(parts)}) "
+        f"in {toml_path}[/green]"
+    )
+
+    # Flush cq cache so next check picks up the new thresholds
+    from py_cq.execution_engine import _cache
+    _cache.clear()
+    console.print("[dim]Tool cache cleared[/dim]")
+
+
+@app.command()
+def verify(
+    fingerprint: str = typer.Argument(..., help="Fingerprint from -o ci output (tool:file:line:code)"),
+) -> None:
+    """Check whether a fingerprinted issue has been fixed."""
+    parts = fingerprint.split(":", 3)
+    if len(parts) < 2:
+        raise typer.BadParameter(f"Expected tool:file[:line:code], got: {fingerprint!r}")
+    tool_name = parts[0]
+    file_str = parts[1]
+    code = parts[3] if len(parts) == 4 else ""
+
+    if tool_name not in tool_registry:
+        raise typer.BadParameter(f"Unknown tool: {tool_name!r}")
+
+    target = file_str if file_str else "."
+    only_registry = {tool_name: tool_registry[tool_name]}
+    tool_results = run_tools(only_registry.values(), target, max_workers=1, early_exit=False, excludes=[])
+
+    if not tool_results:
+        typer.echo(f"error: {tool_name} produced no output")
+        raise typer.Exit(1)
+
+    tr = tool_results[0]
+    tc = tool_registry[tool_name]
+
+    if not code:
+        fixed = bool(tr.metrics and min(tr.metrics.values()) >= tc.warning_threshold)
+        typer.echo(f"{'fixed' if fixed else 'not fixed'}: {tool_name}")
+        if not fixed:
+            raise typer.Exit(1)
+        return
+
+    target_posix = Path(file_str).as_posix()
+    for detail_file, issues in tr.details.items():
+        detail_posix = Path(detail_file).as_posix()
+        match = (
+            detail_posix == target_posix
+            or detail_posix.endswith(f"/{target_posix}")
+            or target_posix.endswith(f"/{detail_posix}")
+        )
+        if match and isinstance(issues, list) and any(i.get("code") == code for i in issues):
+            typer.echo(f"not fixed: {code} still present in {file_str}")
+            raise typer.Exit(1)
+
+    typer.echo(f"fixed: {code} no longer found in {file_str}")
