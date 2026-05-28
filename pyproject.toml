@@ -47,6 +47,10 @@ cq = "py_cq.main:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 norecursedirs = [".venv", "dist"]
+markers = [
+    "slow: tests that have real side effects (e.g. clearing disk cache)",
+]
+addopts = "-m 'not slow'"
 
 [[tool.ty.overrides]]
 include = ["demo/**"]

@@ -137,6 +137,7 @@ def test_skip_flag_removes_tool(tmp_path):
     assert all(entry["tool_name"] != "mycheck" for entry in data)
 
 
+@pytest.mark.slow
 def test_clear_cache_then_runs(tmp_path):
     path = _project(tmp_path, "echo hello")
     r1 = runner.invoke(app, ["check", path, "-o", "score", "--workers", "1"])
