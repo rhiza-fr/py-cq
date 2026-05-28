@@ -274,7 +274,8 @@ def check(
         print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence))
     elif output == OutputMode.LLM_JSON:
         from py_cq.llm_formatter import format_for_llm_json
-        print(json.dumps(format_for_llm_json(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence)))
+        project_root = path_obj.resolve() if path_obj.is_dir() else path_obj.resolve().parent
+        print(json.dumps(format_for_llm_json(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence, project_root=project_root)))
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
         console.print(format_as_table(combined_metrics, effective_registry))

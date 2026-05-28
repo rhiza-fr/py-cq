@@ -122,10 +122,16 @@ def _build_message(slices, parser, context_lines: int, limit: int, hint: bool, c
     return body
 
 
-def _fingerprint_from_slice(tool_name: str, tr: ToolResult) -> str:
+def _fingerprint_from_slice(tool_name: str, tr: ToolResult, project_root: Path | None = None) -> str:
     """Return fingerprint as tool:file:line:code (line/code omitted when unavailable)."""
     for file, issues in tr.details.items():
-        posix = Path(file).as_posix()
+        p = Path(file)
+        if project_root:
+            try:
+                p = p.resolve().relative_to(project_root.resolve())
+            except ValueError:
+                pass
+        posix = p.as_posix()
         if isinstance(issues, list) and issues:
             code = issues[0].get("code", "")
             line = issues[0].get("line", "")
@@ -166,13 +172,22 @@ def format_for_llm_json(
     hint: bool = False,
     limit: int = 1,
     silence: list[str] | None = None,
+    project_root: Path | None = None,
 ) -> dict:
-    """Like format_for_llm but returns a dict with id and file for automation use."""
+    """Like format_for_llm but returns a dict with id, file, project, and message for automation use."""
     message = format_for_llm(tool_configs, combined, cq_invocation, context_lines, hint, limit, silence)
+    project = project_root.as_posix() if project_root else None
     result = _select_top_issue(tool_configs, combined, limit, silence or [])
     if result is None:
-        return {"id": None, "file": None, "message": message}
+        return {"id": None, "file": None, "project": project, "message": message}
     worst, slices, _, _ = result
-    issue_id = _fingerprint_from_slice(worst.raw.tool_name, slices[0])
-    file = Path(next(iter(slices[0].details), "")).as_posix() or None
-    return {"id": issue_id, "file": file, "message": message}
+    issue_id = _fingerprint_from_slice(worst.raw.tool_name, slices[0], project_root)
+    raw_file = next(iter(slices[0].details), "")
+    if project_root and raw_file:
+        try:
+            file: str | None = Path(raw_file).resolve().relative_to(project_root).as_posix() or None
+        except ValueError:
+            file = Path(raw_file).as_posix() or None
+    else:
+        file = Path(raw_file).as_posix() or None
+    return {"id": issue_id, "file": file, "project": project, "message": message}

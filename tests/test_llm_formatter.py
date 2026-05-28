@@ -516,6 +516,17 @@ def test_fingerprint_empty_details():
     assert fp == "pytest"
 
 
+def test_fingerprint_relativizes_absolute_path(tmp_path):
+    abs_file = tmp_path / "src" / "foo.py"
+    tr = ToolResult(
+        metrics={"lint": 0.5},
+        details={str(abs_file): [{"line": 10, "code": "E302", "message": "expected 2 blank lines"}]},
+        raw=RawResult(tool_name="ruff"),
+    )
+    fp = _fingerprint_from_slice("ruff", tr, project_root=tmp_path)
+    assert fp == "ruff:src/foo.py:10:E302"
+
+
 # --- format_for_llm_json ---
 
 def _ruff_registry_and_tr():
@@ -533,7 +544,8 @@ def test_format_for_llm_json_has_id_and_file():
     result = format_for_llm_json(registry, combined)
     assert result["id"] == "ruff:src/foo.py:42:E501"
     assert result["file"] == "src/foo.py"
-    assert set(result.keys()) == {"id", "file", "message"}
+    assert result["project"] is None
+    assert set(result.keys()) == {"id", "file", "project", "message"}
     assert "E501" in result["message"]
 
 

@@ -113,10 +113,10 @@ def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tupl
 
 
 def _relative_path(path: str) -> str:
-    """Return path relative to cwd if inside it, otherwise absolute. Forward slashes."""
+    """Return path relative to project root if possible, otherwise absolute. Forward slashes."""
     resolved = Path(path).resolve()
     try:
-        return str(resolved.relative_to(Path.cwd())).replace("\\", "/")
+        return str(resolved.relative_to(_find_project_root(path))).replace("\\", "/")
     except ValueError:
         return str(resolved).replace("\\", "/")
 
