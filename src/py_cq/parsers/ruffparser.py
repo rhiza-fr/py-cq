@@ -15,14 +15,14 @@ from collections.abc import Callable
 from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import find_enclosing_function, format_issue_header, format_source_context, score_logistic_variant
+from py_cq.parsers.common import enclosing_function_range, find_enclosing_function, format_issue_header, format_source_context, score_logistic_variant
 
 _DIAG_RE = re.compile(r"^(.+):(\d+):(\d+): ([A-Z]\d+) (.+)$")
 _VARNAME_RE = re.compile(r"[`'](\w+)[`']")
 
 
 def _format_F841(file: str, line: int, message: str) -> str:
-    """Unused variable: show source context, then report other references or advise deletion."""
+    """Unused variable: show source context, then report same-function references or advise deletion."""
     base = format_issue_header(file, line, "F841", message) + format_source_context(file, line)
     m = _VARNAME_RE.search(message)
     if not m:
@@ -32,15 +32,18 @@ def _format_F841(file: str, line: int, message: str) -> str:
         lines = Path(file).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return base
+    func_range = enclosing_function_range(file, line)
     refs = [
         i + 1
         for i, ln in enumerate(lines)
-        if i + 1 != line and re.search(rf"\b{re.escape(var)}\b", ln)
+        if i + 1 != line
+        and re.search(rf"\b{re.escape(var)}\b", ln)
+        and (func_range is None or func_range[0] <= i + 1 <= func_range[1])
     ]
-    if refs:
+    if refs and len(var) > 1:
         ref_str = ", ".join(str(r) for r in refs[:8])
         return base + f"\n\n`{var}` is also referenced at line(s): {ref_str}. Determine whether this assignment should feed into those uses or is redundant."
-    return base + f"\n\n`{var}` is not referenced anywhere else in this file. Delete line {line}."
+    return base + f"\n\n`{var}` is not referenced anywhere else in this function. Delete line {line}."
 
 
 def _format_F541(file: str, line: int, message: str) -> str:

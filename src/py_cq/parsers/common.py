@@ -71,7 +71,7 @@ def extract_callee_name(source_line: str) -> str | None:
     if "=" in stripped and not stripped.startswith(("assert", "return")):
         rhs = stripped.split("=", 1)[1].strip()
     m = re.search(r"\b([a-zA-Z_]\w*)\s*\(", rhs)
-    if m and m.group(1) not in _PYTHON_KEYWORDS:
+    if m and m.group(1) not in _PYTHON_KEYWORDS and len(m.group(1)) > 1:
         return m.group(1)
     return None
 
@@ -89,6 +89,9 @@ def _find_project_root(hint_file: str) -> Path:
     return root
 
 
+_SKIP_DIRS = {".venv", "venv", "__pycache__", ".git", "node_modules", ".tox", "dist", "build"}
+
+
 def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tuple[str, str]:
     """Find func_name definition in project files; same file first, then project-wide.
 
@@ -99,6 +102,8 @@ def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tupl
         return hint_file, result
     root = _find_project_root(hint_file)
     for py_file in sorted(root.rglob("*.py")):
+        if any(part in _SKIP_DIRS for part in py_file.parts):
+            continue
         if py_file.resolve() == Path(hint_file).resolve():
             continue
         r = find_function_source(str(py_file), func_name, max_lines=max_lines)
@@ -108,11 +113,12 @@ def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tupl
 
 
 def _relative_path(path: str) -> str:
-    """Return path relative to cwd, normalised to forward slashes."""
+    """Return path relative to cwd if inside it, otherwise absolute. Forward slashes."""
+    resolved = Path(path).resolve()
     try:
-        return str(Path(path).relative_to(Path.cwd())).replace("\\", "/")
+        return str(resolved.relative_to(Path.cwd())).replace("\\", "/")
     except ValueError:
-        return path.replace("\\", "/")
+        return str(resolved).replace("\\", "/")
 
 
 def format_issue_header(file: str, line: int, code: str, message: str) -> str:
@@ -137,6 +143,42 @@ def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -
     m = re.search(r"```python\n(\d+):", code_block)
     line_ref = f":{m.group(1)}" if m else ""
     return f"\n`{func_name}` is defined at: `{_relative_path(callee_file)}{line_ref}`{code_block}"
+
+
+def enclosing_function_range(file: str, line: int) -> tuple[int, int] | None:
+    """Return (start_line, end_line) 1-based for the function enclosing `line`, or None."""
+    try:
+        all_lines = Path(file).read_text(encoding="utf-8").splitlines()
+    except (OSError, ValueError):
+        return None
+    if line < 1 or line > len(all_lines):
+        return None
+    target_idx = line - 1
+    target_indent = len(all_lines[target_idx]) - len(all_lines[target_idx].lstrip())
+    def_re = re.compile(r"^(\s*)(?:async\s+)?def\s+")
+    start_idx = baseline_indent = None
+    for i in range(target_idx - 1, -1, -1):
+        m = def_re.match(all_lines[i])
+        if m:
+            indent = len(m.group(1))
+            if indent < target_indent:
+                start_idx, baseline_indent = i, indent
+                break
+    if start_idx is None or baseline_indent is None:
+        return None
+    end_idx = start_idx
+    in_body = ":" in all_lines[start_idx].split("#")[0]
+    for i, ln in enumerate(all_lines[start_idx + 1:], start=start_idx + 1):
+        stripped = ln.lstrip()
+        if not in_body:
+            if ":" in ln.split("#")[0]:
+                in_body = True
+            end_idx = i
+        else:
+            if stripped and len(ln) - len(stripped) <= baseline_indent:
+                break
+            end_idx = i
+    return (start_idx + 1, end_idx + 1)
 
 
 def find_enclosing_function(file: str, line: int, max_lines: int = 50) -> str:
@@ -198,11 +240,28 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
         return ""
     start_idx, baseline_indent = match_result
     collected = [all_lines[start_idx]]
+    in_docstring = False
+    docstring_marker: str | None = None
+    past_docstring = False
     for line in all_lines[start_idx + 1 :]:
         stripped = line.lstrip()
         indent = len(line) - len(stripped)
         if stripped and indent <= baseline_indent:
             break
+        if not past_docstring:
+            if not in_docstring:
+                quote = next((q for q in ('"""', "'''") if stripped.startswith(q)), None)
+                if quote:
+                    in_docstring = quote not in stripped[3:]
+                    past_docstring = not in_docstring
+                    docstring_marker = quote
+                    continue
+                past_docstring = bool(stripped)
+            else:
+                if docstring_marker and docstring_marker in stripped:
+                    in_docstring = False
+                    past_docstring = True
+                continue
         collected.append(line)
         if len(collected) >= max_lines:
             break
