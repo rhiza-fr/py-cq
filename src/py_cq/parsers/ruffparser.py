@@ -17,7 +17,7 @@ from pathlib import Path
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 from py_cq.parsers.common import enclosing_function_range, find_enclosing_function, format_issue_header, format_source_context, score_logistic_variant
 
-_DIAG_RE = re.compile(r"^(.+):(\d+):(\d+): ([A-Z]\d+) (.+)$")
+_DIAG_RE = re.compile(r"^(.+):(\d+):(\d+): ([A-Z]{1,5}\d+) (.+)$")
 _VARNAME_RE = re.compile(r"[`'](\w+)[`']")
 
 
@@ -76,7 +76,7 @@ def _format_F401(file: str, line: int, message: str) -> str:
     name = m.group(1).split(".")[-1]
     refs = _file_refs(file, name, exclude_line=line)
     if refs:
-        ref_lines = "\n".join(f"  line {l}: {txt}" for l, txt in refs[:6])
+        ref_lines = "\n".join(f"  line {line_no}: {txt}" for line_no, txt in refs[:6])
         return base + f"\n\n`{name}` appears elsewhere in this file — verify these are not active uses before deleting:\n{ref_lines}"
     suffix = " Auto-fixable: `ruff check --fix`." if autofixable else ""
     return base + f"\n\nNo other uses found. Delete this import.{suffix}"
@@ -92,7 +92,7 @@ def _format_F821(file: str, line: int, message: str) -> str:
     refs = _file_refs(file, name, exclude_line=line)
     enclosing = find_enclosing_function(file, line)
     if refs:
-        ref_lines = "\n".join(f"  line {l}: {txt}" for l, txt in refs[:8])
+        ref_lines = "\n".join(f"  line {line_no}: {txt}" for line_no, txt in refs[:8])
         base += f"\n\nOther references to `{name}` in this file:\n{ref_lines}"
     else:
         base += f"\n\n`{name}` is not imported or defined anywhere else in this file."
