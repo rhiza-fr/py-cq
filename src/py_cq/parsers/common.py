@@ -183,43 +183,19 @@ def enclosing_function_range(file: str, line: int) -> tuple[int, int] | None:
 
 def find_enclosing_function(file: str, line: int, max_lines: int = 50) -> str:
     """Return a fenced python block for the function enclosing 1-based `line`, or '' if not found."""
+    r = enclosing_function_range(file, line)
+    if r is None:
+        return ""
+    start_line, end_line = r
     try:
         all_lines = Path(file).read_text(encoding="utf-8").splitlines()
     except (OSError, ValueError):
         return ""
-    if line < 1 or line > len(all_lines):
-        return ""
-    target_idx = line - 1
-    target_indent = len(all_lines[target_idx]) - len(all_lines[target_idx].lstrip())
-    def_re = re.compile(r"^(\s*)(?:async\s+)?def\s+")
-    start_idx = baseline_indent = None
-    for i in range(target_idx - 1, -1, -1):
-        m = def_re.match(all_lines[i])
-        if m:
-            indent = len(m.group(1))
-            if indent < target_indent:
-                start_idx, baseline_indent = i, indent
-                break
-    if start_idx is None or baseline_indent is None:
-        return ""
-    collected = [all_lines[start_idx]]
-    in_body = ":" in all_lines[start_idx].split("#")[0]
-    for ln in all_lines[start_idx + 1:]:
-        stripped = ln.lstrip()
-        if not in_body:
-            # still in multi-line signature; enter body when we see the colon
-            if ":" in ln.split("#")[0]:
-                in_body = True
-            collected.append(ln)
-        else:
-            if stripped and len(ln) - len(stripped) <= baseline_indent:
-                break
-            collected.append(ln)
-        if len(collected) >= max_lines:
-            break
+    start_idx = start_line - 1
+    collected = list(all_lines[start_idx : min(end_line, start_idx + max_lines)])
     while collected and not collected[-1].strip():
         collected.pop()
-    numbered = "\n".join(f"{start_idx + 1 + i}: {ln}" for i, ln in enumerate(collected))
+    numbered = "\n".join(f"{start_line + i}: {ln}" for i, ln in enumerate(collected))
     return f"\n```python\n{numbered}\n```"
 
 
@@ -272,7 +248,13 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
 
 
 def inv_normalize(value: float, max_value: float) -> float:
-    """Returns the inverse normalized value of `value` relative to `max_value`."""
+    """Returns the inverse normalized value of `value` relative to `max_value`.
+
+    When *max_value* is zero the result is defined as 1.0 (no deviation from a
+    zero-sized reference).
+    """
+    if max_value == 0:
+        return 1.0
     return (max_value - min(value, max_value)) / max_value
 
 
