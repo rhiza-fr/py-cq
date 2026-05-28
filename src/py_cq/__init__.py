@@ -1,6 +1,3 @@
-"""Provides a simple greeting function that returns a friendly message.
+from py_cq.api import CQ
 
-The module defines a single function, `hello`, which returns the string
-`'Hello from py_cq!'`. It can serve as a minimal example, placeholder, or
-testing stub in larger applications."""
-
+__all__ = ["CQ"]

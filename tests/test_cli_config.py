@@ -1,10 +1,10 @@
 """Tests for cli config command, _apply_user_config, and format_as_table."""
 
 import pytest
-import typer
 from typer.testing import CliRunner
 
-from py_cq.cli import _apply_user_config, app
+from py_cq.api import _apply_user_config
+from py_cq.cli import app
 from py_cq.localtypes import CombinedToolResults, RawResult, ToolConfig, ToolResult
 from py_cq.table_formatter import format_as_table
 
@@ -85,7 +85,7 @@ def test_apply_user_config_missing_required_field_raises():
             }
         }
     }
-    with pytest.raises(typer.BadParameter) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
         _apply_user_config({}, user_cfg)
     assert "mycheck" in str(exc_info.value)
 
@@ -144,7 +144,7 @@ def test_apply_user_config_cannot_override_builtin():
             }
         }
     }
-    with pytest.raises(typer.BadParameter, match="built-in"):
+    with pytest.raises(ValueError, match="built-in"):
         _apply_user_config(cfg, user_cfg)
 
 
@@ -360,7 +360,7 @@ def test_apply_user_config_invalid_parser_is_rejected():
             }
         }
     }
-    with pytest.raises(typer.BadParameter, match="NonExistentParser123"):
+    with pytest.raises(ValueError, match="NonExistentParser123"):
         _apply_user_config({"ruff": _tc()}, user_cfg)
 
 

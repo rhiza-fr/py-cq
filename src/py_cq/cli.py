@@ -10,13 +10,11 @@ analysis.
 Helper functions such as `format_as_table` convert the aggregated tool
 results into a Rich Table for convenient console display.
 """
-import copy
 import io
 import json
 import logging
 import tomllib
 from enum import Enum
-from importlib import import_module
 from importlib.metadata import requires, version
 from pathlib import Path
 
@@ -26,27 +24,11 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
 
-from py_cq.config import load_user_config
-from py_cq.execution_engine import _cache as tool_cache
-from py_cq.execution_engine import run_tools
+from py_cq.api import CQ, _apply_user_config
 from py_cq.language_detector import detect_language
-from py_cq.localtypes import ToolConfig
 from py_cq.metric_aggregator import aggregate_metrics
 from py_cq.table_formatter import format_as_table
 from py_cq.tool_registry import tool_registry
-
-# Known parser class names that are allowed in user tool definitions via
-# pyproject.toml.  This safelist prevents arbitrary code execution through
-# unexpected module imports (H-1).
-_KNOWN_PARSER_CLASSES = frozenset({
-    # Built-in tools (from config.toml)
-    "CompileParser", "RuffParser", "TyParser", "BanditParser",
-    "PytestParser", "CoverageParser", "ComplexityParser",
-    "MaintainabilityParser", "HalsteadParser", "VultureParser",
-    "InterrogateParser",
-    # Standalone parsers usable by user-defined tools
-    "ExitCodeParser", "LineCountParser", "RegexCountParser",
-})
 
 logging.basicConfig(
     level="INFO",
@@ -70,63 +52,6 @@ app = typer.Typer(
         "  cq config set radon-hal --error 0.25 --path .        # set with path"
     ),
 )
-
-
-def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str, ToolConfig]:
-    """Return a modified copy of base with user overrides applied.
-
-    Supports:
-      - ``disable``: list of tool IDs to remove
-      - ``thresholds.<tool_id>.warning`` / ``.error``: override per-tool thresholds
-      - ``tools.<tool_id>``: declare new tools (or override built-ins)
-    """
-    registry = {k: copy.copy(v) for k, v in base.items()}
-    for tool_id in user_cfg.get("disable", []):
-        registry.pop(tool_id, None)
-    for tool_id, thresholds in user_cfg.get("thresholds", {}).items():
-        if tool_id in registry:
-            if "warning" in thresholds:
-                registry[tool_id].warning_threshold = float(thresholds["warning"])
-            if "error" in thresholds:
-                registry[tool_id].error_threshold = float(thresholds["error"])
-    for tool_id, tool_data in user_cfg.get("tools", {}).items():
-        if tool_id in base:
-            available = ", ".join(sorted(base))
-            raise typer.BadParameter(
-                f"[tool.cq.tools.{tool_id}] is a built-in tool and cannot be redefined via pyproject.toml. "
-                f"Use [tool.cq.thresholds.{tool_id}] to adjust thresholds instead. "
-                f"Available: {available}"
-            )
-        try:
-            parser_name = tool_data["parser"]
-        except KeyError:
-            raise typer.BadParameter(f"[tool.cq.tools.{tool_id}] missing required field 'parser'")
-        if parser_name not in _KNOWN_PARSER_CLASSES:
-            allowed = ", ".join(sorted(_KNOWN_PARSER_CLASSES))
-            raise typer.BadParameter(
-                f"[tool.cq.tools.{tool_id}] unknown parser {parser_name!r}. "
-                f"Allowed parsers: {allowed}"
-            )
-        try:
-            module = import_module(f"py_cq.parsers.{parser_name.lower()}")
-            parser_class = getattr(module, parser_name)
-            registry[tool_id] = ToolConfig(
-                name=tool_id,
-                command=tool_data["command"],
-                parser_class=parser_class,
-                order=tool_data["order"],
-                warning_threshold=tool_data["warning_threshold"],
-                error_threshold=tool_data["error_threshold"],
-                run_in_target_env=tool_data.get("run_in_target_env", False),
-                extra_deps=tool_data.get("extra_deps", []),
-                parser_config=tool_data.get("parser_config", {}),
-                exclude_format=tool_data.get("exclude_format", ""),
-            )
-        except (KeyError, ImportError, AttributeError) as e:
-            raise typer.BadParameter(
-                f"[tool.cq.tools.{tool_id}] {e}"
-            )
-    return registry
 
 
 class OutputMode(str, Enum):
@@ -156,7 +81,7 @@ def _version_callback(value: bool) -> None:
             pass
     typer.echo(f"{pkg} v{pkg_version}")
     for dep_name, dep_ver in sorted(dep_versions):
-        typer.echo(f"\u251c\u2500\u2500 {dep_name} v{dep_ver}")
+        typer.echo(f"├── {dep_name} v{dep_ver}")
     raise typer.Exit()
 
 
@@ -226,9 +151,6 @@ def check(
         )
         raise typer.Exit(0)
 
-    # Python path (or unknown — fall through to existing validation).
-    # Note: --language python still requires pyproject.toml; the flag selects
-    # the tool set, not the input validation rules.
     if path_obj.is_file():
         if path_obj.suffix != ".py":
             raise typer.BadParameter(f"File must be a Python file (.py): {path}")
@@ -236,51 +158,37 @@ def check(
         if not (path_obj / "pyproject.toml").exists():
             raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
     log.setLevel(log_level)
-    user_cfg = load_user_config(path_obj)
-    context_lines: int = int(user_cfg.get("context_lines", 15))
-    effective_registry = _apply_user_config(tool_registry, user_cfg)
-    if only:
-        keep = set(only.split(","))
-        unknown = keep - set(effective_registry)
-        if unknown:
-            available = ", ".join(sorted(effective_registry))
-            raise typer.BadParameter(f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {available}")
-        effective_registry = {k: v for k, v in effective_registry.items() if k in keep}
-    if skip:
-        drop = set(skip.split(","))
-        unknown = drop - set(effective_registry)
-        if unknown:
-            available = ", ".join(sorted(effective_registry))
-            raise typer.BadParameter(f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {available}")
-        effective_registry = {k: v for k, v in effective_registry.items() if k not in drop}
-    config_excludes: list[str] = user_cfg.get("exclude", [])
-    cli_excludes: list[str] = [e.strip() for e in exclude.split(",")] if exclude else []
-    excludes = list(dict.fromkeys(config_excludes + cli_excludes))
-    if clear_cache:
-        tool_cache.clear()
-    tool_results = run_tools(effective_registry.values(), path, workers, early_exit=(output in (OutputMode.LLM, OutputMode.LLM_JSON)), excludes=excludes)
-    # for tr in tool_results:
-    #     log.debug(json.dumps(tr.to_dict(), indent=2))
-    combined_metrics = aggregate_metrics(path=path, metrics=tool_results)
+
+    only_list = [t.strip() for t in only.split(",")] if only else None
+    skip_list = [t.strip() for t in skip.split(",")] if skip else None
+    exclude_list = [e.strip() for e in exclude.split(",")] if exclude else None
+
+    try:
+        cq = CQ(path_obj, only=only_list, skip=skip_list, exclude=exclude_list, workers=workers, clear_cache=clear_cache)
+    except ValueError as e:
+        raise typer.BadParameter(str(e))
+
+    is_llm = output in (OutputMode.LLM, OutputMode.LLM_JSON)
+    tool_results = cq.raw(early_exit=is_llm)
+    combined = aggregate_metrics(path, tool_results)
+
     if output == OutputMode.SCORE:
-        console.print(combined_metrics.score)
+        console.print(combined.score)
     elif output == OutputMode.JSON:
         print(json.dumps([tr.to_dict() for tr in tool_results], indent=2))
     elif output == OutputMode.RAW:
         print(json.dumps([tr.raw.to_dict() for tr in tool_results], indent=2))
     elif output == OutputMode.LLM:
-        # log.setLevel("CRITICAL")
         from py_cq.llm_formatter import format_for_llm
-        print(format_for_llm(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence))
+        print(format_for_llm(cq._registry, combined, context_lines=cq._context_lines, hint=hint, limit=limit, silence=silence))
     elif output == OutputMode.LLM_JSON:
         from py_cq.llm_formatter import format_for_llm_json
-        project_root = path_obj.resolve() if path_obj.is_dir() else path_obj.resolve().parent
-        print(json.dumps(format_for_llm_json(effective_registry, combined_metrics, context_lines=context_lines, hint=hint, limit=limit, silence=silence, project_root=project_root)))
+        print(json.dumps(format_for_llm_json(cq._registry, combined, context_lines=cq._context_lines, hint=hint, limit=limit, silence=silence, project_root=cq._project_root)))
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
-        console.print(format_as_table(combined_metrics, effective_registry))
+        console.print(format_as_table(combined, cq._registry))
 
-    tool_by_name = {tc.name: tc for tc in effective_registry.values()}
+    tool_by_name = {tc.name: tc for tc in cq._registry.values()}
     if any(
         min(tr.metrics.values()) < tool_by_name[tr.raw.tool_name].error_threshold
         for tr in tool_results
@@ -324,7 +232,10 @@ def config(
 
     console.print(f"Config: [bold]{toml_path}[/bold] ({status_text})\n")
 
-    effective_registry = _apply_user_config(tool_registry, user_cfg)
+    try:
+        effective_registry = _apply_user_config(tool_registry, user_cfg)
+    except ValueError as e:
+        raise typer.BadParameter(str(e))
     disabled_ids = set(tool_registry.keys()) - set(effective_registry.keys())
 
     table = Table()
@@ -375,11 +286,9 @@ def config_set(
     if not toml_path.exists():
         raise typer.BadParameter(f"No pyproject.toml found at {toml_path}")
 
-    # Read, modify, write
     with toml_path.open("r", encoding="utf-8") as f:
         doc = tomlkit.parse(f.read())
 
-    # Ensure nested tables exist
     if "tool" not in doc:
         doc["tool"] = tomlkit.table()
     tool_tbl = doc["tool"]
@@ -390,7 +299,6 @@ def config_set(
         cq_tbl["thresholds"] = tomlkit.table()
     thresholds = cq_tbl["thresholds"]
 
-    # Build or update the inline table for this tool
     if tool_id in thresholds:
         entry = thresholds[tool_id]
     else:
@@ -405,7 +313,6 @@ def config_set(
     with toml_path.open("w", encoding="utf-8") as f:
         f.write(tomlkit.dumps(doc))
 
-    # Report what was set
     parts = []
     if warning is not None:
         parts.append(f"warning={warning}")
@@ -416,7 +323,6 @@ def config_set(
         f"in {toml_path}[/green]"
     )
 
-    # Flush cq cache so next check picks up the new thresholds
     from py_cq.execution_engine import _cache
     _cache.clear()
     console.print("[dim]Tool cache cleared[/dim]")
@@ -427,49 +333,14 @@ def verify(
     fingerprint: str = typer.Argument(..., help="Fingerprint from -o ci output (tool:file:line:code)"),
 ) -> None:
     """Check whether a fingerprinted issue has been fixed."""
-    # Split from the right to handle Windows drive-letter colons in the
-    # file path (e.g. "ruff:C:/foo/bar.py:42:E501").
-    # rsplit(":", 2) produces e.g. ["ruff:C:/foo/bar.py", "42", "E501"].
-    parts = fingerprint.rsplit(":", 2)
-    if len(parts) < 2:
-        raise typer.BadParameter(f"Expected tool:file[:line:code], got: {fingerprint!r}")
-    # The first part is "tool:file" — split it on the first colon only
-    tool_parts = parts[0].split(":", 1)
-    tool_name = tool_parts[0]
-    file_str = tool_parts[1] if len(tool_parts) > 1 else ""
-    code = parts[2] if len(parts) == 3 else ""
+    try:
+        cq = CQ(".")
+        fixed = cq.verify(fingerprint)
+    except ValueError as e:
+        raise typer.BadParameter(str(e))
 
-    if tool_name not in tool_registry:
-        raise typer.BadParameter(f"Unknown tool: {tool_name!r}")
-
-    target = file_str if file_str else "."
-    only_registry = {tool_name: tool_registry[tool_name]}
-    tool_results = run_tools(only_registry.values(), target, max_workers=1, early_exit=False, excludes=[])
-
-    if not tool_results:
-        typer.echo(f"error: {tool_name} produced no output")
+    if fixed:
+        typer.echo("FIXED")
+    else:
+        typer.echo(f"FAILED: {fingerprint}")
         raise typer.Exit(1)
-
-    tr = tool_results[0]
-    tc = tool_registry[tool_name]
-
-    if not code:
-        fixed = bool(tr.metrics and min(tr.metrics.values()) >= tc.warning_threshold)
-        typer.echo("FIXED" if fixed else f"FAILED: {fingerprint}")
-        if not fixed:
-            raise typer.Exit(1)
-        return
-
-    target_posix = Path(file_str).as_posix()
-    for detail_file, issues in tr.details.items():
-        detail_posix = Path(detail_file).as_posix()
-        match = (
-            detail_posix == target_posix
-            or detail_posix.endswith(f"/{target_posix}")
-            or target_posix.endswith(f"/{detail_posix}")
-        )
-        if match and isinstance(issues, list) and any(i.get("code") == code for i in issues):
-            typer.echo(f"FAILED: {code} still present in {file_str}")
-            raise typer.Exit(1)
-
-    typer.echo("FIXED")
