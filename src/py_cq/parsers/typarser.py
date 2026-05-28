@@ -25,7 +25,15 @@ _DIRECTORY_RE = re.compile(r'--directory\s+"([^"]+)"')
 
 
 def _resolve(context_path: str, rel_file: str) -> str:
-    """Return the best resolvable path for rel_file, trying cwd, context_path, and its absolute form."""
+    """Return the best resolvable path for rel_file, trying cwd, context_path, and its absolute form.
+
+    Args:
+        context_path: The project or file path passed to the check command.
+        rel_file: A relative file path from a ty diagnostic.
+
+    Returns:
+        The first existing path found, or rel_file if none exists.
+    """
     if Path(rel_file).exists():
         return rel_file
     for base in (Path(context_path), Path(context_path).resolve()):
@@ -36,6 +44,18 @@ def _resolve(context_path: str, rel_file: str) -> str:
 
 
 def _format_invalid_argument_type(file: str, line: int, message: str) -> str:
+    """Format a ty 'invalid-argument-type' diagnostic for LLM consumption.
+
+    Includes hint text when ty reports ``Unknown`` as the found type.
+
+    Args:
+        file: Resolved file path.
+        line: Line number of the diagnostic.
+        message: The diagnostic message from ty.
+
+    Returns:
+        Markdown-formatted issue report with fix hints.
+    """
     display_msg = re.sub(r": (Expected `)", r":\n\1", message)
     base = format_issue_header(file, line, "invalid-argument-type", display_msg) + format_source_context(file, line)
     m = _EXPECTED_FOUND_RE.search(message)
@@ -56,6 +76,18 @@ _IMPORT_MODULE_RE = re.compile(r"Cannot resolve imported module `([^`]+)`")
 
 
 def _format_call_non_callable(file: str, line: int, message: str) -> str:
+    """Format a ty 'call-non-callable' diagnostic for LLM consumption.
+
+    Provides fix advice about incomplete type stubs and Callable annotations.
+
+    Args:
+        file: Resolved file path.
+        line: Line number of the diagnostic.
+        message: The diagnostic message from ty.
+
+    Returns:
+        Markdown-formatted issue report with fix hints.
+    """
     base = format_issue_header(file, line, "call-non-callable", message) + format_source_context(file, line, context=3, count=8)
     m = _TYPE_NAME_RE.search(message)
     type_name = f"`{m.group(1)}`" if m else "this type"
@@ -67,6 +99,18 @@ def _format_call_non_callable(file: str, line: int, message: str) -> str:
 
 
 def _format_possibly_missing_submodule(file: str, line: int, message: str) -> str:
+    """Format a ty 'possibly-missing-submodule' diagnostic for LLM consumption.
+
+    Advises adding an explicit import for the submodule before attribute access.
+
+    Args:
+        file: Resolved file path.
+        line: Line number of the diagnostic.
+        message: The diagnostic message from ty.
+
+    Returns:
+        Markdown-formatted issue report with fix hints.
+    """
     base = format_issue_header(file, line, "possibly-missing-submodule", message) + format_source_context(file, line, context=1, count=3)
     m = _MODULE_RE.search(message)
     submodule = m.group(1) if m else "the submodule"
@@ -74,6 +118,18 @@ def _format_possibly_missing_submodule(file: str, line: int, message: str) -> st
 
 
 def _format_unresolved_import(file: str, line: int, message: str) -> str:
+    """Format a ty 'unresolved-import' diagnostic for LLM consumption.
+
+    Advises checking whether the module was renamed, deleted, or needs installation.
+
+    Args:
+        file: Resolved file path.
+        line: Line number of the diagnostic.
+        message: The diagnostic message from ty.
+
+    Returns:
+        Markdown-formatted issue report with fix hints.
+    """
     base = format_issue_header(file, line, "unresolved-import", message) + format_source_context(file, line, context=1, count=3)
     m = _IMPORT_MODULE_RE.search(message)
     module = f"`{m.group(1)}`" if m else "the module"
@@ -122,6 +178,20 @@ class TyParser(AbstractParser):
         return ToolResult(raw=raw_result, metrics={"type_check": score}, details=files)
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        """Return a markdown description of the most important ty defect.
+
+        Delegates to a custom formatter when the code has a registered handler
+        in ``_CUSTOM_FORMAT`` (e.g. ``call-non-callable``, ``invalid-argument-type``),
+        otherwise falls back to the standard header + source context format.
+
+        Args:
+            tr: The parsed tool result containing details and raw output.
+            context_lines: Number of source context lines to show.
+            limit: Maximum number of issues to display (unused — always 1).
+
+        Returns:
+            Markdown-formatted issue description.
+        """
         if not tr.details:
             return "ty reported issues (no details available)"
         file, issues = next(iter(tr.details.items()))
