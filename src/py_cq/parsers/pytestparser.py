@@ -9,8 +9,15 @@ from multiple test tools.  It is part of the test-collection framework and
 enables consistent handling of pytest output across the system."""
 
 import re as _re
+from pathlib import Path as _Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+
+
+def _target_dir(command: str) -> str:
+    """Extract the --directory value from a uv run command, or ''."""
+    m = _re.search(r'--directory\s+"?([^"\s]+)"?', command)
+    return m.group(1) if m else ""
 
 
 def _last_call_line_for_test(stdout: str, test_name: str) -> str:
@@ -76,14 +83,33 @@ def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
             break
     if start is None:
         return ""
-    collected = []
+    # Collect the full block — skip sub-section dividers ("_ _ _") but stop at
+    # the next test header ("____") or summary line ("====").
+    section = []
     for line in lines[start:]:
-        if line.strip().startswith("_") or line.strip().startswith("="):
+        stripped = line.strip()
+        if _re.match(r"_{4,}", stripped) or stripped.startswith("="):
             break
-        collected.append(line)
-        if len(collected) >= max_lines:
-            break
-    text = "\n".join(collected).strip()
+        section.append(line)
+    # Prefer E-lines (the actual assertion / exception messages).
+    e_lines = [ln for ln in section if ln.startswith("E ") or ln.strip() == "E"]
+    if e_lines:
+        arrow_lines = [ln.lstrip("> \t") for ln in section if ln.startswith(">") and ln.lstrip("> \t")]
+        cleaned = [_re.sub(r"^E\s*", "", ln) for ln in e_lines]
+        # Drop "At index N diff:" lines — always redundant with the first E-line.
+        cleaned = [ln for ln in cleaned if not _re.match(r"At index \d+ diff:", ln)]
+        parts = ([f"> {arrow_lines[-1]}"] if arrow_lines else []) + cleaned
+        text = "\n".join(parts[:max_lines]).strip()
+    else:
+        # Fall back: show the traceback up to max_lines, stopping before E-lines.
+        sub = []
+        for line in section:
+            if line.startswith("E ") or line.strip() == "E":
+                break
+            sub.append(line)
+            if len(sub) >= max_lines:
+                break
+        text = "\n".join(sub).strip()
     return f"\n```\n{text}\n```" if text else ""
 
 
@@ -168,14 +194,16 @@ class PytestParser(AbstractParser):
                     continue
                 header = f"`{file}::{test_name}` — test **FAILED**"
                 bare_name = test_name.split("[")[0]
-                body = find_function_source(file, bare_name, max_lines=context_lines)
-                failure = _extract_failure(tr.raw.stdout, test_name, max_lines=context_lines)
+                tdir = _target_dir(tr.raw.command)
+                resolved = str(_Path(tdir) / file) if tdir and not _Path(file).is_absolute() else file
+                body = find_function_source(resolved, bare_name, max_lines=context_lines)
+                failure = _extract_failure(tr.raw.stdout, test_name, max_lines=50)
                 callee = ""
                 call_line = _last_call_line_for_test(tr.raw.stdout, test_name)
                 if call_line:
                     func_name = extract_callee_name(call_line)
                     if func_name and func_name != bare_name:
-                        callee = format_callee_context(func_name, file)
+                        callee = format_callee_context(func_name, resolved)
                 parts = [header]
                 if body:
                     parts.append(body)
