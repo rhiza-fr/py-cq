@@ -39,7 +39,7 @@ from py_cq.tool_registry import tool_registry
 # pyproject.toml.  This safelist prevents arbitrary code execution through
 # unexpected module imports (H-1).
 _KNOWN_PARSER_CLASSES = frozenset({
-    # Built-in tools (from config.yaml)
+    # Built-in tools (from config.toml)
     "CompileParser", "RuffParser", "TyParser", "BanditParser",
     "PytestParser", "CoverageParser", "ComplexityParser",
     "MaintainabilityParser", "HalsteadParser", "VultureParser",

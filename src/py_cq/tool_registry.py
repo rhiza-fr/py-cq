@@ -1,20 +1,19 @@
-"""Loads tool configurations from a YAML file and builds a registry that maps tool names to their configuration objects, enabling efficient lookup and instantiation of tools throughout the application. The module relies on PyYAML for parsing the configuration file."""
+"""Loads tool configurations from a TOML file and builds a registry that maps tool names to their configuration objects, enabling efficient lookup and instantiation of tools throughout the application."""
 
+import tomllib
 from importlib import import_module
 from importlib.resources import files
-
-import yaml
 
 from py_cq.localtypes import ToolConfig
 
 
 def load_tool_configs() -> dict[str, ToolConfig]:
-    """Load tool configurations from the bundled config.yaml and return a registry.
+    """Load tool configurations from the bundled config.toml and return a registry.
 
     Returns:
         dict[str, ToolConfig]: A mapping from tool ID to its configuration instance."""
-    yaml_text = files("py_cq.config").joinpath("config.yaml").read_text(encoding="utf-8")
-    config = yaml.safe_load(yaml_text)
+    toml_bytes = files("py_cq.config").joinpath("config.toml").read_bytes()
+    config = tomllib.loads(toml_bytes.decode())
     registry = {}
     for tool_id, tool_data in config["python"].items():
         # Dynamically import parser class
