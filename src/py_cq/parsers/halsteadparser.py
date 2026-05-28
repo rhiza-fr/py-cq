@@ -68,7 +68,7 @@ class HalsteadParser(AbstractParser):
             tr.metrics = {"file_bug_free": 1.0, "file_smallness": 1.0, "functions_bug_free": 1.0, "functions_smallness": 1.0}
             return tr
         MAX_FILE_BUGS = 1
-        MAX_FILE_VOLUME = 2000
+        MAX_FILE_VOLUME = 3000
         MAX_FUNCTION_BUGS = 0.2
         MAX_FUNCTION_VOLUME = 600
         min_file_nb = 1.0
