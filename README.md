@@ -79,6 +79,61 @@ cq check . && deploy        # block deploy on errors
 cq check . -o score         # print score, exit 1 on errors
 ```
 
+## Python Library
+
+`py_cq` can be used as a library — no subprocess required. Instantiate `CQ` with a project root; config is loaded once from `pyproject.toml`.
+
+```python
+from py_cq import CQ
+
+cq = CQ(".")                      # load config from ./pyproject.toml
+cq = CQ(".", skip=["bandit"])     # skip specific tools
+cq = CQ(".", only=["ruff", "ty"]) # run only specific tools
+cq = CQ(".", workers=4)           # control parallelism
+```
+
+**Methods mirror the CLI and return data objects:**
+
+```python
+# list[ToolResult] — all parsed results before aggregation (-o raw / -o json)
+results = cq.raw()
+
+# CombinedToolResults — aggregated score and per-tool results (-o score / table)
+combined = cq.check()
+print(combined.score)          # float
+print(combined.tool_results)   # list[ToolResult]
+
+# dict — top defect for LLM consumption (-o llm-json)
+issue = cq.check_llm_json()
+issue["id"]       # fingerprint: "ruff:src/foo.py:42:E501"
+issue["file"]     # "src/foo.py"
+issue["message"]  # markdown prompt ready to send to an LLM
+issue["project"]  # absolute project root path
+
+# bool — True if the fingerprinted issue is gone (verify command)
+fixed = cq.verify(issue["id"])
+```
+
+`check_llm_json` accepts the same options as `cq check . -o llm-json`:
+
+```python
+issue = cq.check_llm_json(limit=3, silence=["src/generated.py"], hint=True)
+```
+
+**Typical automation loop:**
+
+```python
+from py_cq import CQ
+
+cq = CQ(".")
+while True:
+    issue = cq.check_llm_json()
+    if issue["id"] is None:
+        break                        # all clear
+    fix(issue["message"])            # call your LLM
+    assert cq.verify(issue["id"])
+```
+
 ## Claude Code Integration
 
 Add a stop hook to your project's `.claude/settings.json` so Claude automatically checks quality after each session and loops until clean:
