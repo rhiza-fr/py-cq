@@ -5,6 +5,8 @@ wall time, and verifies the second run is substantially faster because all
 tool results are served from diskcache.
 """
 
+import os
+import shutil
 import subprocess
 import sys
 import time
@@ -14,11 +16,19 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent.parent
 
 
+def _find_cq() -> str:
+    if found := shutil.which("cq"):
+        return found
+    scripts = "Scripts" if os.name == "nt" else "bin"
+    exe = "cq.exe" if os.name == "nt" else "cq"
+    candidate = HERE / ".venv" / scripts / exe
+    assert candidate.exists(), f"cq not found on PATH or at {candidate}"
+    return str(candidate)
+
+
 def _cq_invoke(args: list[str]) -> tuple[int, float]:
     """Run cq check via subprocess and return (exit_code, elapsed_seconds)."""
-    cq = HERE / ".venv" / "Scripts" / "cq.exe"
-    assert cq.exists(), f"cq not found at {cq}"
-    cmd = [str(cq), "check", str(HERE)] + args
+    cmd = [_find_cq(), "check", str(HERE)] + args
     t0 = time.perf_counter()
     result = subprocess.run(
         cmd,
