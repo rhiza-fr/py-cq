@@ -16,8 +16,11 @@ def _severity(score: float, config: ToolConfig) -> int:
 
 
 def _parse_silence_spec(spec: str) -> tuple[str, int | None, str | None]:
-    """Parse 'file[:line[:code]]' into (file, line, code)."""
-    parts = spec.split(":")
+    """Parse 'file[:line[:code]]' into (file, line, code).
+
+    Uses rsplit to handle Windows paths (e.g. C:/foo/bar.py:10:E501).
+    """
+    parts = spec.rsplit(":", 2)
     file = parts[0]
     line = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
     code = parts[2] if len(parts) > 2 else None
@@ -57,8 +60,14 @@ def _single_issue_slices(tr: ToolResult, limit: int, silence: list[str] | None =
                 if len(slices) >= limit:
                     break
     else:
-        # Non-list details (e.g. interrogate per-file stats): one slice per entry, sorted by coverage
-        items = sorted(tr.details.items(), key=lambda x: x[1].get("coverage", 0.0) if isinstance(x[1], dict) else 0)
+        # Non-list details: sort so files with failures (pytest-style) come first, then by coverage ascending
+        def _dict_sort_key(v: object) -> tuple[int, float]:
+            if not isinstance(v, dict):
+                return (0, 0.0)
+            failures = sum(1 for val in v.values() if isinstance(val, str) and val in ("FAILED", "ERROR"))
+            return (-failures, v.get("coverage", 0.0))
+
+        items = sorted(tr.details.items(), key=lambda x: _dict_sort_key(x[1]))
         for file, data in items:
             if silence and _is_silenced(file, {}, silence):
                 continue
@@ -66,6 +75,61 @@ def _single_issue_slices(tr: ToolResult, limit: int, silence: list[str] | None =
             if len(slices) >= limit:
                 break
     return slices[:limit] or ([] if silence else [tr])
+
+
+def _select_top_issue(
+    tool_configs: dict,
+    combined: CombinedToolResults,
+    limit: int,
+    silence: list[str],
+):
+    """Return (worst, slices, config, parser) for the top failing tool, or None if all pass."""
+    by_name = {tc.name: tc for tc in tool_configs.values()}
+    failing = sorted(
+        [
+            tr for tr in combined.tool_results
+            if tr.metrics and (cfg := by_name.get(tr.raw.tool_name)) and min(tr.metrics.values()) < cfg.warning_threshold
+        ],
+        key=lambda tr: (
+            _severity(min(tr.metrics.values()), by_name[tr.raw.tool_name]),
+            by_name[tr.raw.tool_name].order,
+            min(tr.metrics.values()),
+        ),
+    )
+    for candidate in failing:
+        slices = _single_issue_slices(candidate, limit, silence)
+        if slices:
+            config = by_name[candidate.raw.tool_name]
+            return candidate, slices, config, config.parser_class()
+    return None
+
+
+def _build_message(slices, parser, context_lines: int, limit: int, hint: bool, cq_invocation) -> str:
+    parts = [parser.format_llm_message(s, context_lines=context_lines, limit=limit) for s in slices]
+    n = len(parts)
+    close = "Please fix only this issue." if n == 1 else f"Please fix these {n} issues."
+    body = "\n\n---\n\n".join(parts) + f"\n\n{close}"
+    if hint:
+        if cq_invocation is None:
+            cq_invocation = "cq " + " ".join(sys.argv[1:])
+        body += f" After fixing, run `{cq_invocation}` to verify."
+    return body
+
+
+def _fingerprint_from_slice(tool_name: str, tr: ToolResult) -> str:
+    """Return fingerprint as tool:file:line:code (line/code omitted when unavailable)."""
+    for file, issues in tr.details.items():
+        posix = Path(file).as_posix()
+        if isinstance(issues, list) and issues:
+            code = issues[0].get("code", "")
+            line = issues[0].get("line", "")
+            return f"{tool_name}:{posix}:{line}:{code}"
+        if isinstance(issues, dict):
+            str_vals = [v for v in issues.values() if isinstance(v, str)]
+            if str_vals and all(v not in ("FAILED", "ERROR") for v in str_vals):
+                continue
+            return f"{tool_name}:{posix}:"
+    return f"{tool_name}::"
 
 
 def format_for_llm(
@@ -78,45 +142,28 @@ def format_for_llm(
     silence: list[str] | None = None,
 ) -> str:
     """Return a markdown prompt describing the top `limit` defects from the worst-scoring tool."""
-    silence = silence or []
-    by_name = {tc.name: tc for tc in tool_configs.values()}
-
-    failing = sorted(
-        [
-            tr for tr in combined.tool_results
-            if tr.metrics and (cfg := by_name.get(tr.raw.tool_name)) and min(tr.metrics.values()) < cfg.warning_threshold
-        ],
-        key=lambda tr: (
-            _severity(min(tr.metrics.values()), by_name[tr.raw.tool_name]),
-            by_name[tr.raw.tool_name].order,
-            min(tr.metrics.values()),
-        ),
-    )
-    if not failing:
+    result = _select_top_issue(tool_configs, combined, limit, silence or [])
+    if result is None:
         return f"# No issues found\n\nOverall score: **{combined.score:.3f} / 1.0**"
+    _, slices, _, parser = result
+    return _build_message(slices, parser, context_lines, limit, hint, cq_invocation)
 
-    worst = None
-    slices: list[ToolResult] = []
-    for candidate in failing:
-        s = _single_issue_slices(candidate, limit, silence)
-        if s:
-            worst = candidate
-            slices = s
-            break
 
-    if worst is None:
-        return f"# No issues found\n\nOverall score: **{combined.score:.3f} / 1.0**"
-
-    config = by_name[worst.raw.tool_name]
-    parser = config.parser_class()
-
-    parts = [parser.format_llm_message(s, context_lines=context_lines, limit=limit) for s in slices]
-    n = len(parts)
-    defect_md = "\n\n---\n\n".join(parts)
-    close = "Please fix only this issue." if n == 1 else f"Please fix these {n} issues."
-    body = f"{defect_md}\n\n{close}"
-    if hint:
-        if cq_invocation is None:
-            cq_invocation = "cq " + " ".join(sys.argv[1:])
-        body += f" After fixing, run `{cq_invocation}` to verify."
-    return body
+def format_for_llm_json(
+    tool_configs: dict,
+    combined: CombinedToolResults,
+    cq_invocation: str | None = None,
+    context_lines: int = 15,
+    hint: bool = False,
+    limit: int = 1,
+    silence: list[str] | None = None,
+) -> dict:
+    """Like format_for_llm but returns a dict with id and file for automation use."""
+    message = format_for_llm(tool_configs, combined, cq_invocation, context_lines, hint, limit, silence)
+    result = _select_top_issue(tool_configs, combined, limit, silence or [])
+    if result is None:
+        return {"id": None, "file": None, "message": message}
+    worst, slices, _, _ = result
+    issue_id = _fingerprint_from_slice(worst.raw.tool_name, slices[0])
+    file = Path(next(iter(slices[0].details), "")).as_posix() or None
+    return {"id": issue_id, "file": file, "message": message}

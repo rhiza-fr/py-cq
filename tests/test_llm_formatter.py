@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from py_cq.llm_formatter import _severity, format_for_llm
+from py_cq.llm_formatter import _fingerprint_from_slice, _severity, format_for_llm, format_for_llm_json
 from py_cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolConfig, ToolResult
 from py_cq.parsers.compileparser import CompileParser
 from py_cq.parsers.halsteadparser import HalsteadParser
@@ -486,3 +486,68 @@ def test_format_for_llm_limit_1_unchanged():
     assert "E501" in result
     assert "F401" not in result
     assert "Please fix only this issue" in result
+
+
+# --- _fingerprint_from_slice ---
+
+def test_fingerprint_list_details():
+    tr = ToolResult(
+        metrics={"lint": 0.5},
+        details={"src/foo.py": [{"line": 42, "code": "E501", "message": "too long"}]},
+        raw=RawResult(tool_name="ruff"),
+    )
+    fp = _fingerprint_from_slice("ruff", tr)
+    assert fp == "ruff:src/foo.py:42:E501"
+
+
+def test_fingerprint_dict_details():
+    tr = ToolResult(
+        metrics={"coverage": 0.5},
+        details={"src/bar.py": {"total": 4, "missing": 2, "coverage": 0.5}},
+        raw=RawResult(tool_name="interrogate"),
+    )
+    fp = _fingerprint_from_slice("interrogate", tr)
+    assert fp == "interrogate:src/bar.py:"
+
+
+def test_fingerprint_empty_details():
+    tr = ToolResult(metrics={"score": 0.3}, details={}, raw=RawResult(tool_name="pytest"))
+    fp = _fingerprint_from_slice("pytest", tr)
+    assert fp == "pytest::"
+
+
+# --- format_for_llm_json ---
+
+def _ruff_registry_and_tr():
+    config = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
+    tr = ToolResult(
+        metrics={"lint": 0.3},
+        details={"src/foo.py": [{"line": 42, "code": "E501", "message": "line too long"}]},
+        raw=RawResult(tool_name="ruff"),
+    )
+    return {"ruff": config}, CombinedToolResults(path=".", tool_results=[tr])
+
+
+def test_format_for_llm_json_has_id_and_file():
+    registry, combined = _ruff_registry_and_tr()
+    result = format_for_llm_json(registry, combined)
+    assert result["id"] == "ruff:src/foo.py:42:E501"
+    assert result["file"] == "src/foo.py"
+    assert set(result.keys()) == {"id", "file", "message"}
+    assert "E501" in result["message"]
+
+
+def test_format_for_llm_json_message_matches_llm():
+    registry, combined = _ruff_registry_and_tr()
+    result = format_for_llm_json(registry, combined)
+    llm = format_for_llm(registry, combined)
+    assert result["message"] == llm
+
+
+def test_format_for_llm_json_no_issues():
+    registry = make_registry(make_config("ruff", 3))
+    combined = make_combined([make_tr("ruff", 1.0)])
+    result = format_for_llm_json(registry, combined)
+    assert result["id"] is None
+    assert result["file"] is None
+    assert "No issues found" in result["message"]
