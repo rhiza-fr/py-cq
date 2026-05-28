@@ -132,8 +132,8 @@ EXITCODE_DEFECT_SNAPSHOT = (
 )
 
 HALSTEAD_BUG_DEFECT_SNAPSHOT = (
-    "`src/heavy.py` has high estimated bug density (Halstead bug estimate: 2.500)\n\n"
-    "Reduce complexity by extracting helper functions or simplifying logic.\n\n"
+    "src/heavy.py has high estimated bug density (bugs: 2.500)\n\n"
+    "Extract helper functions to reduce the function's size and scope.\n\n"
     "Please fix only this issue."
 )
 

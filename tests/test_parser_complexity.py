@@ -76,11 +76,12 @@ def test_complexity_multiple_files_averaged():
     assert "src/b.py" in tr.details
 
 
-def test_complexity_format_llm_message_uses_base_fallback():
+def test_complexity_format_llm_message_worst_function():
     tr = ComplexityParser().parse(raw(_ONE_FILE))
     msg = ComplexityParser().format_llm_message(tr)
-    assert "simplicity" in msg   # base fallback emits metric name
-    assert "0." in msg            # base fallback emits formatted score
+    assert "baz" in msg       # worst function (complexity 15, rank C) is highlighted
+    assert "C" in msg          # rank is shown
+    assert "complexity" in msg.lower()
 
 
 def test_complexity_parse_valid_json_non_dict():

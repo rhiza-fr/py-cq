@@ -68,3 +68,29 @@ class MaintainabilityParser(AbstractParser):
                 }
         tr.metrics["maintainability"] = score / num_items if num_items > 0 else 0.0
         return tr
+
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        worst_file = worst_rank = None
+        worst_score = 1.0
+        for file, data in tr.details.items():
+            if not isinstance(data, dict):
+                continue
+            error = data.get("error")
+            score = data.get("mi", 1.0)
+            if score < worst_score:
+                worst_score = score
+                worst_file = file
+                worst_rank = data.get("rank", "F")
+                if error:
+                    worst_rank = f"F (error: {error})"
+        if worst_file is None:
+            if tr.metrics:
+                metric_name, value = next(iter(tr.metrics.items()))
+                return f"**{metric_name}** score: {value:.3f}"
+            return "No maintainability details available"
+        return (
+            f"`{worst_file}` — maintainability rank **{worst_rank}**\n\n"
+            "The maintainability index is low. Common causes: long functions, high complexity, "
+            "deeply nested logic, or lack of comments. Refactor by extracting helpers and "
+            "simplifying control flow."
+        )

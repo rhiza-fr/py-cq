@@ -8,7 +8,7 @@ maximum thresholds, and aggregates file- and function-level metrics."""
 import json
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import score_logistic_variant
+from py_cq.parsers.common import _relative_path, score_logistic_variant
 
 
 class HalsteadParser(AbstractParser):
@@ -111,6 +111,7 @@ class HalsteadParser(AbstractParser):
                         "smallness": sm,
                         "bugs": function_values.get("bugs", 0),
                         "volume": function_values.get("volume", 0),
+                        "difficulty": function_values.get("difficulty", 0),
                     }
         tr.metrics = {
             "file_bug_free": min_file_nb,
@@ -120,7 +121,7 @@ class HalsteadParser(AbstractParser):
         }
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         """Return the worst Halstead offender as an actionable defect description."""
         if not tr.metrics:
             return "No Halstead details available"
@@ -134,6 +135,7 @@ class HalsteadParser(AbstractParser):
         worst_score = 1.0
         worst_bugs = None
         worst_volume = None
+        worst_difficulty = None
 
         for file_name, file_data in tr.details.items():
             if is_function_metric:
@@ -145,6 +147,7 @@ class HalsteadParser(AbstractParser):
                         worst_function = func_name
                         worst_bugs = func_data.get("bugs")
                         worst_volume = func_data.get("volume")
+                        worst_difficulty = func_data.get("difficulty")
             else:
                 s = file_data.get("bug_free" if is_bug_metric else "smallness", 1.0)
                 if s < worst_score:
@@ -156,13 +159,22 @@ class HalsteadParser(AbstractParser):
         if worst_file is None:
             return f"**{metric_name}** score: {score:.3f}"
 
-        location = f"`{worst_file}` — function `{worst_function}`" if worst_function else f"`{worst_file}`"
+        path = _relative_path(worst_file)
+        location = f"{path} — function `{worst_function}`" if worst_function else path
         if is_bug_metric:
-            detail = f" (Halstead bug estimate: {worst_bugs:.3f})" if worst_bugs is not None else ""
-            return (
-                f"{location} has high estimated bug density{detail}\n\n"
-                f"Reduce complexity by extracting helper functions or simplifying logic."
-            )
+            parts = []
+            if worst_bugs is not None:
+                parts.append(f"bugs: {worst_bugs:.3f}")
+            if worst_volume is not None:
+                parts.append(f"volume: {worst_volume:.0f}")
+            if worst_difficulty is not None:
+                parts.append(f"difficulty: {worst_difficulty:.1f}")
+            detail = f" ({', '.join(parts)})" if parts else ""
+            if worst_difficulty is not None and worst_volume is not None and worst_difficulty > worst_volume / 50:
+                advice = "Simplify branching logic, reduce nesting, or consolidate repeated operator patterns."
+            else:
+                advice = "Extract helper functions to reduce the function's size and scope."
+            return f"{location} has high estimated bug density{detail}\n\n{advice}"
         else:
             detail = f" (volume: {worst_volume:.0f})" if worst_volume is not None else ""
             return (

@@ -3,7 +3,7 @@
 import json
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import score_logistic_variant
+from py_cq.parsers.common import find_function_source, score_logistic_variant
 
 
 class ComplexityParser(AbstractParser):
@@ -91,3 +91,29 @@ class ComplexityParser(AbstractParser):
                 }
         tr.metrics["simplicity"] = score / num_items if num_items > 0 else 0.0
         return tr
+
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        worst_file = worst_func = worst_rank = None
+        worst_score = 1.0
+        for file, funcs in tr.details.items():
+            if not isinstance(funcs, dict):
+                continue
+            for func_name, data in funcs.items():
+                score = data.get("simplicity", 1.0)
+                if score < worst_score:
+                    worst_score = score
+                    worst_file = file
+                    worst_func = func_name
+                    worst_rank = data.get("rank", "F")
+        if worst_file is None or worst_func is None:
+            if tr.metrics:
+                metric_name, value = next(iter(tr.metrics.items()))
+                return f"**{metric_name}** score: {value:.3f}"
+            return "No complexity details available"
+        source = find_function_source(worst_file, worst_func, max_lines=context_lines)
+        header = f"`{worst_file}::{worst_func}` — cyclomatic complexity rank **{worst_rank}**"
+        parts = [header]
+        if source:
+            parts.append(source)
+        parts.append("Cyclomatic complexity is too high. Break this function into smaller, single-purpose helpers.")
+        return "\n\n".join(parts)
