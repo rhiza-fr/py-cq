@@ -335,7 +335,7 @@ def verify(
     """Check whether a fingerprinted issue has been fixed."""
     try:
         cq = CQ(".")
-        fixed = cq.verify(fingerprint)
+        fixed = cq.is_fixed(fingerprint)
     except ValueError as e:
         raise typer.BadParameter(str(e))
 

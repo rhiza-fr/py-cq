@@ -111,7 +111,7 @@ issue["message"]  # markdown prompt ready to send to an LLM
 issue["project"]  # absolute project root path
 
 # bool — True if the fingerprinted issue is gone (verify command)
-fixed = cq.verify(issue["id"])
+fixed = cq.is_fixed(issue["id"])
 ```
 
 `check_llm_json` accepts the same options as `cq check . -o llm-json`:
@@ -131,7 +131,7 @@ while True:
     if issue["id"] is None:
         break                        # all clear
     fix(issue["message"])            # call your LLM
-    assert cq.verify(issue["id"])
+    assert cq.is_fixed(issue["id"])
 ```
 
 ## Claude Code Integration

@@ -82,7 +82,7 @@ class CQ:
 
         cq = CQ(".")
         issue = cq.check_llm_json()   # {"id": ..., "message": ..., "file": ..., "project": ...}
-        fixed = cq.verify(issue["id"])
+        fixed = cq.is_fixed(issue["id"])
     """
 
     def __init__(
@@ -153,7 +153,7 @@ class CQ:
             project_root=self._project_root,
         )
 
-    def verify(self, fingerprint: str) -> bool:
+    def is_fixed(self, fingerprint: str) -> bool:
         """Return True if the fingerprinted issue is no longer present.
 
         Fingerprint format: tool:file[:line:code]  (as returned by check_llm_json["id"])
@@ -164,6 +164,7 @@ class CQ:
         tool_parts = parts[0].split(":", 1)
         tool_name = tool_parts[0]
         file_str = tool_parts[1] if len(tool_parts) > 1 else ""
+        line = parts[1] if len(parts) >= 2 else ""
         code = parts[2] if len(parts) == 3 else ""
 
         if tool_name not in tool_registry:
@@ -190,13 +191,15 @@ class CQ:
             return bool(tr.metrics and min(tr.metrics.values()) >= tc.warning_threshold)
 
         target_posix = Path(file_str).as_posix()
-        for detail_file, issues in tr.details.items():
-            detail_posix = Path(detail_file).as_posix()
-            match = (
-                detail_posix == target_posix
-                or detail_posix.endswith(f"/{target_posix}")
-                or target_posix.endswith(f"/{detail_posix}")
-            )
-            if match and isinstance(issues, list) and any(i.get("code") == code for i in issues):
-                return False
-        return True
+
+        def _file_matches(detail_file: str) -> bool:
+            p = Path(detail_file).as_posix()
+            return p == target_posix or p.endswith(f"/{target_posix}") or target_posix.endswith(f"/{p}")
+
+        still_present = any(
+            str(i.get("line", "")) == line and i.get("code") == code
+            for f, issues in tr.details.items()
+            if _file_matches(f) and isinstance(issues, list)
+            for i in issues
+        )
+        return not still_present
