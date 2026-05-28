@@ -27,7 +27,7 @@ class RegexCountParser(AbstractParser):
             details={"count": count, "matches": matches},
         )
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         matches = tr.details.get("matches", [])
         if not matches:
             return "No violations found"

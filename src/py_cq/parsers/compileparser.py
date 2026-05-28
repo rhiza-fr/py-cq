@@ -122,7 +122,7 @@ class CompileParser(AbstractParser):
             tr.details["failed_files"] = failed_files
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         """Return the first compilation failure as a defect description."""
         failed = tr.details.get("failed_files", {})
         if not failed:

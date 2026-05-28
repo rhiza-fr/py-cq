@@ -18,7 +18,7 @@ class LineCountParser(AbstractParser):
         score = score_logistic_variant(count, scale_factor=scale)
         return ToolResult(raw=raw_result, metrics={"violations": score}, details={"lines": lines})
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         lines = tr.details.get("lines", [])
         if not lines:
             return "No violations found"

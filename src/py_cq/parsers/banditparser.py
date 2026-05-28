@@ -44,7 +44,7 @@ class BanditParser(AbstractParser):
         score = score_logistic_variant(weighted, scale_factor=10)
         return ToolResult(raw=raw_result, metrics={"security": score}, details=files)
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         if not tr.details:
             return "bandit reported issues (no details available)"
         file, issues = next(iter(tr.details.items()))

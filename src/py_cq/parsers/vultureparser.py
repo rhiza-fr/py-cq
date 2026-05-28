@@ -36,7 +36,7 @@ class VultureParser(AbstractParser):
         score = score_logistic_variant(count, scale_factor=15)
         return ToolResult(raw=raw_result, metrics={"dead_code": score}, details=files)
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15) -> str:
+    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         if not tr.details:
             return "vulture reported issues (no details available)"
         file, issues = next(iter(tr.details.items()))
