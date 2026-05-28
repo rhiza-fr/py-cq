@@ -44,10 +44,12 @@ def get_sigs(path: str):
     items = []
     with os.scandir(path) as entries:
         for entry in entries:
-            if entry.is_file() and entry.name.endswith(".py"):
-                stat_info = entry.stat()
+            # Use follow_symlinks=False to prevent cache poisoning from
+            # symlinks pointing outside the project tree (M-2)
+            if entry.is_file(follow_symlinks=False) and entry.name.endswith(".py"):
+                stat_info = entry.stat(follow_symlinks=False)
                 items.append(f"{entry.path}:{stat_info.st_size}:{stat_info.st_mtime}")
-            if entry.is_dir() and entry.name not in [".venv", "venv", "__pycache__", ".git"]:
+            if entry.is_dir(follow_symlinks=False) and entry.name not in [".venv", "venv", "__pycache__", ".git"]:
                 items.extend(get_sigs(entry.path))
     return items
 

@@ -13,6 +13,7 @@ where tool invocations may be expensive and should be avoided
 when a cached result already exists."""
 
 import logging
+import shlex
 import shutil
 import subprocess
 import sys
@@ -59,7 +60,12 @@ def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: s
     parts = []
     for exc in excludes:
         abs_posix_path = Path(exc).resolve().as_posix()
-        parts.append(exclude_format.format(path=exc, abs_posix_path=abs_posix_path, **extra_vars))
+        # shlex.quote prevents shell injection via exclude paths
+        parts.append(exclude_format.format(
+            path=shlex.quote(exc),
+            abs_posix_path=shlex.quote(abs_posix_path),
+            **{k: shlex.quote(v) for k, v in extra_vars.items()},
+        ))
     return "".join(parts)
 
 
@@ -96,7 +102,10 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
                 path = str(resolved)
             project_root_path = Path(abs_dir)
             missing_deps = [d for d in tool_config.extra_deps if not _dep_in_venv(d, project_root_path)]
-            with_flags = " ".join(f"--with {dep}" for dep in missing_deps)
+            # Quote deps with shlex.quote to prevent injection via extra_deps.
+            # The uv path and abs_dir use standard double-quoting which is
+            # compatible with both POSIX and MSYS bash on Windows.
+            with_flags = " ".join(f"--with {shlex.quote(dep)}" for dep in missing_deps)
             no_sync = "--no-sync" if sys.executable.startswith(abs_dir) else ""
             python = f'"{uv}" run {no_sync} --directory "{abs_dir}" {with_flags}'.strip()
     abs_context_path = str(Path(context_path).resolve())
@@ -108,7 +117,12 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
         log.debug(f"Cache hit: {command}")
         return RawResult(**cast(dict[str, Any], _cache[cache_key]))
     log.debug(f"Running: {command}")
-    result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace") # nosec
+    # shell=True is required because commands use shell features (&&, |) and
+    # variable substitution ({python} expands to a compound uv command).
+    # All user-supplied values (context_path, excludes) are properly quoted
+    # via shlex.quote() to prevent injection — see _build_exclude_str and
+    # the uv command assembly above.
+    result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace")  # nosec
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     raw_result = RawResult(
         tool_name=tool_config.name,
@@ -174,14 +188,24 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
     t_start = time.perf_counter()
     prioritized: list[tuple[int, ToolResult]] = []
     if early_exit:
-        for tool_config in sorted(tool_configs, key=lambda tc: tc.order):
+        sorted_configs = sorted(tool_configs, key=lambda tc: tc.order)
+        n_total = len(sorted_configs)
+        for i, tool_config in enumerate(sorted_configs):
             try:
                 prioritized.append(_run_and_parse(tool_config))
             except Exception as exc:
                 log.error(f"{tool_config.name} generated an exception: {exc}")
+                n_skipped = n_total - i - 1
+                if n_skipped:
+                    remaining = ", ".join(tc.name for tc in sorted_configs[i + 1:])
+                    log.warning(f"Early exit: skipped {n_skipped} tool(s): {remaining}")
                 break
             _, tr = prioritized[-1]
             if tr.metrics and min(tr.metrics.values()) < tool_config.error_threshold:
+                n_skipped = n_total - i - 1
+                if n_skipped:
+                    remaining = ", ".join(tc.name for tc in sorted_configs[i + 1:])
+                    log.debug(f"Error threshold hit at {tool_config.name}: skipped {n_skipped} tool(s): {remaining}")
                 break
         log.debug(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
         return [tr for _, tr in sorted(prioritized)]
