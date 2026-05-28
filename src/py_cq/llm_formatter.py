@@ -123,13 +123,16 @@ def _fingerprint_from_slice(tool_name: str, tr: ToolResult) -> str:
         if isinstance(issues, list) and issues:
             code = issues[0].get("code", "")
             line = issues[0].get("line", "")
-            return f"{tool_name}:{posix}:{line}:{code}"
-        if isinstance(issues, dict):
+            fp = f"{tool_name}:{posix}:{line}:{code}"
+        elif isinstance(issues, dict):
             str_vals = [v for v in issues.values() if isinstance(v, str)]
             if str_vals and all(v not in ("FAILED", "ERROR") for v in str_vals):
                 continue
-            return f"{tool_name}:{posix}:"
-    return f"{tool_name}::"
+            fp = f"{tool_name}:{posix}"
+        else:
+            fp = tool_name
+        return fp.rstrip(":")
+    return tool_name
 
 
 def format_for_llm(

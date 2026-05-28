@@ -105,9 +105,9 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
     command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, input_path_posix=input_path_posix, python=python, exclude=exclude)
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
-        log.info(f"Cache hit: {command}")
+        log.debug(f"Cache hit: {command}")
         return RawResult(**cast(dict[str, Any], _cache[cache_key]))
-    log.info(f"Running: {command}")
+    log.debug(f"Running: {command}")
     result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace") # nosec
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     raw_result = RawResult(
@@ -183,7 +183,7 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
             _, tr = prioritized[-1]
             if tr.metrics and min(tr.metrics.values()) < tool_config.error_threshold:
                 break
-        log.info(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
+        log.debug(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
         return [tr for _, tr in sorted(prioritized)]
     with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
         future_to_tool = {
@@ -196,5 +196,5 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
                 prioritized.append(future.result())
             except Exception as exc:
                 log.error(f"{tool_config.name} generated an exception: {exc}")
-    log.info(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
+    log.debug(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
     return [tr for _, tr in sorted(prioritized)]

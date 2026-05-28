@@ -418,7 +418,7 @@ def verify(
 
     if not code:
         fixed = bool(tr.metrics and min(tr.metrics.values()) >= tc.warning_threshold)
-        typer.echo(f"{'fixed' if fixed else 'not fixed'}: {tool_name}")
+        typer.echo("FIXED" if fixed else f"FAILED: {fingerprint}")
         if not fixed:
             raise typer.Exit(1)
         return
@@ -432,7 +432,7 @@ def verify(
             or target_posix.endswith(f"/{detail_posix}")
         )
         if match and isinstance(issues, list) and any(i.get("code") == code for i in issues):
-            typer.echo(f"not fixed: {code} still present in {file_str}")
+            typer.echo(f"FAILED: {code} still present in {file_str}")
             raise typer.Exit(1)
 
-    typer.echo(f"fixed: {code} no longer found in {file_str}")
+    typer.echo("FIXED")

@@ -507,13 +507,13 @@ def test_fingerprint_dict_details():
         raw=RawResult(tool_name="interrogate"),
     )
     fp = _fingerprint_from_slice("interrogate", tr)
-    assert fp == "interrogate:src/bar.py:"
+    assert fp == "interrogate:src/bar.py"
 
 
 def test_fingerprint_empty_details():
     tr = ToolResult(metrics={"score": 0.3}, details={}, raw=RawResult(tool_name="pytest"))
     fp = _fingerprint_from_slice("pytest", tr)
-    assert fp == "pytest::"
+    assert fp == "pytest"
 
 
 # --- format_for_llm_json ---

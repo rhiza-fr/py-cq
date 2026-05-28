@@ -136,6 +136,7 @@ def test_find_project_root_no_pyproject_returns_hint_root(tmp_path):
 def test_find_project_root_reaches_filesystem_root(tmp_path, monkeypatch):
     """_find_project_root breaks at the filesystem root (parent == current)."""
     from pathlib import Path
+
     import py_cq.parsers.common as common_mod
 
     fake_file = tmp_path / "orphan.py"
