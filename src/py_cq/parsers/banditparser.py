@@ -7,9 +7,12 @@ logistic-variant score stored under the ``security`` metric key.
 """
 
 import json
+import logging
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 from py_cq.parsers.common import format_source_context, score_logistic_variant
+
+log = logging.getLogger("cq")
 
 _SEVERITY_WEIGHT = {"HIGH": 5, "MEDIUM": 2, "LOW": 1}
 
@@ -21,9 +24,12 @@ class BanditParser(AbstractParser):
         try:
             data = json.loads(raw_result.stdout)
         except (json.JSONDecodeError, ValueError):
-            return ToolResult(raw=raw_result, metrics={"security": 1.0})
+            log.warning("bandit output is not valid JSON (return_code=%s). Reporting degraded score.", raw_result.return_code)
+            degraded = 0.0 if raw_result.return_code != 0 else 0.5
+            return ToolResult(raw=raw_result, metrics={"security": degraded})
         if not isinstance(data, dict):
-            return ToolResult(raw=raw_result, metrics={"security": 1.0})
+            log.warning("bandit output is not a JSON object. Reporting degraded score.")
+            return ToolResult(raw=raw_result, metrics={"security": 0.5})
 
         files: dict[str, list] = {}
         weighted = 0

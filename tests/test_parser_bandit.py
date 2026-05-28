@@ -59,14 +59,20 @@ def test_bandit_high_severity_scores_lower_than_low():
     assert high_tr.metrics["security"] < low_tr.metrics["security"]
 
 
-def test_bandit_invalid_json_returns_perfect_score():
+def test_bandit_invalid_json_returns_degraded_score():
     tr = BanditParser().parse(raw("not json", return_code=0))
-    assert tr.metrics["security"] == 1.0
+    assert tr.metrics["security"] == 0.5
 
 
-def test_bandit_non_dict_json_returns_perfect_score():
+def test_bandit_non_dict_json_returns_degraded_score():
     tr = BanditParser().parse(raw("[]", return_code=0))
-    assert tr.metrics["security"] == 1.0
+    assert tr.metrics["security"] == 0.5
+
+
+def test_bandit_crash_returns_zero():
+    """When bandit crashes (non-zero exit + non-JSON), score should be 0.0."""
+    tr = BanditParser().parse(raw("not json", return_code=2))
+    assert tr.metrics["security"] == 0.0
 
 
 def test_bandit_skips_venv_paths():
