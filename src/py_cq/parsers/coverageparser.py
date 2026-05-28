@@ -46,7 +46,9 @@ class CoverageParser(AbstractParser):
             0.9"""
         tr = ToolResult(raw=raw_result)
         lines = raw_result.stdout.splitlines()
-        coverage_lines = [line for line in lines if line.endswith("%")]
+        # Skip lines that look like pytest progress output (contain "[") which can appear
+        # when coverage report runs after a failed test suite via ; instead of &&.
+        coverage_lines = [line for line in lines if line.endswith("%") and "[" not in line]
         details = {}
         for line in coverage_lines:
             parts = line.split()
