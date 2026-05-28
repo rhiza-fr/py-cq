@@ -139,11 +139,11 @@ def test_inv_normalize_parametrized(value, max_value, expected):
     assert inv_normalize(value, max_value) == pytest.approx(expected)
 
 
-def test_inv_normalize_zero_max_raises():
-    """inv_normalize(v, 0) raises ZeroDivisionError — document and test the boundary."""
+def test_inv_normalize_zero_max():
+    """inv_normalize(v, 0) returns 1.0 — zero-sized reference means no deviation."""
     from py_cq.parsers.common import inv_normalize
-    with pytest.raises(ZeroDivisionError):
-        inv_normalize(0.0, 0.0)
+    assert inv_normalize(0.0, 0.0) == 1.0
+    assert inv_normalize(5.0, 0.0) == 1.0
 
 
 @pytest.mark.parametrize("errors", [0, 5, 20, 100, 1000])
