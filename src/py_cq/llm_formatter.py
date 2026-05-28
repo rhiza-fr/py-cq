@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from typing import cast
 
 from py_cq.localtypes import CombinedToolResults, ToolConfig, ToolResult
 
@@ -61,11 +62,16 @@ def _single_issue_slices(tr: ToolResult, limit: int, silence: list[str] | None =
                     break
     else:
         # Non-list details: sort so files with failures (pytest-style) come first, then by coverage ascending
-        def _dict_sort_key(v: object) -> tuple[int, float]:
+        def _dict_sort_key(v: object) -> tuple[int, float, float]:
             if not isinstance(v, dict):
-                return (0, 0.0)
-            failures = sum(1 for val in v.values() if isinstance(val, str) and val in ("FAILED", "ERROR"))
-            return (-failures, v.get("coverage", 0.0))
+                return (0, 0.0, 1.0)
+            d = cast("dict[str, object]", v)
+            failures = sum(1 for val in d.values() if isinstance(val, str) and val in ("FAILED", "ERROR"))
+            cov_val = d.get("coverage", 0)
+            coverage = float(cov_val) if isinstance(cov_val, (int, float, str)) else 0.0
+            sm_val = d.get("smallness", 1.0)
+            smallness = float(sm_val) if isinstance(sm_val, (int, float)) else 1.0
+            return (-failures, coverage, smallness)
 
         items = sorted(tr.details.items(), key=lambda x: _dict_sort_key(x[1]))
         for file, data in items:
