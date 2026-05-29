@@ -16,48 +16,27 @@ def _severity(score: float, config: ToolConfig) -> int:
     return 2
 
 
-def _parse_silence_spec(spec: str) -> tuple[str, int | None, str | None]:
-    """Parse 'file[:line[:code]]' into (file, line, code).
-
-    Uses rsplit to handle Windows paths (e.g. C:/foo/bar.py:10:E501).
-    """
-    parts = spec.rsplit(":", 2)
-    file = parts[0]
-    line = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
-    code = parts[2] if len(parts) > 2 else None
-    return file, line, code
-
-
-def _is_silenced(file: str, issue: dict, specs: list[str]) -> bool:
-    file_parts = Path(file.replace("\\", "/")).parts
-    for spec in specs:
-        spec_file, spec_line, spec_code = _parse_silence_spec(spec)
-        spec_parts = Path(spec_file.replace("\\", "/")).parts
-        n = len(spec_parts)
-        if file_parts[-n:] != spec_parts:
-            continue
-        if spec_line is not None and issue.get("line") != spec_line:
-            continue
-        if spec_code is not None and issue.get("code") != spec_code:
-            continue
-        return True
-    return False
-
-
-def _single_issue_slices(tr: ToolResult, limit: int, silence: list[str] | None = None) -> list[ToolResult]:
+def _single_issue_slices(
+    tr: ToolResult,
+    limit: int,
+    silence: list[str] | None = None,
+    project_root: Path | None = None,
+) -> list[ToolResult]:
     """Return up to `limit` ToolResults each containing one issue from tr.details.
 
     Returns empty list (not [tr]) when silence specs filter out all issues."""
-    silence = silence or []
+    silence_set = set(silence or [])
     slices: list[ToolResult] = []
     has_list = any(isinstance(v, list) for v in tr.details.values())
+
     if has_list:
         for file, issues in tr.details.items():
             if isinstance(issues, list):
                 for issue in issues:
-                    if silence and _is_silenced(file, issue, silence):
+                    candidate = ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: [issue]})
+                    if _fingerprint_from_slice(tr.raw.tool_name, candidate, project_root) in silence_set:
                         continue
-                    slices.append(ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: [issue]}))
+                    slices.append(candidate)
                 if len(slices) >= limit:
                     break
     else:
@@ -75,12 +54,13 @@ def _single_issue_slices(tr: ToolResult, limit: int, silence: list[str] | None =
 
         items = sorted(tr.details.items(), key=lambda x: _dict_sort_key(x[1]))
         for file, data in items:
-            if silence and _is_silenced(file, {}, silence):
+            candidate = ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: data})
+            if _fingerprint_from_slice(tr.raw.tool_name, candidate, project_root) in silence_set:
                 continue
-            slices.append(ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: data}))
+            slices.append(candidate)
             if len(slices) >= limit:
                 break
-    return slices[:limit] or ([] if silence else [tr])
+    return slices[:limit] or ([] if silence_set else [tr])
 
 
 def _select_top_issue(
@@ -88,6 +68,7 @@ def _select_top_issue(
     combined: CombinedToolResults,
     limit: int,
     silence: list[str],
+    project_root: Path | None = None,
 ):
     """Return (worst, slices, config, parser) for the top failing tool, or None if all pass."""
     by_name = {tc.name: tc for tc in tool_configs.values()}
@@ -102,8 +83,9 @@ def _select_top_issue(
             min(tr.metrics.values()),
         ),
     )
+
     for candidate in failing:
-        slices = _single_issue_slices(candidate, limit, silence)
+        slices = _single_issue_slices(candidate, limit, silence, project_root)
         if slices:
             config = by_name[candidate.raw.tool_name]
             return candidate, slices, config, config.parser_class()
@@ -133,8 +115,9 @@ def _fingerprint_from_slice(tool_name: str, tr: ToolResult, project_root: Path |
                 pass
         posix = p.as_posix()
         if isinstance(issues, list) and issues:
-            code = issues[0].get("code", "")
-            line = issues[0].get("line", "")
+            first = issues[0]
+            code = first.get("code", "") if isinstance(first, dict) else ""
+            line = first.get("line", "") if isinstance(first, dict) else ""
             fp = f"{tool_name}:{posix}:{line}:{code}"
         elif isinstance(issues, dict):
             str_vals = [v for v in issues.values() if isinstance(v, str)]
@@ -155,9 +138,10 @@ def format_for_llm(
     hint: bool = False,
     limit: int = 1,
     silence: list[str] | None = None,
+    project_root: Path | None = None,
 ) -> str:
     """Return a markdown prompt describing the top `limit` defects from the worst-scoring tool."""
-    result = _select_top_issue(tool_configs, combined, limit, silence or [])
+    result = _select_top_issue(tool_configs, combined, limit, silence or [], project_root)
     if result is None:
         return f"# No issues found\n\nOverall score: **{combined.score:.3f} / 1.0**"
     _, slices, _, parser = result
@@ -175,9 +159,9 @@ def format_for_llm_json(
     project_root: Path | None = None,
 ) -> dict:
     """Like format_for_llm but returns a dict with id, file, project, and message for automation use."""
-    message = format_for_llm(tool_configs, combined, cq_invocation, context_lines, hint, limit, silence)
+    message = format_for_llm(tool_configs, combined, cq_invocation, context_lines, hint, limit, silence, project_root)
     project = project_root.as_posix() if project_root else None
-    result = _select_top_issue(tool_configs, combined, limit, silence or [])
+    result = _select_top_issue(tool_configs, combined, limit, silence or [], project_root)
     if result is None:
         return {"id": None, "file": None, "project": project, "message": message}
     worst, slices, _, _ = result
