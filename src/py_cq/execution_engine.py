@@ -182,6 +182,7 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
         raw_result = run_tool(tool_config, path, excludes)
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
+        log.debug(f"{tool_config.name}: {tr.duration_s:.2f}s")
         return tool_config.order, tr
 
     if not tool_configs:
