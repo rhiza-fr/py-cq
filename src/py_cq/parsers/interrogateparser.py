@@ -18,6 +18,7 @@ from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 
 _ROW_RE = re.compile(r"^\|\s+(.+?)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+\d+\s+\|\s+(\d+(?:\.\d+)?)%\s*\|")
 _CONTEXT_PATH_RE = re.compile(r'interrogate\s+"([^"]+)"')
+_COVERAGE_FOR_RE = re.compile(r"Coverage for\s+(.+?)[\s=]*$")
 
 
 def _missing_docstrings(file_path: Path) -> list[tuple[int, str, str]]:
@@ -59,6 +60,15 @@ def _missing_docstrings(file_path: Path) -> list[tuple[int, str, str]]:
     return results
 
 
+def _is_file_empty(path: Path | None) -> bool:
+    if path is None:
+        return False
+    try:
+        return not path.read_text(encoding="utf-8").strip()
+    except OSError:
+        return False
+
+
 def _resolve(context_path: str, rel_file: str) -> Path | None:
     """Return the first existing Path for rel_file, trying cwd then context_path."""
     direct = Path(rel_file)
@@ -74,25 +84,53 @@ class InterrogateParser(AbstractParser):
     """Parses raw output from ``interrogate -v`` into a ToolResult."""
 
     def parse(self, raw_result: RawResult) -> ToolResult:
+        cm = _CONTEXT_PATH_RE.search(raw_result.command)
+        context_path = cm.group(1) if cm else "."
+
+        # Interrogate reports paths relative to the package root it discovers,
+        # not relative to context_path. Parse the "Coverage for <dir>" header
+        # to compute the prefix needed to make paths project-relative.
+        prefix = ""
+        for line in (raw_result.stdout or "").splitlines():
+            hm = _COVERAGE_FOR_RE.search(line)
+            if hm:
+                coverage_root = hm.group(1).strip().rstrip("\\/")
+                try:
+                    rel = Path(coverage_root).resolve().relative_to(Path(context_path).resolve())
+                    prefix = rel.as_posix()
+                except ValueError:
+                    pass
+                break
+
         files: dict[str, dict] = {}
-        total_coverage: float | None = None
         for line in (raw_result.stdout or "").splitlines():
             m = _ROW_RE.match(line)
             if not m:
                 continue
-            name = m.group(1).strip()
+            name = m.group(1).strip().replace("\\", "/")
             total = int(m.group(2))
             miss = int(m.group(3))
             cover = float(m.group(4))
-            if name == "TOTAL":
-                total_coverage = cover / 100.0
-            elif total > 0:
-                files[name.replace("\\", "/")] = {
+            if name != "TOTAL" and total > 0 and '.venv' not in name:
+                file_key = f"{prefix}/{name}" if prefix else name
+                files[file_key] = {
                     "total": total,
                     "missing": miss,
                     "coverage": cover / 100.0,
                 }
-        score = total_coverage if total_coverage is not None else 1.0
+
+        if self.parser_config.get("skip_empty_init", True):
+            files = {
+                f: d for f, d in files.items()
+                if not (
+                    Path(f).name == "__init__.py"
+                    and _is_file_empty(_resolve(context_path, f))
+                )
+            }
+
+        total_docs = sum(d["total"] for d in files.values())
+        missing_docs = sum(d["missing"] for d in files.values())
+        score = (total_docs - missing_docs) / total_docs if total_docs > 0 else 1.0
         return ToolResult(raw=raw_result, metrics={"doc_coverage": score}, details=files)
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:

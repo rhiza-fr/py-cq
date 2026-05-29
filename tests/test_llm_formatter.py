@@ -497,7 +497,7 @@ def test_fingerprint_list_details():
         raw=RawResult(tool_name="ruff"),
     )
     fp = _fingerprint_from_slice("ruff", tr)
-    assert fp == "ruff:src/foo.py:42:E501"
+    assert fp == "ruff::::src/foo.py::42::E501"
 
 
 def test_fingerprint_dict_details():
@@ -507,7 +507,7 @@ def test_fingerprint_dict_details():
         raw=RawResult(tool_name="interrogate"),
     )
     fp = _fingerprint_from_slice("interrogate", tr)
-    assert fp == "interrogate:src/bar.py"
+    assert fp == "interrogate::::src/bar.py"
 
 
 def test_fingerprint_empty_details():
@@ -524,7 +524,7 @@ def test_fingerprint_relativizes_absolute_path(tmp_path):
         raw=RawResult(tool_name="ruff"),
     )
     fp = _fingerprint_from_slice("ruff", tr, project_root=tmp_path)
-    assert fp == "ruff:src/foo.py:10:E302"
+    assert fp == f"ruff::{tmp_path.resolve().as_posix()}::src/foo.py::10::E302"
 
 
 # --- format_for_llm_json ---
@@ -542,7 +542,7 @@ def _ruff_registry_and_tr():
 def test_format_for_llm_json_has_id_and_file():
     registry, combined = _ruff_registry_and_tr()
     result = format_for_llm_json(registry, combined)
-    assert result["id"] == "ruff:src/foo.py:42:E501"
+    assert result["id"] == "ruff::::src/foo.py::42::E501"
     assert result["file"] == "src/foo.py"
     assert result["project"] is None
     assert set(result.keys()) == {"id", "file", "project", "message"}

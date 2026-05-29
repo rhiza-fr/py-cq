@@ -329,10 +329,10 @@ def config_set(
 
 
 @app.command()
-def verify(
-    fingerprint: str = typer.Argument(..., help="Fingerprint from -o ci output (tool:file:line:code)"),
+def is_fixed(
+    fingerprint: str = typer.Argument(..., help="Fingerprint from -o llm-json output (tool|file|line|code)"),
 ) -> None:
-    """Check whether a fingerprinted issue has been fixed."""
+    """Return True if the fingerprinted issue is no longer present."""
     try:
         cq = CQ(".")
         fixed = cq.is_fixed(fingerprint)

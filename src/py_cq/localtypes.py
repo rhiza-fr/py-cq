@@ -9,6 +9,33 @@ from typing import Any
 
 
 @dataclass
+class Fingerprint:
+    """Stable identity for a single reported issue.
+
+    String form: ``tool::project::path[::line[::code]]``  (trailing empty fields omitted).
+    ``project`` is an absolute path; ``path`` is relative to it.
+    """
+
+    tool: str
+    project: str  # absolute path to project root
+    path: str     # path relative to project
+    line: str = ""
+    code: str = ""
+
+    def __str__(self) -> str:
+        parts = [self.tool, self.project, self.path, self.line, self.code]
+        while parts and not parts[-1]:
+            parts.pop()
+        return "::".join(parts)
+
+    @classmethod
+    def from_string(cls, s: str) -> "Fingerprint":
+        parts = s.split("::")
+        parts += [""] * (5 - len(parts))
+        return cls(tool=parts[0], project=parts[1], path=parts[2], line=parts[3], code=parts[4])
+
+
+@dataclass
 class ToolConfig:
     """Represents the configuration for an analysis tool, including its name, command, parser class, context path, order, and thresholds for warnings and errors."""
 

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import cast
 
-from py_cq.localtypes import CombinedToolResults, ToolConfig, ToolResult
+from py_cq.localtypes import CombinedToolResults, Fingerprint, ToolConfig, ToolResult
 
 
 def _severity(score: float, config: ToolConfig) -> int:
@@ -105,28 +105,32 @@ def _build_message(slices, parser, context_lines: int, limit: int, hint: bool, c
 
 
 def _fingerprint_from_slice(tool_name: str, tr: ToolResult, project_root: Path | None = None) -> str:
-    """Return fingerprint as tool:file:line:code (line/code omitted when unavailable)."""
+    """Return fingerprint string for a single-issue ToolResult slice."""
+    root = project_root.resolve() if project_root else None
+    project_str = root.as_posix() if root else ""
     for file, issues in tr.details.items():
-        p = Path(file)
-        if project_root:
+        if root:
+            p = Path(file)
+            resolved = (root / p).resolve() if not p.is_absolute() else p.resolve()
             try:
-                p = p.resolve().relative_to(project_root.resolve())
+                path_str = resolved.relative_to(root).as_posix()
             except ValueError:
-                pass
-        posix = p.as_posix()
+                path_str = resolved.as_posix()
+        else:
+            path_str = Path(file).as_posix()
         if isinstance(issues, list) and issues:
             first = issues[0]
+            line = str(first.get("line", "")) if isinstance(first, dict) else ""
             code = first.get("code", "") if isinstance(first, dict) else ""
-            line = first.get("line", "") if isinstance(first, dict) else ""
-            fp = f"{tool_name}:{posix}:{line}:{code}"
+            fp = Fingerprint(tool=tool_name, project=project_str, path=path_str, line=line, code=code)
         elif isinstance(issues, dict):
             str_vals = [v for v in issues.values() if isinstance(v, str)]
             if str_vals and all(v not in ("FAILED", "ERROR") for v in str_vals):
                 continue
-            fp = f"{tool_name}:{posix}"
+            fp = Fingerprint(tool=tool_name, project=project_str, path=path_str)
         else:
-            fp = tool_name
-        return fp.rstrip(":")
+            fp = Fingerprint(tool=tool_name, project=project_str, path="")
+        return str(fp)
     return tool_name
 
 

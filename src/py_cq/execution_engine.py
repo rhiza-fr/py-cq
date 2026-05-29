@@ -111,6 +111,7 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
     abs_context_path = str(Path(context_path).resolve())
     input_path_posix = Path(context_path).as_posix().rstrip("/")
     exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix)
+    
     command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, input_path_posix=input_path_posix, python=python, exclude=exclude)
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:

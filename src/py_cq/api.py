@@ -7,7 +7,7 @@ from pathlib import Path
 from py_cq.config import load_user_config
 from py_cq.execution_engine import _cache, run_tools
 from py_cq.llm_formatter import format_for_llm_json
-from py_cq.localtypes import CombinedToolResults, ToolConfig, ToolResult
+from py_cq.localtypes import CombinedToolResults, Fingerprint, ToolConfig, ToolResult
 from py_cq.metric_aggregator import aggregate_metrics
 from py_cq.tool_registry import tool_registry
 
@@ -156,48 +156,42 @@ class CQ:
     def is_fixed(self, fingerprint: str) -> bool:
         """Return True if the fingerprinted issue is no longer present.
 
-        Fingerprint format: tool:file[:line:code]  (as returned by check_llm_json["id"])
+        Fingerprint format: ``tool|project|path[|line[|code]]``  (as returned by check_llm_json["id"])
         """
-        parts = fingerprint.rsplit(":", 2)
-        if len(parts) < 2:
-            raise ValueError(f"Expected tool:file[:line:code], got: {fingerprint!r}")
-        tool_parts = parts[0].split(":", 1)
-        tool_name = tool_parts[0]
-        file_str = tool_parts[1] if len(tool_parts) > 1 else ""
-        line = parts[1] if len(parts) >= 2 else ""
-        code = parts[2] if len(parts) == 3 else ""
+        fp = Fingerprint.from_string(fingerprint)
+        if not fp.tool:
+            raise ValueError(f"Expected tool|project|path[|line[|code]], got: {fingerprint!r}")
+        if fp.tool not in tool_registry:
+            raise ValueError(f"Unknown tool: {fp.tool!r}")
 
-        if tool_name not in tool_registry:
-            raise ValueError(f"Unknown tool: {tool_name!r}")
-
-        if file_str:
-            file_path = Path(file_str)
+        if fp.path:
+            file_path = Path(fp.path)
             if not file_path.is_absolute():
-                file_path = self._project_root / file_path
+                root = Path(fp.project) if fp.project else self._project_root
+                file_path = root / file_path
             target = str(file_path)
         else:
             target = str(self.path)
 
-        only_registry = {tool_name: tool_registry[tool_name]}
+        only_registry = {fp.tool: tool_registry[fp.tool]}
         tool_results = run_tools(only_registry.values(), target, max_workers=1, early_exit=False, excludes=[])
 
         if not tool_results:
             return False
 
         tr = tool_results[0]
-        tc = tool_registry[tool_name]
+        tc = tool_registry[fp.tool]
 
-        if not code:
+        if not fp.code:
             return bool(tr.metrics and min(tr.metrics.values()) >= tc.warning_threshold)
-
-        target_posix = Path(file_str).as_posix()
 
         def _file_matches(detail_file: str) -> bool:
             p = Path(detail_file).as_posix()
-            return p == target_posix or p.endswith(f"/{target_posix}") or target_posix.endswith(f"/{p}")
+            t = Path(fp.path).as_posix()
+            return p == t or p.endswith(f"/{t}") or t.endswith(f"/{p}")
 
         still_present = any(
-            str(i.get("line", "")) == line and i.get("code") == code
+            str(i.get("line", "")) == fp.line and i.get("code") == fp.code
             for f, issues in tr.details.items()
             if _file_matches(f) and isinstance(issues, list)
             for i in issues

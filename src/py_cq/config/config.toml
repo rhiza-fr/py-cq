@@ -87,3 +87,6 @@ parser = "InterrogateParser"
 order = 11
 warning_threshold = 0.8
 error_threshold = 0.3
+
+[python.interrogate.parser_config]
+skip_empty_init = true
