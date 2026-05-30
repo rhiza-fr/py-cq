@@ -12,6 +12,7 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
 
 HERE = Path(__file__).resolve().parent.parent
 
@@ -39,7 +40,7 @@ def _cq_invoke(args: list[str]) -> tuple[int, float]:
     elapsed = time.perf_counter() - t0
     return result.returncode, elapsed
 
-
+@pytest.mark.slow
 def test_cache_speeds_up_repeated_invocation():
     """Second cq check on unchanged code is served from cache: < 25% time, < 0.5 s."""
     tools = "compile,ruff,radon-cc,radon-mi,radon-hal"
