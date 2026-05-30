@@ -232,10 +232,10 @@ def test_ty_format_llm_message():
 
 
 def test_interrogate_format_llm_message():
-    tr = _tr("interrogate", {"src/qux.py": {"total": 4, "missing": 2, "coverage": 0.5}})
+    tr = _tr("interrogate", {"src/qux.py": [{"line": 10, "code": "D103", "message": "missing docstring in function `my_func`"}]})
     msg = InterrogateParser().format_llm_message(tr)
     assert "src/qux.py" in msg
-    assert "2 undocumented" in msg
+    assert "D103" in msg
 
 
 def test_pytest_format_llm_message():

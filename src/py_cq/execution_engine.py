@@ -189,11 +189,11 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
         ... ]
         >>> results = run_tools(configs, '/path/to/project', parallel=True)"""
     def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
-        t0 = time.perf_counter()
+        # t0 = time.perf_counter()
         raw_result = run_tool(tool_config, path, excludes)
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
-        tr.duration_s = time.perf_counter() - t0
-        log.debug(f"{tool_config.name}: {tr.duration_s:.2f}s")
+        # tr.duration_s = time.perf_counter() - t0
+        # log.debug(f"{tool_config.name}: {tr.duration_s:.2f}s")
         return tool_config.order, tr
 
     if not tool_configs:
@@ -220,18 +220,22 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
                     remaining = ", ".join(tc.name for tc in sorted_configs[i + 1:])
                     log.debug(f"Error threshold hit at {tool_config.name}: skipped {n_skipped} tool(s): {remaining}")
                 break
-        log.debug(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
+        log.info(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
         return [tr for _, tr in sorted(prioritized)]
     with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
         future_to_tool = {
             executor.submit(_run_and_parse, tool_config): tool_config
             for tool_config in tool_configs
         }
+        timings: list[tuple[int, str, float]] = []
         for future in as_completed(future_to_tool):
             tool_config = future_to_tool[future]
             try:
-                prioritized.append(future.result())
+                order, tr = future.result()
+                prioritized.append((order, tr))
+                timings.append((order, tool_config.name, tr.duration_s))
             except Exception as exc:
                 log.error(f"{tool_config.name} generated an exception: {exc}")
-    log.debug(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
+    per_tool = ", ".join(f"{name}={dur:.2f}s" for _, name, dur in sorted(timings))
+    log.debug(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s [{per_tool}]")
     return [tr for _, tr in sorted(prioritized)]

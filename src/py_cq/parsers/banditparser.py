@@ -31,8 +31,8 @@ class BanditParser(AbstractParser):
             log.warning("bandit output is not a JSON object. Reporting degraded score.")
             return ToolResult(raw=raw_result, metrics={"security": 0.5})
 
-        totals = data.get("metrics", {}).get("_totals", {})
-        log.debug("bandit scanned %d LOC across %d files", totals.get("loc", 0), len(data.get("metrics", {})) - 1)
+        # totals = data.get("metrics", {}).get("_totals", {})
+        # log.debug("bandit scanned %d LOC across %d files", totals.get("loc", 0), len(data.get("metrics", {})) - 1)
 
         files: dict[str, list] = {}
         weighted = 0

@@ -5,6 +5,9 @@
 ### Changed
 
 - `-o llm` output no longer appends "After fixing, run cq again to verify" by default — this prevented agents from running cleanly in a pipe. Use `--hint` to restore the old behaviour.
+- `interrogate` parser now emits per-issue details with exact line numbers and D-codes (`D100`/`D101`/`D103`), consistent with `ruff`/`ty` output. LLM output shows `file:line — Dxxx: message` with source context instead of a file-level summary.
+- `is_fixed` targets the specific affected file for faster re-checks when the fingerprint includes a path and code.
+- Parallel execution now logs per-tool timing breakdown (e.g. `ruff=0.17s, ty=0.33s`).
 
 ## [0.1.16] - 2026-04-27
 

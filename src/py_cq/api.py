@@ -164,7 +164,14 @@ class CQ:
         if fp.tool not in tool_registry:
             raise ValueError(f"Unknown tool: {fp.tool!r}")
 
-        if fp.project and Path(fp.project).is_dir():
+        if fp.code and fp.path:
+            # Specific issue: target only the affected file for a fast re-check
+            file_path = Path(fp.path)
+            if not file_path.is_absolute():
+                base = Path(fp.project) if fp.project else self._project_root
+                file_path = (base / file_path) if base else file_path
+            target = str(file_path)
+        elif fp.project and Path(fp.project).is_dir():
             target = fp.project
         elif fp.path:
             file_path = Path(fp.path)

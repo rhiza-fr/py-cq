@@ -138,7 +138,7 @@ HALSTEAD_BUG_DEFECT_SNAPSHOT = (
 )
 
 INTERROGATE_DEFECT_SNAPSHOT = (
-    "src/undoc.py — 60% doc coverage (4 undocumented)\n\n"
+    "src/undoc.py:5 — D103: missing docstring in function `some_func`\n\n"
     "Please fix only this issue."
 )
 
@@ -178,7 +178,7 @@ def test_interrogate_defect_snapshot():
     cfg = ToolConfig(name="interrogate", command="", parser_class=InterrogateParser, order=11)
     tr = ToolResult(
         metrics={"doc_coverage": 0.6},
-        details={"src/undoc.py": {"total": 10, "missing": 4, "coverage": 0.6}},
+        details={"src/undoc.py": [{"line": 5, "code": "D103", "message": "missing docstring in function `some_func`"}]},
         raw=RawResult(tool_name="interrogate"),
     )
     result = format_for_llm({"interrogate": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)

@@ -15,6 +15,7 @@ import re
 from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.parsers.common import extract_first_issue, format_issue_header, format_source_context
 
 _ROW_RE = re.compile(r"^\|\s+(.+?)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+\d+\s+\|\s+(\d+(?:\.\d+)?)%\s*\|")
 _CONTEXT_PATH_RE = re.compile(r'interrogate\s+"([^"]+)"')
@@ -102,7 +103,7 @@ class InterrogateParser(AbstractParser):
                     pass
                 break
 
-        files: dict[str, dict] = {}
+        summaries: dict[str, dict] = {}
         for line in (raw_result.stdout or "").splitlines():
             m = _ROW_RE.match(line)
             if not m:
@@ -113,50 +114,63 @@ class InterrogateParser(AbstractParser):
             cover = float(m.group(4))
             if name != "TOTAL" and total > 0 and '.venv' not in name:
                 file_key = f"{prefix}/{name}" if prefix else name
-                files[file_key] = {
-                    "total": total,
-                    "missing": miss,
-                    "coverage": cover / 100.0,
-                }
+                summaries[file_key] = {"total": total, "missing": miss, "coverage": cover / 100.0}
 
         if self.parser_config.get("skip_empty_init", True):
-            files = {
-                f: d for f, d in files.items()
+            summaries = {
+                f: d for f, d in summaries.items()
                 if not (
                     Path(f).name == "__init__.py"
                     and _is_file_empty(_resolve(context_path, f))
                 )
             }
 
-        total_docs = sum(d["total"] for d in files.values())
-        missing_docs = sum(d["missing"] for d in files.values())
+        total_docs = sum(d["total"] for d in summaries.values())
+        missing_docs = sum(d["missing"] for d in summaries.values())
         score = (total_docs - missing_docs) / total_docs if total_docs > 0 else 1.0
+
+        # Build per-issue list details (sorted worst-first) so _fingerprint_from_slice
+        # can produce a specific line+code fingerprint for is_fixed checks.
+        files: dict[str, list] = {}
+        for rel_file, summary in sorted(summaries.items(), key=lambda x: x[1]["coverage"]):
+            if summary["missing"] == 0:
+                continue
+            resolved = _resolve(context_path, rel_file)
+            nodes = _missing_docstrings(resolved) if resolved else []
+            issues = []
+            for lineno, kind, source_line in nodes:
+                if kind == "module":
+                    code, message = "D100", "missing module docstring"
+                    lineno = 1
+                elif kind == "class":
+                    nm = re.search(r"class\s+(\w+)", source_line)
+                    name = nm.group(1) if nm else source_line
+                    code, message = "D101", f"missing docstring in class `{name}`"
+                else:
+                    nm = re.search(r"def\s+(\w+)", source_line)
+                    name = nm.group(1) if nm else source_line
+                    code, message = "D103", f"missing docstring in function `{name}`"
+                issues.append({"line": lineno if lineno > 0 else 1, "code": code, "message": message})
+            if issues:
+                files[rel_file] = issues
+
         return ToolResult(raw=raw_result, metrics={"doc_coverage": score}, details=files)
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
-        # Each call receives a single-file slice from _single_issue_slices
-        files_with_missing = [(f, d) for f, d in tr.details.items() if isinstance(d, dict) and d.get("missing", 0) > 0]
-        if not files_with_missing:
+        result = extract_first_issue(tr.details)
+        if result is None:
             score = tr.metrics.get("doc_coverage", 0)
             return f"**doc_coverage** score: {score:.3f}"
 
         m = _CONTEXT_PATH_RE.search(tr.raw.command)
         context_path = m.group(1) if m else "."
 
-        rel_file, data = files_with_missing[0]
-        miss = data.get("missing", 0)
-        file_score = data.get("coverage", 0.0)
+        rel_file, issue = result
+        line = issue.get("line", 1)
+        code = issue.get("code", "D100")
+        message = issue.get("message", "missing docstring")
+
         resolved = _resolve(context_path, rel_file)
-        nodes = _missing_docstrings(resolved) if resolved else []
+        file_str = str(resolved) if resolved else rel_file
 
-        if not nodes:
-            return f"{rel_file} — {file_score:.0%} doc coverage ({miss} undocumented)"
-
-        lines = [f"{rel_file} — {file_score:.0%} doc coverage ({miss} missing). Add a docstring as the first statement of each:"]
-        for lineno, kind, source_line in nodes:
-            if kind == "module":
-                before = f" (before `{source_line}`)" if source_line else ""
-                lines.append(f"- module docstring at line 1{before}")
-            else:
-                lines.append(f"- line {lineno}: `{source_line}`")
-        return "\n".join(lines)
+        return format_issue_header(file_str, line, code, message) + format_source_context(file_str, line, count=context_lines)
