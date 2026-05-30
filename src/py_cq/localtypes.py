@@ -50,6 +50,7 @@ class ToolConfig:
     extra_deps: list[str] = field(default_factory=list)  # Extra deps to inject via uv --with
     parser_config: dict[str, Any] = field(default_factory=dict)
     exclude_format: str = ""  # Per-path template for --exclude injection, e.g. " --exclude {path}"
+    scan_exclude_names: list[str] = field(default_factory=list)  # Top-level dir/file names to omit from {scan_targets}
 
 
 @dataclass

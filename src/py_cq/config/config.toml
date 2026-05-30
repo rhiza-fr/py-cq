@@ -24,8 +24,9 @@ run_in_target_env = true
 extra_deps = ["ty"]
 
 [python.bandit]
-command = "{python} -m bandit -r \"{context_path}\" -f json -q -s B101 --severity-level medium --exclude \"{input_path_posix}/.venv,{input_path_posix}/tests{exclude}\""
-exclude_format = ",{input_path_posix}/{path}"
+command = "{python} -m bandit -r {scan_targets} -f json -q -s B101 --severity-level medium{exclude}"
+scan_exclude_names = [".venv", ".claude", "tests"]
+exclude_format = " --exclude {abs_native_path}"
 parser = "BanditParser"
 order = 4
 warning_threshold = 0.9999

@@ -30,6 +30,7 @@ def load_tool_configs() -> dict[str, ToolConfig]:
             extra_deps=tool_data.get("extra_deps", []),
             parser_config=tool_data.get("parser_config", {}),
             exclude_format=tool_data.get("exclude_format", ""),
+            scan_exclude_names=tool_data.get("scan_exclude_names", []),
         )
     return registry
 

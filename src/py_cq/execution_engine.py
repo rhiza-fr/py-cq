@@ -55,6 +55,22 @@ def _dep_in_venv(dep: str, project_root: Path) -> bool:
     return False
 
 
+def _compute_scan_targets(context_path: str, scan_exclude_names: list[str]) -> str:
+    """Return space-separated quoted absolute paths for bandit-style scanning.
+
+    When context_path is a directory, enumerates its top-level children and
+    omits any whose name is in scan_exclude_names.  When it's a file, returns
+    just that file.  Falls back to the root itself if all children are excluded.
+    """
+    root = Path(context_path).resolve()
+    if not root.is_dir():
+        return f'"{root}"'
+    excluded = set(scan_exclude_names)
+    targets = [str(p) for p in sorted(root.iterdir()) if p.name not in excluded]
+    paths = targets if targets else [str(root)]
+    return " ".join(f'"{p}"' for p in paths)
+
+
 def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: str) -> str:
     """Builds an exclude string from a list of excludes and a format string."""
 
@@ -63,10 +79,12 @@ def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: s
     parts = []
     for exc in excludes:
         abs_posix_path = Path(exc).resolve().as_posix()
+        abs_native_path = str(Path(exc).resolve())
         # shlex.quote prevents shell injection via exclude paths
         parts.append(exclude_format.format(
             path=shlex.quote(exc),
             abs_posix_path=shlex.quote(abs_posix_path),
+            abs_native_path=shlex.quote(abs_native_path),
             **{k: shlex.quote(v) for k, v in extra_vars.items()},
         ))
     return "".join(parts)
@@ -119,12 +137,15 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
             # corrupt the subprocess's sys.path, mixing packages from both projects.
             run_env = {k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH")}
     abs_context_path = str(Path(context_path).resolve())
+    abs_context_path_posix = Path(context_path).resolve().as_posix()
+    native_sep = os.sep
     if not project_dir:
         project_dir = Path(abs_context_path).as_posix() if Path(abs_context_path).is_dir() else Path(abs_context_path).parent.as_posix()
     input_path_posix = Path(context_path).as_posix().rstrip("/")
-    exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix)
+    exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix, abs_context_path_posix=abs_context_path_posix)
+    scan_targets = _compute_scan_targets(context_path, tool_config.scan_exclude_names)
 
-    command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, input_path_posix=input_path_posix, python=python, exclude=exclude)
+    command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, abs_context_path_posix=abs_context_path_posix, input_path_posix=input_path_posix, native_sep=native_sep, scan_targets=scan_targets, python=python, exclude=exclude)
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
         log.debug(f"Cache hit: {command}")
