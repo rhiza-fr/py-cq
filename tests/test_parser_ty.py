@@ -13,6 +13,7 @@ Found 2 diagnostics.
 
 
 def test_ty_parse_diagnostics():
+    """Test parsing of type checker diagnostics."""
     tr = TyParser().parse(raw(TY_OUTPUT, return_code=1))
     assert "type_check" in tr.metrics
     assert tr.metrics["type_check"] < 1.0

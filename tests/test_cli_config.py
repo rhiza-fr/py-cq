@@ -34,6 +34,8 @@ def _registry(name="ruff", warning=0.7, error=0.5):
 # --- _apply_user_config ---
 
 def test_apply_user_config_empty():
+    """Test applying user config when it is empty."""
+    cfg = {"ruff": _tc()}
     cfg = {"ruff": _tc()}
     result = _apply_user_config(cfg, {})
     assert "ruff" in result
@@ -41,6 +43,8 @@ def test_apply_user_config_empty():
 
 
 def test_apply_user_config_disable():
+    """Test that disabling a tool via user config works correctly."""
+    cfg = {"ruff": _tc(), "bandit": _tc("bandit", 2)}
     cfg = {"ruff": _tc(), "bandit": _tc("bandit", 2)}
     result = _apply_user_config(cfg, {"disable": ["ruff"]})
     assert "ruff" not in result
@@ -48,12 +52,14 @@ def test_apply_user_config_disable():
 
 
 def test_apply_user_config_disable_unknown_tool():
+    """Test applying user config with unknown tool disabled."""
     cfg = {"ruff": _tc()}
     result = _apply_user_config(cfg, {"disable": ["nonexistent"]})
     assert "ruff" in result
 
 
 def test_apply_user_config_threshold_warning():
+    """Test that user config can update the warning threshold."""
     cfg = {"ruff": _tc()}
     result = _apply_user_config(cfg, {"thresholds": {"ruff": {"warning": 0.8}}})
     assert result["ruff"].warning_threshold == 0.8
@@ -61,6 +67,7 @@ def test_apply_user_config_threshold_warning():
 
 
 def test_apply_user_config_threshold_error():
+    """Test applying user config with error threshold."""
     cfg = {"ruff": _tc()}
     result = _apply_user_config(cfg, {"thresholds": {"ruff": {"error": 0.6}}})
     assert result["ruff"].error_threshold == 0.6
@@ -68,6 +75,7 @@ def test_apply_user_config_threshold_error():
 
 
 def test_apply_user_config_threshold_unknown_tool():
+    """Test applying user config for an unknown tool threshold."""
     cfg = {"ruff": _tc()}
     result = _apply_user_config(cfg, {"thresholds": {"unknown": {"warning": 0.9}}})
     assert result["ruff"].warning_threshold == 0.7

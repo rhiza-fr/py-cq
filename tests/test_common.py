@@ -36,10 +36,12 @@ def test_format_source_context_non_int_line():
 
 
 def test_format_source_context_non_int_line_with_context():
+    """Test format_source_context with a non-integer line argument and context."""
     assert format_source_context("any_file.py", "not-an-int", context=2) == ""
 
 
 def test_format_source_context_valid(tmp_path):
+    """Test format_source_context with valid inputs."""
     f = tmp_path / "foo.py"
     f.write_text("line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\n")
     result = format_source_context(str(f), 4, context=1, count=3)
@@ -48,11 +50,13 @@ def test_format_source_context_valid(tmp_path):
 
 
 def test_format_source_context_missing_file():
+    """Test format_source_context with a non-existent file."""
     result = format_source_context("/nonexistent/path.py", 5)
     assert result == ""
 
 
 def test_format_source_context_stops_at_next_def(tmp_path):
+    """Test that format_source_context stops at the next function definition."""
     f = tmp_path / "foo.py"
     f.write_text(
         "def test_one():\n"

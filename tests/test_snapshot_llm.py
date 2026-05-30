@@ -97,6 +97,7 @@ def test_ty_defect_snapshot():
 
 
 def test_bandit_defect_snapshot():
+    """Test that bandit defects are correctly snapshotted."""
     cfg = ToolConfig(name="bandit", command="", parser_class=BanditParser, order=4)
     tr = ToolResult(
         metrics={"security": 0.5},
@@ -108,6 +109,7 @@ def test_bandit_defect_snapshot():
 
 
 def test_coverage_defect_snapshot():
+    """Test coverage defect snapshot."""
     cfg = ToolConfig(name="coverage", command="", parser_class=CoverageParser, order=6)
     tr = ToolResult(
         metrics={"coverage": 0.6},
@@ -119,6 +121,7 @@ def test_coverage_defect_snapshot():
 
 
 def test_vulture_defect_snapshot():
+    """Test for vulture defect snapshot."""
     cfg = ToolConfig(name="vulture", command="", parser_class=VultureParser, order=9)
     tr = ToolResult(
         metrics={"dead_code": 0.5},

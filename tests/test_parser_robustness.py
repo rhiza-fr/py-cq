@@ -56,13 +56,16 @@ def test_coverage_parse_never_crashes(text):
 
 @given(st.text())
 def test_exitcode_parse_never_crashes(text):
+    """Ensure that parsing arbitrary text never crashes."""
     tr = ExitCodeParser().parse(raw(text))
+
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())
 
 
 @given(st.text())
 def test_halstead_parse_never_crashes(text):
+    """Test that the Halstead parser never crashes with any input text."""
     tr = HalsteadParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())

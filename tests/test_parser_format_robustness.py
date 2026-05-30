@@ -147,6 +147,7 @@ _cov_details = st.dictionaries(
 @given(_cov_details, _metrics)
 @settings(max_examples=50)
 def test_coverage_format_never_raises(details, metrics):
+    """Test that CoverageParser.format_llm_message never raises an error."""
     tr = ToolResult(metrics=metrics, details=details)
     assert isinstance(CoverageParser().format_llm_message(tr), str)
 
@@ -170,6 +171,7 @@ _interrogate_details = st.dictionaries(st.text(min_size=1), _interrogate_file_da
 @given(_interrogate_details, _metrics)
 @settings(max_examples=50)
 def test_interrogate_format_never_raises(details, metrics):
+    """Test that InterrogateParser.format_llm_message never raises an exception for various inputs."""
     tr = ToolResult(metrics=metrics, details=details)
     assert isinstance(InterrogateParser().format_llm_message(tr), str)
 

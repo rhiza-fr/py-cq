@@ -24,16 +24,19 @@ _issue_strategy = st.fixed_dictionaries({
 
 
 def _bandit_json(results):
+    """Return bandit results as a JSON string."""
     return json.dumps({"results": results, "metrics": {"_totals": {}}})
 
 
 def test_bandit_parse_clean():
+    """Test bandit parser with clean input."""
     tr = BanditParser().parse(raw(_bandit_json([]), return_code=0))
     assert tr.metrics["security"] == 1.0
     assert tr.details == {}
 
 
 def test_bandit_parse_low_issue():
+    """Test bandit parser with a low severity issue."""
     payload = _bandit_json([{
         "filename": "src/foo.py",
         "line_number": 10,

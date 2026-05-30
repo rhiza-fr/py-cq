@@ -53,11 +53,13 @@ def test_abstract_parse_body_via_super():
     class SuperCaller(AbstractParser):
         """A subclass of AbstractParser to test super()."""
         def parse(self, raw_result):
+            """Parse the raw result."""
             return super().parse(raw_result)
     assert SuperCaller().parse(RawResult()) is None
 
 
 def test_aggregate_metrics_returns_combined():
+    """Test that aggregate_metrics returns a CombinedToolResults object."""
     tr = ToolResult(metrics={"score": 0.9}, raw=RawResult(tool_name="ruff"))
     result = aggregate_metrics("myproject", [tr])
     assert isinstance(result, CombinedToolResults)
@@ -66,11 +68,13 @@ def test_aggregate_metrics_returns_combined():
 
 
 def test_aggregate_metrics_empty():
+    """Test aggregate_metrics with an empty list of results."""
     result = aggregate_metrics(".", [])
     assert result.score == 0.0
 
 
 def test_toolconfig_parser_config_defaults_to_empty_dict():
+    """Test that parser_config defaults to an empty dictionary."""
     from py_cq.localtypes import ToolConfig
     tc = ToolConfig(name="x", command="cmd", parser_class=object)
     assert tc.parser_config == {}

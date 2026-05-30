@@ -37,12 +37,16 @@ def test_maintainability_details_structure():
 
 
 def test_maintainability_normalizes_backslash():
+    """Test that maintainability parser normalizes backslashes to forward slashes."""
+    tr = MaintainabilityParser().parse(raw(_NORMAL))
     tr = MaintainabilityParser().parse(raw(_NORMAL))
     assert "src/bar.py" in tr.details
     assert "src\\bar.py" not in tr.details
 
 
 def test_maintainability_error_file_recorded():
+    """Test that maintainability error is recorded correctly."""
+    tr = MaintainabilityParser().parse(raw(_ERROR))
     tr = MaintainabilityParser().parse(raw(_ERROR))
     assert "src/bad.py" in tr.details
     assert tr.details["src/bad.py"]["rank"] == "F"

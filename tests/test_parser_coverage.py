@@ -102,12 +102,14 @@ def test_coverage_parse_sorted_worst_first():
 
 
 def test_coverage_parse_single_token_percent_line():
+    """Test coverage parsing for a single token with percentage line."""
     output = "80%\nTOTAL  30  2  93%\n"
     tr = CoverageParser().parse(raw(output))
     assert abs(tr.metrics["coverage"] - 0.93) < 0.01
 
 
 def test_coverage_total_100_with_partial_files():
+    """Test coverage total calculation with partial files."""
     output = (
         "src/foo.py            20      5    75%\n"
         "src/bar.py            10      0   100%\n"
@@ -119,6 +121,7 @@ def test_coverage_total_100_with_partial_files():
 
 
 def test_coverage_non_numeric_miss_count_scores_zero_does_not_crash():
+    """Test that non-numeric miss count does not crash coverage calculation."""
     output = "src/foo.py  10  bad  0%\nTOTAL  10  bad  0%\n"
     tr = CoverageParser().parse(raw(output))
     assert tr.metrics["coverage"] == pytest.approx(0.0)
@@ -127,6 +130,7 @@ def test_coverage_non_numeric_miss_count_scores_zero_does_not_crash():
 # --- format_llm_message() ---
 
 def test_coverage_format_llm_fallback():
+    """Test fallback behavior of format_llm_message when no missing lines are present."""
     # No missing_lines → fallback shows file + count
     tr = CoverageParser().parse(raw(COVERAGE_OUTPUT))
     msg = CoverageParser().format_llm_message(tr)

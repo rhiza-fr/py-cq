@@ -36,12 +36,15 @@ def test_complexity_parse_details_structure():
 
 
 def test_complexity_parse_normalizes_backslash():
+    """Test that backslashes in file paths are normalized."""
+    tr = ComplexityParser().parse(raw(_TWO_FILES))
     tr = ComplexityParser().parse(raw(_TWO_FILES))
     assert "src/bar.py" in tr.details
     assert "src\\bar.py" not in tr.details
 
 
 def test_complexity_parse_empty_input():
+    """Test complexity parsing with an empty input dictionary."""
     tr = ComplexityParser().parse(raw(json.dumps({})))
     assert tr.metrics["simplicity"] == 0.0
     assert tr.details == {}

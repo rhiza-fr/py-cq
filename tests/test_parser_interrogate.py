@@ -38,6 +38,8 @@ def test_interrogate_parse_violations():
 
 
 def test_interrogate_parse_skips_zero_missing_files():
+    """Test that files with zero missing are skipped in details."""
+    tr = InterrogateParser().parse(raw(INTERROGATE_OUTPUT, return_code=1))
     tr = InterrogateParser().parse(raw(INTERROGATE_OUTPUT, return_code=1))
     # bar.py has missing=0, so it is excluded from details
     assert "src/bar.py" not in tr.details

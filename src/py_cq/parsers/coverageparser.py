@@ -11,6 +11,10 @@ log = logging.getLogger("cq")
 
 
 def _parse_line_ranges(s: str) -> set[int]:
+    """Parse a comma-separated string of line ranges and individual lines.
+
+    Example: "1, 3-5, 10" -> {1, 3, 4, 5, 10}
+    """
     result: set[int] = set()
     for part in s.split(","):
         part = part.strip()

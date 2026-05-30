@@ -24,6 +24,7 @@ def test_vulture_parse_violations():
 
 
 def test_vulture_parse_clean():
+    """Test that clean vulture output is parsed correctly."""
     tr = VultureParser().parse(raw("", return_code=0))
     assert tr.metrics["dead_code"] == 1.0
     assert tr.details == {}

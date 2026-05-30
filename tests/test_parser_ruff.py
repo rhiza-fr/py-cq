@@ -40,6 +40,7 @@ def test_ruff_format_llm_no_details():
 
 
 def test_ruff_format_E721(tmp_path):
+    """Test Ruff parser formatting for E721 error."""
     src = tmp_path / "example.py"
     src.write_text("def f(output_type):\n    if output_type == str:\n        pass\n")
     tr = ToolResult(
@@ -53,6 +54,7 @@ def test_ruff_format_E721(tmp_path):
 
 
 def test_ruff_format_E701(tmp_path):
+    """Test Ruff format for E701 error."""
     src = tmp_path / "example.py"
     src.write_text("x = 1\nif x: pass\n")
     tr = ToolResult(
@@ -66,6 +68,7 @@ def test_ruff_format_E701(tmp_path):
 
 
 def test_ruff_hint_F841_referenced_elsewhere(tmp_path):
+    """Test Ruff hint F841 when the variable is referenced elsewhere."""
     src = tmp_path / "example.py"
     src.write_text(
         "def foo():\n"

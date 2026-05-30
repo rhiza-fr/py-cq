@@ -44,12 +44,14 @@ def test_score_tool_result_with_no_metrics_contributes_zero():
 
 
 def test_score_all_metrics_at_one():
+    """Test that the combined score is 1.0 when all metrics are 1.0."""
     trs = [_tr({"a": 1.0, "b": 1.0}), _tr({"c": 1.0})]
     c = CombinedToolResults(path=".", tool_results=trs)
     assert c.score == 1.0
 
 
 def test_aggregate_metrics_matches_direct_construction():
+    """Test that aggregating metrics matches direct construction of CombinedToolResults."""
     trs = [_tr({"lint": 0.8}), _tr({"tests": 0.6})]
     via_func = aggregate_metrics("proj/", trs)
     direct = CombinedToolResults(path="proj/", tool_results=trs)

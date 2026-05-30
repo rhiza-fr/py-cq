@@ -49,6 +49,8 @@ def test_json_output_is_list(tmp_path):
 
 
 def test_json_output_structure(tmp_path):
+    """Test that the JSON output has the expected structure."""
+    path = _project(tmp_path, "echo hello")
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "-o", "json", "--workers", "1"])
     assert result.exit_code == 0
@@ -60,6 +62,7 @@ def test_json_output_structure(tmp_path):
 
 
 def test_score_output_is_float(tmp_path):
+    """Test that the score output is a float."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "-o", "score", "--workers", "1"])
     assert result.exit_code == 0
@@ -68,6 +71,7 @@ def test_score_output_is_float(tmp_path):
 
 
 def test_llm_output_is_markdown(tmp_path):
+    """Test that the LLM output is formatted as markdown."""
     script = tmp_path / "fail.py"
     script.write_text("import sys; sys.exit(1)")
     cmd = f"{{python}} {script.as_posix()}"
@@ -80,6 +84,7 @@ def test_llm_output_is_markdown(tmp_path):
 
 
 def test_raw_output_has_required_keys(tmp_path):
+    """Test that the raw output contains all required keys."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "-o", "raw", "--workers", "1"])
     assert result.exit_code == 0
@@ -92,6 +97,7 @@ def test_raw_output_has_required_keys(tmp_path):
 
 
 def test_exit_code_1_on_error(tmp_path):
+    """Test that the exit code is 1 when the script fails with exit code 1."""
     script = tmp_path / "fail.py"
     script.write_text("import sys; sys.exit(1)")
     cmd = f"{{python}} {script.as_posix()}"

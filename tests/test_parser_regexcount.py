@@ -16,6 +16,7 @@ def test_no_matches_scores_1():
 
 
 def test_matching_lines_counted():
+    """Test that matching lines are correctly counted."""
     stdout = "ERROR: bad\ninfo: ok\nERROR: worse"
     result = _parser(r"^ERROR").parse(raw(stdout=stdout))
     assert 0.0 < result.metrics["violations"] < 1.0

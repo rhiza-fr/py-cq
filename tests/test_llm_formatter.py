@@ -43,12 +43,14 @@ def make_combined(tool_results: list[ToolResult]) -> CombinedToolResults:
 
 
 def make_registry(*configs: ToolConfig) -> dict:
+    """Creates a registry from a variable number of ToolConfig objects."""
     return {tc.name: tc for tc in configs}
 
 
 # --- _severity ---
 
 def test_severity_ok_returns_2():
+    """Test that severity 1.0 returns 2."""
     cfg = make_config("tool", 1)
     assert _severity(1.0, cfg) == 2
 
@@ -59,16 +61,19 @@ def test_severity_error_returns_0():
 
 
 def test_severity_warning_returns_1():
+    """Test that severity returns 1 when above error_threshold but below warning_threshold."""
     cfg = make_config("tool", 1)  # error_threshold=0.5, warning_threshold=0.7
     assert _severity(0.6, cfg) == 1
 
 
 def test_severity_at_error_threshold_returns_warning():
+    """Test that severity at the error threshold returns warning."""
     cfg = make_config("tool", 1)  # error_threshold=0.5 (strict <)
     assert _severity(0.5, cfg) == 1  # exactly at boundary → not error
 
 
 def test_severity_at_warning_threshold_returns_ok():
+    """Test that severity at the warning threshold returns ok."""
     cfg = make_config("tool", 1)  # warning_threshold=0.7 (strict <)
     assert _severity(0.7, cfg) == 2  # exactly at boundary → ok
 
@@ -96,6 +101,7 @@ def test_severity_parametrized_custom_thresholds(score, warn, err, expected):
 )
 @settings(max_examples=300)
 def test_severity_correct_region(score, error_threshold, warning_threshold):
+    """Test that severity is correctly identified based on thresholds."""
     cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
                      error_threshold=error_threshold, warning_threshold=warning_threshold)
     result = _severity(score, cfg)
@@ -116,6 +122,7 @@ def test_severity_correct_region(score, error_threshold, warning_threshold):
 )
 @settings(max_examples=300)
 def test_severity_monotone(score_lo, delta, error_threshold, warning_threshold):
+    """Test that severity is monotonic with respect to score."""
     score_hi = min(score_lo + delta, 1.0)
     cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
                      error_threshold=error_threshold, warning_threshold=warning_threshold)
@@ -161,6 +168,7 @@ def test_severity_beats_order():
 
 
 def test_same_order_worst_score_wins():
+    """Test that when scores are in the same order, the worst score wins."""
     registry = make_registry(make_config("ruff", 3), make_config("ty", 3))
     combined = make_combined([
         make_tr("ruff", 0.8),
@@ -172,6 +180,7 @@ def test_same_order_worst_score_wins():
 
 
 def test_passing_tool_ignored():
+    """Test that a tool with a passing threshold is ignored in the output."""
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
     combined = make_combined([
         make_tr("compile", 1.0), # passes → ignored
@@ -183,12 +192,14 @@ def test_passing_tool_ignored():
 
 
 def test_all_passing_returns_no_issues():
+    """Test that when all checks pass, no issues are reported."""
     registry = make_registry(make_config("ruff", 3))
     result = format_for_llm(registry, make_combined([make_tr("ruff", 1.0)]), cq_invocation=CQ)
     assert result.startswith("# No issues found")
 
 
 def test_empty_results_returns_no_issues():
+    """Test that empty results returns no issues."""
     result = format_for_llm({}, make_combined([]), cq_invocation=CQ)
     assert result.startswith("# No issues found")
 

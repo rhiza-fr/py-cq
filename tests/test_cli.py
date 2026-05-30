@@ -16,12 +16,14 @@ def _fake_tr(score=0.9):
 
 
 def _fake_combined(path=".", score=0.9):
+    """Create a fake combined tool result."""
     tr = _fake_tr(score)
     return CombinedToolResults(path=path, tool_results=[tr])
 
 
 @pytest.fixture
 def project_dir(tmp_path):
+    """Fixture that provides a temporary directory with a pyproject.toml file."""
     (tmp_path / "pyproject.toml").write_text("")
     return tmp_path
 
@@ -29,12 +31,14 @@ def project_dir(tmp_path):
 # --- --version flag ---
 
 def test_version_flag_exits_zero():
+    """Test that the --version flag exits with code 0."""
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "python-code-quality" in result.output
 
 
 def test_version_flag_lists_deps():
+    """Test that the --version flag lists dependencies."""
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert "ruff" in result.output
@@ -43,6 +47,7 @@ def test_version_flag_lists_deps():
 # --- check: validation ---
 
 def test_check_nonexistent_path():
+    """Test that checking a nonexistent path returns a non-zero exit code."""
     result = runner.invoke(app, ["check", "/nonexistent/path/does/not/exist/xyz"])
     assert result.exit_code != 0
 

@@ -10,6 +10,7 @@ def test_exit_code_zero_scores_1():
 
 
 def test_exit_code_nonzero_scores_0():
+    """Test that exit code 0 is not captured when return code is non-zero."""
     result = ExitCodeParser().parse(raw(stdout="error here", return_code=1))
     assert result.metrics == {"exit_code": 0.0}
 

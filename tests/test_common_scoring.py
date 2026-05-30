@@ -15,19 +15,23 @@ def test_extract_callee_name_assignment():
 
 
 def test_extract_callee_name_plain_call():
+    """Test extracting callee name from a plain function call."""
     assert extract_callee_name("    make_registry(a, b)") == "make_registry"
 
 
 def test_extract_callee_name_method_call():
+    """Test that extract_callee_name returns the method name for a method call."""
     # Returns the method name, not the object
     assert extract_callee_name("    result = obj.do_thing()") == "do_thing"
 
 
 def test_extract_callee_name_assert_keyword_returns_none():
+    """Test that extract_callee_name returns None when an assert keyword is found."""
     assert extract_callee_name("    assert True") is None
 
 
 def test_extract_callee_name_plain_statement_call():
+    """Test extracting callee name from a plain statement call."""
     assert extract_callee_name("    something()") == "something"
 
 

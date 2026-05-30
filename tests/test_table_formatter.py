@@ -45,11 +45,13 @@ def test_returns_rich_table():
 
 
 def test_metric_below_error_threshold_shows_error():
+    """Test that a metric below the error threshold shows an error."""
     table = format_as_table(_combined({"m": 0.3}), _make_registry(error_threshold=0.5))
     assert any("Error" in c for c in _status_cells(table))
 
 
 def test_metric_between_warning_and_error_shows_warning():
+    """Test that a metric between warning and error thresholds shows warning."""
     table = format_as_table(_combined({"m": 0.6}), _make_registry(error_threshold=0.5, warning_threshold=0.7))
     assert any("Warning" in c for c in _status_cells(table))
 

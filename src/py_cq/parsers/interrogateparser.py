@@ -37,6 +37,7 @@ def _missing_docstrings(file_path: Path) -> list[tuple[int, str, str]]:
     src_lines = source.splitlines()
 
     def src_line(lineno: int) -> str:
+        """Return the stripped content of the source line at the given line number."""
         return src_lines[lineno - 1].strip() if 0 < lineno <= len(src_lines) else ""
 
     def first_code_line() -> str:

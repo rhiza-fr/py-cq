@@ -8,10 +8,14 @@ from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 
 def _fake_config(name="fake", order=1):
+    """Create a fake ToolConfig for testing purposes."""
     class FakeParser:
+        """Fake parser for testing."""
         def __init__(self, parser_config=None):
+            """Initialize FakeParser."""
             pass
         def parse(self, raw):
+            """Parse the raw output."""
             return ToolResult(metrics={"score": 1.0}, raw=raw)
     return ToolConfig(
         name=name, command="echo hi", parser_class=FakeParser,

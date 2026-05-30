@@ -49,6 +49,7 @@ def test_load_thresholds(tmp_path):
 
 
 def test_load_file_path_reads_parent(tmp_path):
+    """Test that load_user_config reads parent directory config file."""
     (tmp_path / "pyproject.toml").write_text('[tool.cq]\ndisable = ["ruff"]\n')
     py_file = tmp_path / "foo.py"
     py_file.write_text("")
@@ -58,6 +59,7 @@ def test_load_file_path_reads_parent(tmp_path):
 # --- _apply_user_config ---
 
 def test_apply_empty():
+    """Test that applying an empty user config does not remove any base configs."""
     result = _apply_user_config(_base(), {})
     assert set(result) == {"ruff", "coverage"}
 

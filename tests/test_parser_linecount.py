@@ -16,6 +16,7 @@ def test_blank_lines_ignored():
 
 
 def test_single_violation_scores_below_1():
+    """Test that a single violation results in a score below 1.0."""
     result = LineCountParser().parse(raw(stdout="error: something wrong"))
     assert 0.0 < result.metrics["violations"] < 1.0
 

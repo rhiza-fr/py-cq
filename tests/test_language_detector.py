@@ -21,16 +21,19 @@ def test_python_requirements(tmp_path):
 
 
 def test_typescript_tsconfig(tmp_path):
+    """Test detection of TypeScript using tsconfig.json."""
     (tmp_path / "tsconfig.json").write_text("{}")
     assert detect_language(tmp_path) == "typescript"
 
 
 def test_typescript_package_json(tmp_path):
+    """Test language detection for TypeScript using package.json."""
     (tmp_path / "package.json").write_text("{}")
     assert detect_language(tmp_path) == "typescript"
 
 
 def test_rust_cargo(tmp_path):
+    """Test detection of Rust language using Cargo.toml."""
     (tmp_path / "Cargo.toml").write_text("")
     assert detect_language(tmp_path) == "rust"
 
