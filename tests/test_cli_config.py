@@ -12,7 +12,9 @@ runner = CliRunner()
 
 
 def _tc(name="ruff", order=3):
+    """Helper to create a ToolConfig for testing."""
     class FakeParser:
+        """Fake parser for testing."""
         def parse(self, raw):
             return ToolResult(metrics={"score": 1.0}, raw=raw)
         def format_llm_message(self, tr):

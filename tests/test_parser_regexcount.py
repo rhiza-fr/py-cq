@@ -5,6 +5,7 @@ from py_cq.parsers.regexcountparser import RegexCountParser
 
 
 def _parser(pattern, scale_factor=15):
+    """Parser factory function."""
     return RegexCountParser({"pattern": pattern, "scale_factor": scale_factor})
 
 

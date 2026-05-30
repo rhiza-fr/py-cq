@@ -7,6 +7,7 @@ from py_cq.context_hash import get_context_hash, get_sigs
 
 
 def test_get_context_hash_file_returns_md5(tmp_path):
+    """Test that get_context_hash returns an MD5 hash of the file content."""
     f = tmp_path / "foo.py"
     f.write_text("x = 1")
     h = get_context_hash(str(f))
@@ -14,6 +15,7 @@ def test_get_context_hash_file_returns_md5(tmp_path):
 
 
 def test_get_context_hash_file_changes_with_mtime(tmp_path):
+    """Test that changing the mtime of a file results in a different context hash."""
     f = tmp_path / "foo.py"
     f.write_text("x = 1")
     h1 = get_context_hash(str(f))

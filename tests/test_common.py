@@ -1,3 +1,4 @@
+"""Tests for common utilities."""
 
 from py_cq.parsers.common import (
     _find_project_root,
@@ -10,6 +11,7 @@ from py_cq.parsers.common import (
 
 
 def test_inv_normalize():
+    """Test the inv_normalize function."""
     assert inv_normalize(0, 100) == 1.0
     assert inv_normalize(100, 100) == 0.0
     assert inv_normalize(50, 100) == 0.5

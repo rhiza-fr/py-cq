@@ -4,6 +4,7 @@ from py_cq.parsers.linecountparser import LineCountParser
 
 
 def test_no_output_scores_1():
+    """Test parser with empty stdout."""
     result = LineCountParser().parse(raw(stdout=""))
     assert result.metrics["violations"] == 1.0
 

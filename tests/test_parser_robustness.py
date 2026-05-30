@@ -24,6 +24,7 @@ from py_cq.parsers.vultureparser import VultureParser
 
 @given(st.text())
 def test_bandit_parse_never_crashes(text):
+    """Test that BanditParser().parse() never crashes given any text input."""
     tr = BanditParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())
@@ -31,6 +32,7 @@ def test_bandit_parse_never_crashes(text):
 
 @given(st.text())
 def test_compile_parse_never_crashes(text):
+    """Test that compiling and parsing never crashes."""
     tr = CompileParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())

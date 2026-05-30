@@ -59,6 +59,7 @@ TY_DEFECT_SNAPSHOT = (
 
 
 def test_ruff_defect_snapshot():
+    """Test the snapshot for ruff defect."""
     cfg = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
     tr = ToolResult(
         metrics={"lint": 0.5},
@@ -70,6 +71,7 @@ def test_ruff_defect_snapshot():
 
 
 def test_compile_defect_snapshot():
+    """Test for compile defect snapshot."""
     cfg = ToolConfig(name="compile", command="", parser_class=CompileParser, order=1)
     tr = ToolResult(
         metrics={"compile": 0.5},

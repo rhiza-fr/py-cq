@@ -14,6 +14,8 @@ Found 3 errors.
 
 
 def test_ruff_parse_violations():
+    """Test that Ruff output is correctly parsed into violations."""
+    tr = RuffParser().parse(raw(RUFF_OUTPUT, return_code=1))
     tr = RuffParser().parse(raw(RUFF_OUTPUT, return_code=1))
     assert "lint" in tr.metrics
     assert tr.metrics["lint"] < 1.0
@@ -25,6 +27,7 @@ def test_ruff_parse_violations():
 
 
 def test_ruff_parse_clean():
+    """Test parsing of clean Ruff output."""
     tr = RuffParser().parse(raw("All checks passed!\n", return_code=0))
     assert tr.metrics["lint"] == 1.0
     assert tr.details == {}

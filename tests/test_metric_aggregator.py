@@ -7,15 +7,18 @@ from py_cq.metric_aggregator import aggregate_metrics
 
 
 def _tr(metrics: dict, tool_name: str = "tool") -> ToolResult:
+    """Helper function to create a ToolResult."""
     return ToolResult(metrics=metrics, raw=RawResult(tool_name=tool_name))
 
 
 def test_score_empty_tool_results():
+    """Test that the score for empty tool results is 0.0."""
     c = CombinedToolResults(path=".", tool_results=[])
     assert c.score == 0.0
 
 
 def test_score_single_metric():
+    """Test that the combined score correctly reflects a single metric value."""
     c = CombinedToolResults(path=".", tool_results=[_tr({"m": 0.5})])
     assert c.score == 0.5
 

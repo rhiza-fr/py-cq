@@ -84,6 +84,7 @@ _file_issues_details = st.dictionaries(
     (VultureParser, "string-issue"),
 ])
 def test_non_dict_issue_returns_no_details(parser_cls, non_dict_issue):
+    """Test that non-dict issues return no details."""
     tr = ToolResult(metrics={}, details={"src/foo.py": [non_dict_issue]})
     msg = parser_cls().format_llm_message(tr)
     assert "no details" in msg.lower()
@@ -94,6 +95,7 @@ def test_non_dict_issue_returns_no_details(parser_cls, non_dict_issue):
 @given(_file_issues_details, _metrics, _raw)
 @settings(max_examples=50)
 def test_bandit_format_never_raises(details, metrics, raw):
+    """Test that BanditParser.format_llm_message never raises an exception."""
     tr = ToolResult(metrics=metrics, details=details, raw=raw)
     assert isinstance(BanditParser().format_llm_message(tr), str)
 
@@ -101,6 +103,7 @@ def test_bandit_format_never_raises(details, metrics, raw):
 @given(_file_issues_details, _metrics, _raw)
 @settings(max_examples=50)
 def test_ruff_format_never_raises(details, metrics, raw):
+    """Test that RuffParser.format_llm_message never raises an error."""
     tr = ToolResult(metrics=metrics, details=details, raw=raw)
     assert isinstance(RuffParser().format_llm_message(tr), str)
 

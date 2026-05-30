@@ -3,6 +3,7 @@ from py_cq.language_detector import detect_language
 
 
 def test_python_pyproject(tmp_path):
+    """Test language detection for Python project with pyproject.toml."""
     (tmp_path / "pyproject.toml").write_text("")
     assert detect_language(tmp_path) == "python"
 

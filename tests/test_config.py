@@ -8,6 +8,7 @@ from py_cq.localtypes import ToolConfig
 
 
 def _cfg(name: str, order: int = 1) -> ToolConfig:
+    """Create a default ToolConfig."""
     return ToolConfig(
         name=name, command="", parser_class=object,
         order=order, warning_threshold=0.7, error_threshold=0.5,
@@ -15,12 +16,14 @@ def _cfg(name: str, order: int = 1) -> ToolConfig:
 
 
 def _base() -> dict[str, ToolConfig]:
+    """Return the base configuration."""
     return {"ruff": _cfg("ruff", 3), "coverage": _cfg("coverage", 6)}
 
 
 # --- load_user_config ---
 
 def test_load_no_pyproject(tmp_path):
+    """Test that load_user_config returns an empty dict when no pyproject.toml is present."""
     assert load_user_config(tmp_path) == {}
 
 

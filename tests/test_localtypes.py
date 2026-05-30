@@ -5,10 +5,12 @@ from py_cq.metric_aggregator import aggregate_metrics
 
 
 class MinimalParser(AbstractParser):
+    """A minimal implementation of AbstractParser."""
     def parse(self, raw_result): return ToolResult()
 
 
 def test_raw_result_to_dict():
+    """Test that raw result is correctly converted to a dictionary."""
     r = RawResult(tool_name="ruff", command="ruff check .", stdout="out", stderr="err", return_code=1)
     d = r.to_dict()
     assert d["tool_name"] == "ruff"
@@ -17,6 +19,7 @@ def test_raw_result_to_dict():
 
 
 def test_tool_result_to_dict():
+    """Test that ToolResult.to_dict correctly converts the result to a dictionary."""
     tr = ToolResult(metrics={"lint": 0.9}, details={"f.py": []}, raw=RawResult(tool_name="ruff"))
     d = tr.to_dict()
     assert d["tool_name"] == "ruff"
@@ -25,6 +28,7 @@ def test_tool_result_to_dict():
 
 
 def test_combined_to_dict():
+    """Test combined to dict conversion."""
     tr = ToolResult(metrics={"lint": 0.8})
     c = CombinedToolResults(path="src/", tool_results=[tr])
     d = c.to_dict()
@@ -34,6 +38,8 @@ def test_combined_to_dict():
 
 
 def test_abstract_format_llm_message_no_metrics():
+    """Test abstract format llm message with no metrics."""
+    tr = ToolResult(metrics={})
     tr = ToolResult(metrics={})
     assert MinimalParser().format_llm_message(tr) == "No details available"
 
@@ -66,7 +72,7 @@ def test_toolconfig_parser_config_defaults_to_empty_dict():
 
 
 def test_abstract_parser_stores_parser_config():
-    from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+    from py_cq.localtypes import AbstractParser, ToolResult
 
     class MyParser(AbstractParser):
         def parse(self, raw_result: RawResult) -> ToolResult:
@@ -77,7 +83,7 @@ def test_abstract_parser_stores_parser_config():
 
 
 def test_abstract_parser_defaults_config_to_empty():
-    from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+    from py_cq.localtypes import AbstractParser, ToolResult
 
     class MyParser(AbstractParser):
         def parse(self, raw_result: RawResult) -> ToolResult:

@@ -35,11 +35,13 @@ TOTAL                 30      2    93%
 # --- parse() ---
 
 def test_coverage_parse_metrics():
+    """Test parsing of coverage metrics."""
     tr = CoverageParser().parse(raw(COVERAGE_OUTPUT))
     assert abs(tr.metrics["coverage"] - 0.93) < 0.01
 
 
 def test_coverage_parse_fallback_entry():
+    """Test parsing of fallback entry when no missing lines string is available."""
     # No --show-missing: no missing_lines string, gets fallback entry
     tr = CoverageParser().parse(raw(COVERAGE_OUTPUT))
     assert "src/foo.py" in tr.details
@@ -51,12 +53,14 @@ def test_coverage_parse_fallback_entry():
 
 
 def test_coverage_parse_empty():
+    """Test coverage parsing with empty input."""
     tr = CoverageParser().parse(raw(""))
     assert tr.metrics == {}
     assert tr.details == {}
 
 
 def test_coverage_parse_malformed_miss_count():
+    """Test parsing of malformed missing count in coverage output."""
     output = "src/foo.py  10  bad  90%\nTOTAL  10  bad  90%\n"
     tr = CoverageParser().parse(raw(output))
     assert "src/foo.py" in tr.details
@@ -64,6 +68,7 @@ def test_coverage_parse_malformed_miss_count():
 
 
 def test_coverage_parse_malformed_percentage():
+    """Test parsing coverage with malformed percentage values."""
     output = "src/foo.py  10  5  bad%\nTOTAL  10  5  90%\n"
     tr = CoverageParser().parse(raw(output))
     assert abs(tr.metrics["coverage"] - 0.90) < 0.01

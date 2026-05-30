@@ -22,6 +22,7 @@ _MIXED = json.dumps({
 
 
 def test_maintainability_metric_present():
+    """Test that the maintainability metric is present in the parsed output."""
     tr = MaintainabilityParser().parse(raw(_NORMAL))
     assert "maintainability" in tr.metrics
     assert 0.0 < tr.metrics["maintainability"] <= 1.0

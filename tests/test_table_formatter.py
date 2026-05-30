@@ -13,6 +13,7 @@ def _make_registry(
     warning_threshold: float = 0.7,
     error_threshold: float = 0.5,
 ) -> dict[str, ToolConfig]:
+    """Create a registry with default tool configurations."""
     return {"tool": ToolConfig(
         name="tool",
         command="cmd",

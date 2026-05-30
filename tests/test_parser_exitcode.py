@@ -4,6 +4,7 @@ from py_cq.parsers.exitcodeparser import ExitCodeParser
 
 
 def test_exit_code_zero_scores_1():
+    """Test that exit code 0 scores 1.0."""
     result = ExitCodeParser().parse(raw(stdout="all good", return_code=0))
     assert result.metrics == {"exit_code": 1.0}
 
