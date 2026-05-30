@@ -1,6 +1,7 @@
 """Tests for CoverageParser."""
 
 import ast
+from typing import cast
 
 import pytest
 from conftest import raw
@@ -182,15 +183,15 @@ def test_parse_line_ranges():
 
 
 def test_get_signature():
-    node = ast.parse("def foo(x: int, y: str = 'hi') -> bool:\n    pass\n").body[0]
-    sig = _get_signature(node)  # type: ignore[arg-type]
+    node = cast(ast.FunctionDef, ast.parse("def foo(x: int, y: str = 'hi') -> bool:\n    pass\n").body[0])
+    sig = _get_signature(node)
     assert sig.startswith("def foo(")
     assert "-> bool" in sig
 
 
 def test_get_signature_async():
-    node = ast.parse("async def bar() -> None:\n    pass\n").body[0]
-    sig = _get_signature(node)  # type: ignore[arg-type]
+    node = cast(ast.AsyncFunctionDef, ast.parse("async def bar() -> None:\n    pass\n").body[0])
+    sig = _get_signature(node)
     assert sig.startswith("async def bar()")
 
 
