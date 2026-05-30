@@ -195,7 +195,7 @@ class PytestParser(AbstractParser):
                 header = f"`{file}::{test_name}` — test **FAILED**"
                 bare_name = test_name.split("[")[0]
                 tdir = _target_dir(tr.raw.command)
-                resolved = str(_Path(tdir) / file) if tdir and not _Path(file).is_absolute() else file
+                resolved = (_Path(tdir) / file).as_posix() if tdir and not _Path(file).is_absolute() else file
                 body = find_function_source(resolved, bare_name, max_lines=context_lines)
                 failure = _extract_failure(tr.raw.stdout, test_name, max_lines=50)
                 callee = ""

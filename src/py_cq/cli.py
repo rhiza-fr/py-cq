@@ -330,7 +330,7 @@ def config_set(
 
 @app.command()
 def is_fixed(
-    fingerprint: str = typer.Argument(..., help="Fingerprint from -o llm-json output (tool|file|line|code)"),
+    fingerprint: str = typer.Argument(..., help="Fingerprint from -o llm-json output (tool::project::path[::line[::code]])"),
 ) -> None:
     """Return True if the fingerprinted issue is no longer present."""
     try:

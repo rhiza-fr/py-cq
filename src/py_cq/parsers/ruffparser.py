@@ -15,7 +15,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import enclosing_function_range, find_enclosing_function, format_issue_header, format_source_context, score_logistic_variant
+from py_cq.parsers.common import enclosing_function_range, extract_first_issue, find_enclosing_function, format_issue_header, format_source_context, score_logistic_variant
 
 _DIAG_RE = re.compile(r"^(.+):(\d+):(\d+): ([A-Z]{1,5}\d+) (.+)$")
 _VARNAME_RE = re.compile(r"[`'](\w+)[`']")
@@ -155,14 +155,10 @@ class RuffParser(AbstractParser):
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         """Return the first lint violation as a defect description."""
-        if not tr.details:
+        result = extract_first_issue(tr.details)
+        if result is None:
             return "ruff reported issues (no details available)"
-        file, issues = next(iter(tr.details.items()))
-        if not isinstance(issues, list) or not issues:
-            return "ruff reported issues (no details available)"
-        issue = issues[0]
-        if not isinstance(issue, dict):
-            return "ruff reported issues (no details available)"
+        file, issue = result
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")

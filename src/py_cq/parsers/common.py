@@ -12,6 +12,7 @@ performance metrics or error scores:
 Both functions return a float and can be used directly in downstream analytics,
 visualisation or decision-making pipelines."""
 
+import json
 import re
 from pathlib import Path
 
@@ -114,11 +115,14 @@ def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tupl
 
 def _relative_path(path: str) -> str:
     """Return path relative to project root if possible, otherwise absolute. Forward slashes."""
-    resolved = Path(path).resolve()
     try:
-        return str(resolved.relative_to(_find_project_root(path))).replace("\\", "/")
+        resolved = Path(path).resolve()
+    except (OSError, ValueError):
+        return path.replace("\\", "/")
+    try:
+        return resolved.relative_to(_find_project_root(path)).as_posix()
     except ValueError:
-        return str(resolved).replace("\\", "/")
+        return resolved.as_posix()
 
 
 def format_issue_header(file: str, line: int, code: str, message: str) -> str:
@@ -245,6 +249,39 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
         collected.pop()
     numbered = "\n".join(f"{start_idx + 1 + i}: {ln}" for i, ln in enumerate(collected))
     return f"\n```python\n{numbered}\n```"
+
+
+def resolve_path(base: str, rel_file: str) -> str:
+    """Return (base / rel_file) as a posix string; return rel_file unchanged if absolute or base is empty."""
+    if not base or not rel_file:
+        return rel_file
+    try:
+        p = Path(rel_file)
+        if p.is_absolute():
+            return rel_file
+        return (Path(base) / rel_file).as_posix()
+    except (OSError, ValueError):
+        return rel_file
+
+
+def parse_json_dict(stdout: str) -> dict | None:
+    """Parse stdout as a JSON object; return None if invalid or not a dict."""
+    try:
+        data = json.loads(stdout)
+    except (json.JSONDecodeError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def extract_first_issue(details: dict) -> tuple[str, dict] | None:
+    """Return (file, issue) from the first list-typed entry in details, or None."""
+    if not details:
+        return None
+    file, issues = next(iter(details.items()))
+    if not isinstance(issues, list) or not issues:
+        return None
+    issue = issues[0]
+    return (file, issue) if isinstance(issue, dict) else None
 
 
 def inv_normalize(value: float, max_value: float) -> float:

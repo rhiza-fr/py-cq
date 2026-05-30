@@ -42,7 +42,7 @@ run_in_target_env = true
 extra_deps = ["pytest"]
 
 [python.coverage]
-command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\"{exclude} && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
+command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\"{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
 exclude_format = " --ignore {path}"
 parser = "CoverageParser"
 order = 6

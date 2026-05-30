@@ -33,7 +33,7 @@ def _single_issue_slices(
         for file, issues in tr.details.items():
             if isinstance(issues, list):
                 for issue in issues:
-                    candidate = ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: [issue]})
+                    candidate = ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: [issue]}, project_path=tr.project_path)
                     if _fingerprint_from_slice(tr.raw.tool_name, candidate, project_root) in silence_set:
                         continue
                     slices.append(candidate)
@@ -54,7 +54,7 @@ def _single_issue_slices(
 
         items = sorted(tr.details.items(), key=lambda x: _dict_sort_key(x[1]))
         for file, data in items:
-            candidate = ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: data})
+            candidate = ToolResult(raw=tr.raw, metrics=tr.metrics, details={file: data}, project_path=tr.project_path)
             if _fingerprint_from_slice(tr.raw.tool_name, candidate, project_root) in silence_set:
                 continue
             slices.append(candidate)

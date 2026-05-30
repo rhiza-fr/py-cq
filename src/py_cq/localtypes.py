@@ -65,6 +65,7 @@ class RawResult:
     stderr: str = ""
     return_code: int = 0
     timestamp: str = ""  # For tracking when the analysis ran
+    project_path: str = ""  # Absolute path to the target project root
 
     def to_dict(self):
         """Returns a dictionary containing the tool name, command, stdout, stderr, return code, and timestamp."""
@@ -75,6 +76,7 @@ class RawResult:
             "stderr": self.stderr,
             "return_code": self.return_code,
             "timestamp": self.timestamp,
+            "project_path": self.project_path,
         }
 
 
@@ -88,10 +90,9 @@ class ToolResult:
     data into a plain dictionary."""
 
     metrics: dict[str, float] = field(default_factory=dict)
-    details: dict[str, Any] = field(
-        default_factory=dict
-    )  # Additional details about the metric
+    details: dict[str, Any] = field(default_factory=dict)
     raw: RawResult = field(default_factory=RawResult)
+    project_path: str = ""
     duration_s: float = 0.0
 
     def __post_init__(self):
@@ -107,6 +108,7 @@ class ToolResult:
             "tool_name": self.raw.tool_name,
             "metrics": self.metrics,
             "details": self.details,
+            "project_path": self.project_path,
             "duration_s": self.duration_s,
         }
 

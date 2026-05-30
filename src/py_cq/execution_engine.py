@@ -13,6 +13,7 @@ where tool invocations may be expensive and should be avoided
 when a cached result already exists."""
 
 import logging
+import os
 import shlex
 import shutil
 import subprocess
@@ -89,6 +90,8 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
         0"""
     python = sys.executable
     path = str(Path(context_path))
+    run_env = None
+    project_dir = ""
     if tool_config.run_in_target_env:
         uv = shutil.which("uv")
         if uv:
@@ -100,6 +103,7 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
                 project_root = _find_project_root(resolved)
                 abs_dir = str(project_root) if project_root else str(resolved.parent)
                 path = str(resolved)
+            project_dir = Path(abs_dir).as_posix()
             project_root_path = Path(abs_dir)
             missing_deps = [d for d in tool_config.extra_deps if not _dep_in_venv(d, project_root_path)]
             # Quote deps with shlex.quote to prevent injection via extra_deps.
@@ -108,10 +112,16 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
             with_flags = " ".join(f"--with {shlex.quote(dep)}" for dep in missing_deps)
             no_sync = "--no-sync" if sys.executable.startswith(abs_dir) else ""
             python = f'"{uv}" run {no_sync} --directory "{abs_dir}" {with_flags}'.strip()
+            # Strip venv env vars so the target project's environment is used cleanly.
+            # VIRTUAL_ENV pointing to cq's own venv would cause uv to warn and can
+            # corrupt the subprocess's sys.path, mixing packages from both projects.
+            run_env = {k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH")}
     abs_context_path = str(Path(context_path).resolve())
+    if not project_dir:
+        project_dir = Path(abs_context_path).as_posix() if Path(abs_context_path).is_dir() else Path(abs_context_path).parent.as_posix()
     input_path_posix = Path(context_path).as_posix().rstrip("/")
     exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix)
-    
+
     command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, input_path_posix=input_path_posix, python=python, exclude=exclude)
     cache_key = f"{command}:{get_context_hash(context_path)}"
     if cache_key in _cache:
@@ -123,7 +133,7 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
     # All user-supplied values (context_path, excludes) are properly quoted
     # via shlex.quote() to prevent injection — see _build_exclude_str and
     # the uv command assembly above.
-    result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace")  # nosec
+    result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace", env=run_env)  # nosec
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     raw_result = RawResult(
         tool_name=tool_config.name,
@@ -132,6 +142,7 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
         stderr=result.stderr,
         return_code=result.returncode,
         timestamp=timestamp,
+        project_path=project_dir,
     )
     _cache.set(cache_key, raw_result.to_dict(), expire=5 * 24 * 60 * 60)
     return raw_result

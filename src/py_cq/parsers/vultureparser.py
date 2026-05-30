@@ -12,7 +12,7 @@ score stored under the ``dead_code`` metric key.
 import re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import format_source_context, score_logistic_variant
+from py_cq.parsers.common import extract_first_issue, format_source_context, score_logistic_variant
 
 _LINE_RE = re.compile(r"^(.+):(\d+): (unused \S+) '(.+)' \((\d+)% confidence\)$")
 
@@ -37,14 +37,10 @@ class VultureParser(AbstractParser):
         return ToolResult(raw=raw_result, metrics={"dead_code": score}, details=files)
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
-        if not tr.details:
+        result = extract_first_issue(tr.details)
+        if result is None:
             return "vulture reported issues (no details available)"
-        file, issues = next(iter(tr.details.items()))
-        if not isinstance(issues, list) or not issues:
-            return "vulture reported issues (no details available)"
-        issue = issues[0]
-        if not isinstance(issue, dict):
-            return "vulture reported issues (no details available)"
+        file, issue = result
         line = issue.get("line", "?")
         kind = issue.get("type", "unused")
         name = issue.get("name", "")

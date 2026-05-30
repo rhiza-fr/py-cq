@@ -1,90 +1,170 @@
-"""Parses raw coverage tool output into a standardized `ToolResult` for consistent analysis across different coverage utilities.
-The module defines `CoverageParser`, a concrete implementation of `AbstractParser`, which extracts overall and per-file coverage metrics from a `RawResult` object and normalises the data format for downstream processing."""
+"""Parses raw coverage tool output into structured ToolResult instances with per-function granularity."""
 
+import ast
 import logging
+from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+from py_cq.parsers.common import find_function_source, resolve_path
 
 log = logging.getLogger("cq")
 
 
+def _parse_line_ranges(s: str) -> set[int]:
+    result: set[int] = set()
+    for part in s.split(","):
+        part = part.strip()
+        if "-" in part:
+            lo, hi = part.split("-", 1)
+            try:
+                result.update(range(int(lo), int(hi) + 1))
+            except ValueError:
+                pass
+        elif part.isdigit():
+            result.add(int(part))
+    return result
+
+
+def _get_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    prefix = "async def" if isinstance(node, ast.AsyncFunctionDef) else "def"
+    args = ast.unparse(node.args)
+    returns = f" -> {ast.unparse(node.returns)}" if node.returns else ""
+    return f"{prefix} {node.name}({args}){returns}"
+
+
+def _extract_functions(file: str, missing_lines_str: str) -> list[tuple[str, int, str]]:
+    """Return (name, lineno, signature) for functions whose bodies overlap with the missing line ranges."""
+    try:
+        source = Path(file).read_text(encoding="utf-8", errors="replace")
+        tree = ast.parse(source)
+    except (OSError, SyntaxError, ValueError):
+        return []
+    missing = _parse_line_ranges(missing_lines_str)
+    seen: set[str] = set()
+    result: list[tuple[str, int, str]] = []
+    for node in sorted(ast.walk(tree), key=lambda n: getattr(n, "lineno", 0)):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            end = getattr(node, "end_lineno", node.lineno)
+            if missing & set(range(node.lineno, end + 1)) and node.name not in seen:
+                seen.add(node.name)
+                result.append((node.name, node.lineno, _get_signature(node)))
+    return result
+
+
+def _find_test_file(source_file: str) -> str | None:
+    """Return the test file path for source_file if a tests/ directory exists nearby."""
+    candidate_name = f"test_{Path(source_file).stem}.py"
+    try:
+        for ancestor in Path(source_file).parents:
+            try:
+                tests_dir = ancestor / "tests"
+                if tests_dir.is_dir():
+                    return str(tests_dir / candidate_name).replace("\\", "/")
+            except (OSError, ValueError):
+                pass
+    except (OSError, ValueError):
+        pass
+    return None
+
+
 class CoverageParser(AbstractParser):
-    """Parses raw coverage output into structured ToolResult instances.
-    Extends AbstractParser, extracting overall coverage percentages, per-file coverage values, normalising file paths, and preserving the tool's return code."""
-
     def parse(self, raw_result: RawResult) -> ToolResult:
-        """Parse raw coverage output into a :class:`ToolResult`.
-
-        Given a :class:`RawResult` containing the stdout of a coverage tool, the
-        method extracts every line that ends with a percent sign.  Each such line
-        is expected to follow the format::
-
-            <file> <total_lines> <covered_lines> <coverage>%
-
-        The coverage percentage is converted to a fraction (e.g. 90\u202f% → 0.9) and
-        stored in ``metrics['coverage']`` for the overall ``TOTAL`` line, while
-        the per-file values are placed in ``details`` with the file path
-        normalised to use forward slashes.  The tool's return code is added to
-        ``details`` under the key ``'return_code'``.
-
-        Args:
-            raw_result (RawResult): The raw output from a coverage tool.
-
-        Returns:
-            ToolResult: A structured result containing the overall coverage
-            metric, per-file coverage percentages, and the tool's return code.
-
-        Example:
-            >>> parser = CoverageParser()
-            >>> raw = RawResult(
-            ...     stdout='src/main.py 100 90 90%\\\\nTOTAL 200 180 90%',
-            ...     return_code=0)
-            >>> result = parser.parse(raw)
-            >>> result.metrics['coverage']
-            0.9
-            >>> result.details['src/main.py']
-            0.9"""
-        tr = ToolResult(raw=raw_result)
+        tr = ToolResult(raw=raw_result, project_path=raw_result.project_path)
         lines = raw_result.stdout.splitlines()
-        # Skip lines that look like pytest progress output (contain "[") which can appear
-        # when coverage report runs after a failed test suite via ; instead of &&.
-        coverage_lines = [line for line in lines if line.endswith("%") and "[" not in line]
-        details = {}
-        for line in coverage_lines:
+        base_dir = raw_result.project_path
+
+        file_data: dict[str, dict] = {}
+        for line in lines:
+            if "[" in line:
+                continue
             parts = line.split()
-            if len(parts) >= 2:
-                file_name = parts[0]
+            if len(parts) < 4 or not parts[3].endswith("%"):
+                continue
+            file_name = parts[0]
+            try:
+                coverage_pct = float(parts[3].rstrip("%")) / 100.0
+            except ValueError:
+                log.warning("Error parsing coverage percentage from line: %s", line)
+                continue
+            if file_name == "TOTAL":
+                tr.metrics["coverage"] = coverage_pct
+            else:
                 try:
-                    coverage_percentage = float(parts[-1].rstrip('%')) / 100.0
-                except ValueError:
-                    log.warning("Error parsing coverage percentage from line: %s", line)
+                    missing = int(parts[2])
+                except (ValueError, IndexError):
+                    missing = None
+                missing_lines = " ".join(parts[4:]) if len(parts) > 4 else None
+                file_data[file_name.replace("\\", "/")] = {
+                    "coverage": coverage_pct,
+                    "missing": missing,
+                    "missing_lines": missing_lines,
+                }
+
+        # Build list-based details sorted worst-coverage-first so _single_issue_slices
+        # picks the most urgent file and function first.
+        details: dict[str, list] = {}
+        for file_name, data in sorted(file_data.items(), key=lambda x: x[1].get("coverage", 1.0)):
+            if data.get("missing") == 0:
+                continue
+            missing_lines_str = data.get("missing_lines")
+            coverage_pct = data["coverage"]
+            missing_count = data["missing"]
+            resolved = resolve_path(base_dir, file_name)
+            if missing_lines_str:
+                funcs = _extract_functions(resolved, missing_lines_str)
+                if funcs:
+                    details[file_name] = [
+                        {"code": name, "line": lineno, "signature": sig,
+                         "file_coverage": coverage_pct, "missing": missing_count}
+                        for name, lineno, sig in funcs
+                    ]
                     continue
-                if file_name == "TOTAL":
-                    tr.metrics["coverage"] = coverage_percentage
-                else:
-                    try:
-                        missing = int(parts[2]) if len(parts) >= 4 else None
-                    except (ValueError, IndexError):
-                        missing = None
-                    details[file_name.replace("\\", "/")] = {
-                        "coverage": coverage_percentage,
-                        "missing": missing,
-                    }
+            # Fallback when --show-missing wasn't used or AST parsing failed
+            details[file_name] = [{"code": None, "line": None, "missing": missing_count,
+                                    "missing_lines": missing_lines_str, "file_coverage": coverage_pct}]
+
         tr.details = details
         return tr
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
-        """Return the files with lowest coverage as a defect description."""
-        score = tr.metrics.get("coverage", 0)
-        uncovered = sorted(
-            [(f, d) for f, d in tr.details.items() if isinstance(d, dict) and d.get("missing")],
-            key=lambda x: x[1].get("coverage", 0.0),
-        )[:5]
-        if not uncovered:
-            return f"**coverage** score: {score:.3f}"
-        lines = [f"**coverage** score: {score:.3f} — files with lowest coverage:"]
-        for path, data in uncovered:
-            pct = data.get("coverage", 0.0)
-            miss = data.get("missing", 0)
-            lines.append(f"- `{path}`: {pct:.0%} ({miss} uncovered statements)")
-        return "\n".join(lines)
+        for file, issues in tr.details.items():
+            if not isinstance(issues, list) or not issues:
+                continue
+            issue = issues[0]
+            if not isinstance(issue, dict):
+                continue
+            code = issue.get("code")
+            line = issue.get("line")
+            missing = issue.get("missing")
+            file_coverage = issue.get("file_coverage", 0.0)
+            missing_lines = issue.get("missing_lines")
+            try:
+                resolved_file = resolve_path(tr.project_path, file)
+            except (OSError, ValueError):
+                resolved_file = file
+
+            parts: list[str] = []
+            if code and line:
+                parts.append(f"{file}:{line} — {code} is missing tests")
+                fn_src = find_function_source(resolved_file, code)
+                if fn_src:
+                    parts.append(fn_src)
+            else:
+                pct = f"{file_coverage:.0%} " if isinstance(file_coverage, float) and file_coverage else ""
+                miss_info = f"{missing} uncovered lines" if missing else "uncovered"
+                parts.append(f"{file} — {pct}coverage ({miss_info})")
+                if missing_lines:
+                    parts.append(f"  missing lines: {missing_lines}")
+
+            test_file = _find_test_file(file)
+            if test_file:
+                try:
+                    resolved_test = resolve_path(tr.project_path, test_file)
+                    last_line = len(Path(resolved_test).read_text(encoding="utf-8").splitlines())
+                except (OSError, ValueError):
+                    last_line = None
+                location = f"{test_file} after line {last_line}" if last_line else test_file
+                parts.append(f"\nAdd tests to: {location}")
+
+            return "\n".join(parts)
+        return ""

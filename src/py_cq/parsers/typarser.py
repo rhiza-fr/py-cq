@@ -13,34 +13,12 @@ Errors count more heavily than warnings toward the score."""
 
 import re
 from collections.abc import Callable
-from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import find_enclosing_function, format_issue_header, format_source_context, score_logistic_variant
+from py_cq.parsers.common import extract_first_issue, find_enclosing_function, format_issue_header, format_source_context, resolve_path, score_logistic_variant
 
 _DIAG_RE = re.compile(r"^(.+):(\d+):\d+:\s+(error|warning)\[([^\]]+)\] (.+)$")
 _EXPECTED_FOUND_RE = re.compile(r"Expected `([^`]+)`, found `([^`]+)`")
-_CONTEXT_PATH_RE = re.compile(r'ty check[^"]*"([^"]+)"')
-_DIRECTORY_RE = re.compile(r'--directory\s+"([^"]+)"')
-
-
-def _resolve(context_path: str, rel_file: str) -> str:
-    """Return the best resolvable path for rel_file, trying cwd, context_path, and its absolute form.
-
-    Args:
-        context_path: The project or file path passed to the check command.
-        rel_file: A relative file path from a ty diagnostic.
-
-    Returns:
-        The first existing path found, or rel_file if none exists.
-    """
-    if Path(rel_file).exists():
-        return rel_file
-    for base in (Path(context_path), Path(context_path).resolve()):
-        via = base / rel_file
-        if via.exists():
-            return str(via)
-    return rel_file
 
 
 def _format_invalid_argument_type(file: str, line: int, message: str) -> str:
@@ -175,7 +153,8 @@ class TyParser(AbstractParser):
                 weighted += 3 if severity == "error" else 1
 
         score = score_logistic_variant(weighted, scale_factor=10)
-        return ToolResult(raw=raw_result, metrics={"type_check": score}, details=files)
+        return ToolResult(raw=raw_result, metrics={"type_check": score}, details=files,
+                          project_path=raw_result.project_path)
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
         """Return a markdown description of the most important ty defect.
@@ -192,25 +171,14 @@ class TyParser(AbstractParser):
         Returns:
             Markdown-formatted issue description.
         """
-        if not tr.details:
+        result = extract_first_issue(tr.details)
+        if result is None:
             return "ty reported issues (no details available)"
-        file, issues = next(iter(tr.details.items()))
-        if not isinstance(issues, list) or not issues:
-            return "ty reported issues (no details available)"
-        issue = issues[0]
-        if not isinstance(issue, dict):
-            return "ty reported issues (no details available)"
+        file, issue = result
         line = issue.get("line", "?")
         code = issue.get("code", "")
         message = issue.get("message", "")
-        cmd = tr.raw.command
-        m_ctx = _CONTEXT_PATH_RE.search(cmd)
-        context_path = m_ctx.group(1) if m_ctx else "."
-        if context_path == ".":
-            m_dir = _DIRECTORY_RE.search(cmd)
-            if m_dir:
-                context_path = m_dir.group(1)
-        resolved_file = _resolve(context_path, file)
+        resolved_file = resolve_path(tr.project_path, file)
         fmt_fn = _CUSTOM_FORMAT.get(code)
         if fmt_fn and isinstance(line, int):
             return fmt_fn(resolved_file, line, message)

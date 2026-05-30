@@ -119,20 +119,24 @@ def test_vulture_format_never_raises(details, metrics, raw):
     assert isinstance(VultureParser().format_llm_message(tr), str)
 
 
-# --- CoverageParser: {file: {coverage, missing}} ---
+# --- CoverageParser: {file: [{code, line, signature, file_coverage, missing, ...}]} ---
 
-_cov_file_data = st.one_of(
-    st.fixed_dictionaries(
-        {},
-        optional={
-            "coverage": _safe_float,
-            "missing": st.one_of(st.integers(min_value=0, max_value=100), st.none()),
-        },
-    ),
-    st.text(max_size=5),
-    st.integers(),
+_cov_issue = st.fixed_dictionaries(
+    {},
+    optional={
+        "code": st.one_of(st.none(), st.text(max_size=20)),
+        "line": st.one_of(st.none(), st.integers(min_value=1, max_value=9999)),
+        "signature": st.one_of(st.none(), st.text(max_size=100)),
+        "file_coverage": _safe_float,
+        "missing": st.one_of(st.integers(min_value=0, max_value=1000), st.none()),
+        "missing_lines": st.one_of(st.none(), st.text(max_size=50)),
+    },
 )
-_cov_details = st.dictionaries(st.text(min_size=1), _cov_file_data, max_size=3)
+_cov_details = st.dictionaries(
+    st.text(min_size=1),
+    st.one_of(st.lists(_cov_issue, max_size=3), st.text(max_size=5), st.integers()),
+    max_size=3,
+)
 
 
 @given(_cov_details, _metrics)

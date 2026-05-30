@@ -1,9 +1,7 @@
 """Provides a `ComplexityParser` that converts raw complexity-analysis output into structured `ToolResult` objects for downstream use."""
 
-import json
-
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import find_function_source, score_logistic_variant
+from py_cq.parsers.common import find_function_source, parse_json_dict, score_logistic_variant
 
 
 class ComplexityParser(AbstractParser):
@@ -64,12 +62,8 @@ class ComplexityParser(AbstractParser):
             >>> result.metrics["simplicity"]
             0.4"""
         tr = ToolResult(raw=raw_result)
-        try:
-            data = json.loads(raw_result.stdout)
-        except (json.JSONDecodeError, ValueError):
-            tr.metrics["simplicity"] = 0.0
-            return tr
-        if not isinstance(data, dict):
+        data = parse_json_dict(raw_result.stdout)
+        if data is None:
             tr.metrics["simplicity"] = 0.0
             return tr
         score = 0

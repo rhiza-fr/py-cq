@@ -156,19 +156,20 @@ class CQ:
     def is_fixed(self, fingerprint: str) -> bool:
         """Return True if the fingerprinted issue is no longer present.
 
-        Fingerprint format: ``tool|project|path[|line[|code]]``  (as returned by check_llm_json["id"])
+        Fingerprint format: ``tool::project::path[::line[::code]]``  (as returned by check_llm_json["id"])
         """
         fp = Fingerprint.from_string(fingerprint)
         if not fp.tool:
-            raise ValueError(f"Expected tool|project|path[|line[|code]], got: {fingerprint!r}")
+            raise ValueError(f"Expected tool::project::path[::line[::code]], got: {fingerprint!r}")
         if fp.tool not in tool_registry:
             raise ValueError(f"Unknown tool: {fp.tool!r}")
 
-        if fp.path:
+        if fp.project and Path(fp.project).is_dir():
+            target = fp.project
+        elif fp.path:
             file_path = Path(fp.path)
             if not file_path.is_absolute():
-                root = Path(fp.project) if fp.project else self._project_root
-                file_path = root / file_path
+                file_path = (self._project_root / file_path) if self._project_root else file_path
             target = str(file_path)
         else:
             target = str(self.path)

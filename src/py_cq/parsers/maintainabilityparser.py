@@ -4,10 +4,8 @@ The `MaintainabilityParser` implements the `AbstractParser` interface to
 convert raw JSON output from a maintainability tool into a
 `ToolResult` structure that other components of the framework can consume."""
 
-import json
-
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import score_logistic_variant
+from py_cq.parsers.common import parse_json_dict, score_logistic_variant
 
 
 class MaintainabilityParser(AbstractParser):
@@ -41,12 +39,8 @@ class MaintainabilityParser(AbstractParser):
                 * ``details`` - a mapping from each file name (converted to use forward slashes) to a dictionary with keys ``mi``, ``rank``, and optionally ``error``.
                 * ``details['return_code']`` - the tool's exit code."""
         tr = ToolResult(raw=raw_result)
-        try:
-            data = json.loads(raw_result.stdout)
-        except (json.JSONDecodeError, ValueError):
-            tr.metrics["maintainability"] = 0.0
-            return tr
-        if not isinstance(data, dict):
+        data = parse_json_dict(raw_result.stdout)
+        if data is None:
             tr.metrics["maintainability"] = 0.0
             return tr
         num_items = 0

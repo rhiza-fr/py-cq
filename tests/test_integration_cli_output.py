@@ -281,6 +281,7 @@ _JSON_SCHEMA = {
     "tool_name": str,
     "metrics": dict,
     "details": dict,
+    "project_path": str,
     "duration_s": float,
 }
 
@@ -291,6 +292,7 @@ _RAW_SCHEMA = {
     "stderr": str,
     "return_code": int,
     "timestamp": str,
+    "project_path": str,
 }
 
 

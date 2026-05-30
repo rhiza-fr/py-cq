@@ -42,8 +42,8 @@ BANDIT_DEFECT_SNAPSHOT = (
 )
 
 COVERAGE_DEFECT_SNAPSHOT = (
-    "**coverage** score: 0.600 \u2014 files with lowest coverage:\n"
-    "- `src/low.py`: 60% (40 uncovered statements)\n\n"
+    "src/low.py \u2014 60% coverage (40 uncovered lines)\n\n"
+    "Add tests to: tests/test_low.py\n\n"
     "Please fix only this issue."
 )
 
@@ -108,7 +108,7 @@ def test_coverage_defect_snapshot():
     cfg = ToolConfig(name="coverage", command="", parser_class=CoverageParser, order=6)
     tr = ToolResult(
         metrics={"coverage": 0.6},
-        details={"src/low.py": {"coverage": 0.60, "missing": 40}},
+        details={"src/low.py": [{"code": None, "line": None, "missing": 40, "file_coverage": 0.60}]},
         raw=RawResult(tool_name="coverage"),
     )
     result = format_for_llm({"coverage": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
