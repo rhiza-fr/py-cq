@@ -31,6 +31,7 @@ def test_vulture_parse_clean():
 
 
 def test_vulture_more_violations_lower_score():
+    """Test that more violations result in a lower score."""
     one = VultureParser().parse(raw(VULTURE_OUTPUT[:VULTURE_OUTPUT.index("\n") + 1]))
     many = VultureParser().parse(raw(VULTURE_OUTPUT))
     assert many.metrics["dead_code"] < one.metrics["dead_code"]
@@ -42,6 +43,7 @@ def test_vulture_format_llm_no_details():
 
 
 def test_vulture_format_llm_with_issue():
+    """Test formatting of LLM message when there are issues found."""
     tr = ToolResult(
         metrics={"dead_code": 0.5},
         details={"src/foo.py": [{"line": 10, "type": "unused function", "name": "bar", "confidence": 80}]},

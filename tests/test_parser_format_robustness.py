@@ -212,6 +212,7 @@ _halstead_metrics = st.fixed_dictionaries(
 @given(_halstead_details, _halstead_metrics)
 @settings(max_examples=50)
 def test_halstead_format_never_raises(details, metrics):
+    """Tests that HalsteadParser.format_llm_message never raises an exception for any validly formatted Halstead details and metrics."""
     tr = ToolResult(metrics=metrics, details=details)
     assert isinstance(HalsteadParser().format_llm_message(tr), str)
 
@@ -241,6 +242,7 @@ _compile_details = st.fixed_dictionaries(
 @given(_compile_details, _metrics)
 @settings(max_examples=50)
 def test_compile_format_never_raises(details, metrics):
+    """Test that compile format never raises an exception."""
     tr = ToolResult(metrics=metrics, details=details)
     assert isinstance(CompileParser().format_llm_message(tr), str)
 
@@ -264,6 +266,7 @@ _pytest_details = st.dictionaries(st.text(min_size=1), _pytest_file_tests, max_s
 @given(_pytest_details, _raw)
 @settings(max_examples=50)
 def test_pytest_format_never_raises(details, raw):
+    """Test that pytest format never raises an error."""
     tr = ToolResult(metrics={"tests": 0.5}, details=details, raw=raw)
     assert isinstance(PytestParser().format_llm_message(tr), str)
 
@@ -273,6 +276,7 @@ def test_pytest_format_never_raises(details, raw):
 @given(_raw)
 @settings(max_examples=30)
 def test_exitcode_format_never_raises(raw):
+    """Test that ExitCodeParser.format_llm_message never raises for any input."""
     tr = ToolResult(metrics={"exit_code": 0.0}, details={}, raw=raw)
     assert isinstance(ExitCodeParser().format_llm_message(tr), str)
 

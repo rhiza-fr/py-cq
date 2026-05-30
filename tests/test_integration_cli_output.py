@@ -107,12 +107,14 @@ def test_exit_code_1_on_error(tmp_path):
 
 
 def test_exit_code_0_on_pass(tmp_path):
+    """Test that the exit code is 0 on a successful pass."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "-o", "score", "--workers", "1"])
     assert result.exit_code == 0
 
 
 def test_score_output_is_consistent_with_json(tmp_path):
+    """Ensure score output is consistent with json output."""
     path = _project(tmp_path, "echo hello")
     r_score = runner.invoke(app, ["check", path, "-o", "score", "--workers", "1"])
     r_json = runner.invoke(app, ["check", path, "-o", "json", "--workers", "1"])
@@ -129,6 +131,7 @@ def test_score_output_is_consistent_with_json(tmp_path):
 
 
 def test_only_flag_limits_tools(tmp_path):
+    """Test that the --only flag correctly limits tools to the specified ones."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "--only", "mycheck", "-o", "json", "--workers", "1"])
     assert result.exit_code == 0
@@ -137,6 +140,7 @@ def test_only_flag_limits_tools(tmp_path):
 
 
 def test_skip_flag_removes_tool(tmp_path):
+    """Test that the --skip flag removes the specified tool from the output."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "--skip", "mycheck", "-o", "json", "--workers", "1"])
     assert result.exit_code == 0
@@ -146,6 +150,8 @@ def test_skip_flag_removes_tool(tmp_path):
 
 @pytest.mark.slow
 def test_clear_cache_then_runs(tmp_path):
+    """Test that running with --clear-cache produces the same output as without it."""
+    path = _project(tmp_path, "echo hello")
     path = _project(tmp_path, "echo hello")
     r1 = runner.invoke(app, ["check", path, "-o", "score", "--workers", "1"])
     r2 = runner.invoke(app, ["check", path, "--clear-cache", "-o", "score", "--workers", "1"])
@@ -155,6 +161,7 @@ def test_clear_cache_then_runs(tmp_path):
 
 
 def test_table_output_renders(tmp_path):
+    """Test that the table output format renders correctly."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "-o", "table", "--workers", "1"])
     assert result.exit_code == 0
@@ -164,6 +171,7 @@ def test_table_output_renders(tmp_path):
 
 
 def test_exclude_flag_runs_cleanly(tmp_path):
+    """Test that the --exclude flag runs cleanly."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "--exclude", "demo", "-o", "score", "--workers", "1"])
     assert result.exit_code == 0

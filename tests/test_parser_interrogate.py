@@ -46,12 +46,14 @@ def test_interrogate_parse_skips_zero_missing_files():
 
 
 def test_interrogate_parse_clean():
+    """Test parsing when all files have docstrings."""
     tr = InterrogateParser().parse(raw(INTERROGATE_CLEAN, return_code=0))
     assert tr.metrics["doc_coverage"] == 1.0
     assert tr.details == {}
 
 
 def test_interrogate_parse_empty_output():
+    """Test that parsing empty output results in zero doc coverage."""
     tr = InterrogateParser().parse(raw("", return_code=0))
     assert tr.metrics["doc_coverage"] == 1.0
     assert tr.details == {}

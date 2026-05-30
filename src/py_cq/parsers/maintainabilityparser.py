@@ -64,6 +64,7 @@ class MaintainabilityParser(AbstractParser):
         return tr
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        """Format the LLM message with details about the worst maintainability scores."""
         worst_file = worst_rank = None
         worst_score = 1.0
         for file, data in tr.details.items():

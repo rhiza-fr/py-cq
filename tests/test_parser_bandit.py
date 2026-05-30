@@ -53,6 +53,7 @@ def test_bandit_parse_low_issue():
 
 
 def test_bandit_high_severity_scores_lower_than_low():
+    """Test that high severity issues are weighted less than low severity issues in security metric."""
     low_payload = _bandit_json([{"filename": "a.py", "line_number": 1,
         "test_id": "B105", "issue_severity": "LOW", "issue_confidence": "HIGH", "issue_text": ""}])
     high_payload = _bandit_json([{"filename": "a.py", "line_number": 1,
@@ -63,11 +64,14 @@ def test_bandit_high_severity_scores_lower_than_low():
 
 
 def test_bandit_invalid_json_returns_degraded_score():
+    """Test that invalid JSON returns a degraded security score."""
     tr = BanditParser().parse(raw("not json", return_code=0))
     assert tr.metrics["security"] == 0.5
 
 
 def test_bandit_non_dict_json_returns_degraded_score():
+    """Test that non-dictionary JSON results in a degraded security score."""
+
     tr = BanditParser().parse(raw("[]", return_code=0))
     assert tr.metrics["security"] == 0.5
 
@@ -79,6 +83,7 @@ def test_bandit_crash_returns_zero():
 
 
 def test_bandit_skips_venv_paths():
+    """Test that BanditParser skips files located in venv paths."""
     payload = _bandit_json([{
         "filename": "/project/.venv/lib/foo.py",
         "line_number": 1,

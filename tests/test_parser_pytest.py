@@ -14,6 +14,7 @@ PYTEST_NO_TESTS = "no tests ran"
 
 
 def test_pytest_parse_mixed():
+    """Test parsing of mixed pytest output."""
     tr = PytestParser().parse(raw(PYTEST_OUTPUT, return_code=1))
     assert tr.metrics["tests"] == 0.5
     assert "tests/test_foo.py" in tr.details
@@ -22,6 +23,7 @@ def test_pytest_parse_mixed():
 
 
 def test_pytest_parse_all_pass():
+    """Test that all tests pass in pytest parse."""
     tr = PytestParser().parse(raw("tests/test_foo.py::test_one PASSED    [100%]\n", return_code=0))
     assert tr.metrics["tests"] == 1.0
 

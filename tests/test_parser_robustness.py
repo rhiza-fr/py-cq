@@ -73,6 +73,7 @@ def test_halstead_parse_never_crashes(text):
 
 @given(st.text())
 def test_interrogate_parse_never_crashes(text):
+    """Test that InterrogateParser never crashes with any input text."""
     tr = InterrogateParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())
@@ -80,6 +81,7 @@ def test_interrogate_parse_never_crashes(text):
 
 @given(st.text())
 def test_linecount_parse_never_crashes(text):
+    """Test that LineCountParser.parse never crashes with any string input."""
     tr = LineCountParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())
@@ -87,6 +89,7 @@ def test_linecount_parse_never_crashes(text):
 
 @given(st.text())
 def test_maintainability_parse_never_crashes(text):
+    """Test that MaintainabilityParser.parse never crashes with any string input."""
     tr = MaintainabilityParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())
@@ -94,6 +97,7 @@ def test_maintainability_parse_never_crashes(text):
 
 @given(st.text())
 def test_pytest_parse_never_crashes(text):
+    """Test that the PytestParser does not crash on any input text."""
     tr = PytestParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())

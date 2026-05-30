@@ -47,6 +47,7 @@ def _format_F841(file: str, line: int, message: str) -> str:
 
 
 def _format_F541(file: str, line: int, message: str) -> str:
+    """Format F541 error message."""
     base = format_issue_header(file, line, "F541", message) + format_source_context(file, line)
     return base + "\n\nFix: remove the `f` prefix from this string literal."
 

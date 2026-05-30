@@ -87,6 +87,7 @@ def test_ruff_hint_F841_referenced_elsewhere(tmp_path):
 
 
 def test_ruff_hint_F841_not_referenced(tmp_path):
+    """Test ruff hint F841 for unused variables."""
     src = tmp_path / "example.py"
     src.write_text(
         "def foo():\n"
@@ -103,6 +104,7 @@ def test_ruff_hint_F841_not_referenced(tmp_path):
 
 
 def test_ruff_hint_F541(tmp_path):
+    """Test Ruff hint for F541."""
     src = tmp_path / "example.py"
     src.write_text('x = f"no placeholders here"\n')
     tr = ToolResult(
@@ -115,6 +117,7 @@ def test_ruff_hint_F541(tmp_path):
 
 
 def test_ruff_hint_F401_safe_to_delete(tmp_path):
+    """Test if Ruff hint F401 suggests deleting the unused import."""
     src = tmp_path / "mod.py"
     src.write_text("import os\n\ndef foo():\n    return 42\n")
     tr = ToolResult(

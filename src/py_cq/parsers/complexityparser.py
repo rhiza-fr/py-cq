@@ -87,6 +87,7 @@ class ComplexityParser(AbstractParser):
         return tr
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        """Formats the LLM message based on the tool result."""
         worst_file = worst_func = worst_rank = None
         worst_score = 1.0
         for file, funcs in tr.details.items():

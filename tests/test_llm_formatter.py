@@ -56,6 +56,7 @@ def test_severity_ok_returns_2():
 
 
 def test_severity_error_returns_0():
+    """Test that severity is 0 when error fails to reach threshold."""
     cfg = make_config("tool", 1)  # error_threshold=0.5
     assert _severity(0.3, cfg) == 0
 
@@ -89,6 +90,7 @@ def test_severity_at_warning_threshold_returns_ok():
     (0.29, 0.3, 0.3, 0),  # below both equal thresholds → error
 ])
 def test_severity_parametrized_custom_thresholds(score, warn, err, expected):
+    """Test severity with custom thresholds."""
     cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
                      warning_threshold=warn, error_threshold=err)
     assert _severity(score, cfg) == expected
@@ -205,6 +207,7 @@ def test_empty_results_returns_no_issues():
 
 
 def test_cq_invocation_in_footer():
+    """Test if cq_invocation is present in the footer."""
     registry = make_registry(make_config("ruff", 3))
     result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation="cq run myfile.py --llm", hint=True)
     assert "cq run myfile.py --llm" in result
@@ -213,10 +216,12 @@ def test_cq_invocation_in_footer():
 # --- parser format_llm_message ---
 
 def _tr(tool_name: str, details: dict) -> ToolResult:
+    """Return a ToolResult representing a tool execution."""
     return ToolResult(metrics={"score": 0.5}, details=details, raw=RawResult(tool_name=tool_name))
 
 
 def test_compile_format_llm_message():
+    """Test that the compile format LLM message is correctly generated from a ToolResult."""
     tr = _tr("compile", {"failed_files": {
         "src/foo.py": {"line": 10, "src": "x = {a = b}", "type": "SyntaxError", "help": "invalid syntax"}
     }})
@@ -228,11 +233,13 @@ def test_compile_format_llm_message():
 
 
 def test_compile_format_llm_message_no_details():
+    """Test compilation of LLM message without details."""
     tr = _tr("compile", {})
     assert "no details" in CompileParser().format_llm_message(tr)
 
 
 def test_ruff_format_llm_message():
+    """Test Ruff parser formatting for LLM message."""
     tr = _tr("ruff", {"src/bar.py": [{"line": 42, "code": "E501", "message": "line too long"}]})
     msg = RuffParser().format_llm_message(tr)
     assert "src/bar.py:42" in msg
@@ -241,6 +248,7 @@ def test_ruff_format_llm_message():
 
 
 def test_ty_format_llm_message():
+    """Test formatting of LLM messages for ty-style errors."""
     tr = _tr("ty", {"src/baz.py": [{"line": 7, "code": "possibly-unbound", "message": "x may be unbound"}]})
     msg = TyParser().format_llm_message(tr)
     assert "src/baz.py:7" in msg
@@ -248,6 +256,7 @@ def test_ty_format_llm_message():
 
 
 def test_interrogate_format_llm_message():
+    """Test formatting of LLM message for interrogate."""
     tr = _tr("interrogate", {"src/qux.py": [{"line": 10, "code": "D103", "message": "missing docstring in function `my_func`"}]})
     msg = InterrogateParser().format_llm_message(tr)
     assert "src/qux.py" in msg
@@ -255,6 +264,7 @@ def test_interrogate_format_llm_message():
 
 
 def test_pytest_format_llm_message():
+    """Test that PytestParser correctly formats the LLM message."""
     tr = _tr("pytest", {"tests/test_foo.py": {"test_bar": "FAILED", "test_baz": "PASSED"}})
     msg = PytestParser().format_llm_message(tr)
     assert "tests/test_foo.py::test_bar" in msg
@@ -263,11 +273,14 @@ def test_pytest_format_llm_message():
 
 
 def test_pytest_format_llm_message_no_failures():
+    """Test pytest format llm message with no failures."""
     tr = _tr("pytest", {})
     assert "no details" in PytestParser().format_llm_message(tr).lower()
 
 
 def test_halstead_format_llm_message_function_bugs():
+    """Test Halstead parser formatting for function-level bugs."""
+
     tr = _tr("radon hal", {
         "src/foo.py": {
             "bug_free": 0.9, "smallness": 0.9, "bugs": 0.05, "volume": 100,
@@ -286,6 +299,7 @@ def test_halstead_format_llm_message_function_bugs():
 
 
 def test_halstead_format_llm_message_file_volume():
+    """Test Halstead parser with file volume metrics."""
     tr = _tr("radon hal", {
         "src/large.py": {
             "bug_free": 0.8, "smallness": 0.2, "bugs": 0.1, "volume": 1900,
@@ -300,6 +314,7 @@ def test_halstead_format_llm_message_file_volume():
 
 
 def test_halstead_format_llm_message_no_metrics():
+    """Test Halstead formatter with no metrics."""
     tr = ToolResult(metrics={}, details={}, raw=RawResult())
     assert "No Halstead" in HalsteadParser().format_llm_message(tr)
 
@@ -346,6 +361,7 @@ def test_format_for_llm_context_lines_forwarded():
     received: dict = {}
 
     class RecordingParser(AbstractParser):
+        """Mock parser for testing."""
         def parse(self, raw_result): return ToolResult()
         def format_llm_message(self, tr, *, context_lines=15, limit=1):
             received["context_lines"] = context_lines

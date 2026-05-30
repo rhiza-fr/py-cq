@@ -160,6 +160,7 @@ REGEXCOUNT_DEFECT_SNAPSHOT = (
 
 
 def test_exitcode_defect_snapshot():
+    """Test that exit code defect is correctly captured in the snapshot."""
     cfg = ToolConfig(name="mycheck", command="", parser_class=ExitCodeParser, order=1)
     tr = ToolResult(
         metrics={"exit_code": 0.0},
@@ -170,6 +171,7 @@ def test_exitcode_defect_snapshot():
 
 
 def test_halstead_bug_defect_snapshot():
+    """Test halstead bug defect snapshot."""
     cfg = ToolConfig(name="radon-hal", command="", parser_class=HalsteadParser, order=9)
     tr = ToolResult(
         metrics={"bug_free": 0.3},
@@ -181,6 +183,7 @@ def test_halstead_bug_defect_snapshot():
 
 
 def test_interrogate_defect_snapshot():
+    """Test the interrogation of a defect snapshot."""
     cfg = ToolConfig(name="interrogate", command="", parser_class=InterrogateParser, order=11)
     tr = ToolResult(
         metrics={"doc_coverage": 0.6},
@@ -192,6 +195,7 @@ def test_interrogate_defect_snapshot():
 
 
 def test_linecount_defect_snapshot():
+    """Test linecount defect snapshot."""
     cfg = ToolConfig(name="linecount", command="", parser_class=LineCountParser, order=10)
     tr = ToolResult(
         metrics={"violations": 0.5},

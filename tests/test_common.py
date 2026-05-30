@@ -71,6 +71,7 @@ def test_format_source_context_stops_at_next_def(tmp_path):
 
 
 def test_format_source_context_includes_def_containing_error(tmp_path):
+    """Test that format_source_context includes the definition containing the error."""
     f = tmp_path / "foo.py"
     f.write_text(
         "def test_one():\n"
@@ -86,6 +87,7 @@ def test_format_source_context_includes_def_containing_error(tmp_path):
 
 
 def test_find_function_source_basic(tmp_path):
+    """Test finding the source of a basic function."""
     f = tmp_path / "foo.py"
     f.write_text(
         "def unrelated():\n"
@@ -106,6 +108,7 @@ def test_find_function_source_basic(tmp_path):
 
 
 def test_find_function_source_truncates(tmp_path):
+    """Test that the function source is truncated when max_lines is provided."""
     f = tmp_path / "foo.py"
     lines = ["def test_long():\n"] + [f"    x = {i}\n" for i in range(20)]
     f.write_text("".join(lines))
@@ -120,10 +123,12 @@ def test_find_function_source_not_found(tmp_path):
 
 
 def test_find_function_source_missing_file():
+    """Test that find_function_source returns an empty string when the file does not exist."""
     assert find_function_source("/nonexistent/foo.py", "test_x", max_lines=10) == ""
 
 
 def test_find_function_source_async(tmp_path):
+    """Test finding source of an async function."""
     f = tmp_path / "foo.py"
     f.write_text("async def test_async():\n    await something()\n")
     result = find_function_source(str(f), "test_async", max_lines=10)
@@ -157,6 +162,7 @@ def test_find_project_root_reaches_filesystem_root(tmp_path, monkeypatch):
     call_count = {"n": 0}
 
     def _fake_parent(self):
+        """Fake implementation of Path.parent to simulate filesystem root."""
         call_count["n"] += 1
         if call_count["n"] > 1:
             return self  # simulate filesystem root: parent == self

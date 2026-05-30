@@ -140,6 +140,7 @@ def test_coverage_format_llm_fallback():
 
 
 def test_coverage_format_llm_fallback_with_missing_lines():
+    """Test coverage formatting when missing lines are present but file doesn't exist."""
     # Has missing lines string but file doesn't exist → fallback shows line numbers
     tr = CoverageParser().parse(raw(COVERAGE_OUTPUT_WITH_MISSING))
     msg = CoverageParser().format_llm_message(tr)
@@ -148,6 +149,7 @@ def test_coverage_format_llm_fallback_with_missing_lines():
 
 
 def test_coverage_format_llm_with_function(tmp_path):
+    """Test coverage format for LLM with function."""
     src_file = tmp_path / "foo.py"
     src_file.write_text("def my_func(x: int) -> str:\n    return str(x)\n")
     output = f"{src_file}   2   2   0%   1-2\nTOTAL   2   2   0%\n"
@@ -159,6 +161,7 @@ def test_coverage_format_llm_with_function(tmp_path):
 
 
 def test_coverage_format_llm_with_test_file(tmp_path):
+    """Test that the LLM message format includes test files from coverage report."""
     tests_dir = tmp_path / "tests"
     tests_dir.mkdir()
     (tests_dir / "test_foo.py").write_text("")
@@ -173,11 +176,13 @@ def test_coverage_format_llm_with_test_file(tmp_path):
 
 
 def test_coverage_format_llm_no_details():
+    """Test coverage format LLM with no details."""
     tr = ToolResult(metrics={"coverage": 0.95}, details={}, raw=RawResult())
     assert CoverageParser().format_llm_message(tr) == ""
 
 
 def test_coverage_format_llm_at_warning_threshold():
+    """Test that LLM message is formatted correctly when coverage is at the warning threshold."""
     output = "src/threshold.py   10   1   90%\nTOTAL   10   1   90%\n"
     tr = CoverageParser().parse(raw(output))
     msg = CoverageParser().format_llm_message(tr)
@@ -187,6 +192,7 @@ def test_coverage_format_llm_at_warning_threshold():
 # --- helpers ---
 
 def test_parse_line_ranges():
+    """Test the parsing of line ranges."""
     assert _parse_line_ranges("1-3, 5") == {1, 2, 3, 5}
     assert _parse_line_ranges("10") == {10}
     assert _parse_line_ranges("") == set()
@@ -194,6 +200,7 @@ def test_parse_line_ranges():
 
 
 def test_get_signature():
+    """Test the _get_signature function."""
     node = cast(ast.FunctionDef, ast.parse("def foo(x: int, y: str = 'hi') -> bool:\n    pass\n").body[0])
     sig = _get_signature(node)
     assert sig.startswith("def foo(")

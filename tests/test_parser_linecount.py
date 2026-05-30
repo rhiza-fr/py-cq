@@ -22,12 +22,14 @@ def test_single_violation_scores_below_1():
 
 
 def test_more_violations_score_lower():
+    """Test that a higher number of violations results in a lower score."""
     few = LineCountParser().parse(raw(stdout="e1\ne2"))
     many = LineCountParser().parse(raw(stdout="\n".join(f"e{i}" for i in range(20))))
     assert many.metrics["violations"] < few.metrics["violations"]
 
 
 def test_custom_scale_factor():
+    """Test that a custom scale factor affects the violation scores."""
     # With scale_factor=1, a single error should score much lower than default scale_factor=15
     strict = LineCountParser({"scale_factor": 1}).parse(raw(stdout="one error"))
     default = LineCountParser().parse(raw(stdout="one error"))

@@ -60,23 +60,27 @@ def test_aggregate_metrics_matches_direct_construction():
 
 
 def test_all_tools_empty_metrics_score_zero():
+    """Test that score is zero when all tools have empty metrics."""
     trs = [_tr({}), _tr({})]
     c = CombinedToolResults(path=".", tool_results=trs)
     assert c.score == 0.0
 
 
 def test_single_tool_multiple_metrics_mean():
+    """Test that the mean is correctly calculated for multiple metrics in a single tool result."""
     c = CombinedToolResults(path=".", tool_results=[_tr({"a": 0.8, "b": 0.6})])
     assert c.score == pytest.approx(0.7)
 
 
 def test_score_is_mean_of_per_tool_means():
+    """Test that the combined score is the mean of the per-tool means."""
     trs = [_tr({"m": 0.5}), _tr({"m": 0.75}), _tr({"m": 1.0})]
     c = CombinedToolResults(path=".", tool_results=trs)
     assert c.score == pytest.approx(0.75)
 
 
 def test_mixed_empty_and_nonempty_tools():
+    """Test that empty tool results are excluded from the mean calculation."""
     # Empty tool is excluded from scored list, so only the nonempty tool's mean counts
     tr_good = _tr({"m": 0.6})
     tr_empty = _tr({})

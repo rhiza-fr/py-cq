@@ -40,6 +40,7 @@ def test_get_context_hash_nonexistent_returns_empty_hash(tmp_path):
 
 
 def test_get_sigs_py_files_only(tmp_path):
+    """Test that only .py files are included in the signatures."""
     (tmp_path / "foo.py").write_text("")
     (tmp_path / "readme.md").write_text("")
     sigs = get_sigs(str(tmp_path))
@@ -48,6 +49,7 @@ def test_get_sigs_py_files_only(tmp_path):
 
 
 def test_get_sigs_skips_venv(tmp_path):
+    """Test that get_sigs skips .venv directory."""
     venv = tmp_path / ".venv"
     venv.mkdir()
     (venv / "lib.py").write_text("")
@@ -58,6 +60,7 @@ def test_get_sigs_skips_venv(tmp_path):
 
 
 def test_get_sigs_skips_pycache(tmp_path):
+    """Test that get_sigs skips __pycache__ directories."""
     cache = tmp_path / "__pycache__"
     cache.mkdir()
     (cache / "mod.py").write_text("")

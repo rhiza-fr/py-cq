@@ -81,10 +81,13 @@ def test_toolconfig_parser_config_defaults_to_empty_dict():
 
 
 def test_abstract_parser_stores_parser_config():
+    """Test that AbstractParser stores parser configuration correctly."""
     from py_cq.localtypes import AbstractParser, ToolResult
 
     class MyParser(AbstractParser):
+        """Mock parser for testing."""
         def parse(self, raw_result: RawResult) -> ToolResult:
+            """Parse the raw result."""
             return ToolResult()
 
     p = MyParser({"scale_factor": 10})
@@ -92,10 +95,13 @@ def test_abstract_parser_stores_parser_config():
 
 
 def test_abstract_parser_defaults_config_to_empty():
+    """Test that the default parser configuration is empty."""
     from py_cq.localtypes import AbstractParser, ToolResult
 
     class MyParser(AbstractParser):
+        """A test parser implementation."""
         def parse(self, raw_result: RawResult) -> ToolResult:
+            """Parse the raw result."""
             return ToolResult()
 
     p = MyParser()
@@ -103,12 +109,14 @@ def test_abstract_parser_defaults_config_to_empty():
 
 
 def test_tool_result_coerces_none_details():
+    """Test that ToolResult coerces None details to an empty dictionary."""
     tr = ToolResult(metrics=None, details=None, raw=RawResult())  # ty: ignore[invalid-argument-type]
     assert tr.metrics == {}
     assert tr.details == {}
 
 
 def test_tool_result_coerces_list_metrics():
+    """Test that ToolResult coerces list metrics."""
     tr = ToolResult(metrics=[], details={}, raw=RawResult())  # ty: ignore[invalid-argument-type]
     assert tr.metrics == {}
 

@@ -57,11 +57,13 @@ def test_metric_between_warning_and_error_shows_warning():
 
 
 def test_metric_above_warning_shows_ok():
+    """Test that metric above warning threshold shows OK."""
     table = format_as_table(_combined({"m": 0.8}), _make_registry(warning_threshold=0.7))
     assert any("OK" in c for c in _status_cells(table))
 
 
 def test_metric_exactly_at_error_threshold_shows_warning_not_error():
+    """Test that a metric exactly at the error threshold shows a warning instead of an error."""
     # value < error_threshold → Error; value == error_threshold → Warning (not Error)
     table = format_as_table(_combined({"m": 0.5}), _make_registry(error_threshold=0.5, warning_threshold=0.7))
     statuses = _status_cells(table)
@@ -70,6 +72,7 @@ def test_metric_exactly_at_error_threshold_shows_warning_not_error():
 
 
 def test_metric_exactly_at_warning_threshold_shows_ok():
+    """Test that a metric exactly at the warning threshold shows OK."""
     # value < warning_threshold → Warning; value == warning_threshold → OK
     table = format_as_table(_combined({"m": 0.7}), _make_registry(error_threshold=0.5, warning_threshold=0.7))
     statuses = _status_cells(table)

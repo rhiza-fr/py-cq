@@ -16,11 +16,13 @@ def test_exit_code_nonzero_scores_0():
 
 
 def test_exit_code_2_scores_0():
+    """Test that exit code 2 results in a score of 0.0."""
     result = ExitCodeParser().parse(raw(stdout="", return_code=2))
     assert result.metrics == {"exit_code": 0.0}
 
 
 def test_llm_message_shows_stdout():
+    """Test that the LLM message shows stdout."""
     from py_cq.localtypes import RawResult, ToolResult
     tr = ToolResult(
         metrics={"exit_code": 0.0},

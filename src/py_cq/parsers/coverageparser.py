@@ -30,6 +30,7 @@ def _parse_line_ranges(s: str) -> set[int]:
 
 
 def _get_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    """Return the signature of the function definition as a string."""
     prefix = "async def" if isinstance(node, ast.AsyncFunctionDef) else "def"
     args = ast.unparse(node.args)
     returns = f" -> {ast.unparse(node.returns)}" if node.returns else ""
@@ -72,7 +73,9 @@ def _find_test_file(source_file: str) -> str | None:
 
 
 class CoverageParser(AbstractParser):
+    """Parser for coverage results."""
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """Parse the coverage result."""
         tr = ToolResult(raw=raw_result, project_path=raw_result.project_path)
         lines = raw_result.stdout.splitlines()
         base_dir = raw_result.project_path

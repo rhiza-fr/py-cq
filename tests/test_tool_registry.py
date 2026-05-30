@@ -10,6 +10,7 @@ def test_registry_loads_python_tools():
 
 
 def test_registry_tools_have_required_fields():
+    """Test that all tools in the registry have the required fields."""
     for name, tc in tool_registry.items():
         assert tc.command, f"{name} has no command"
         assert tc.parser_class is not None, f"{name} has no parser_class"

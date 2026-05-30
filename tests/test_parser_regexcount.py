@@ -24,12 +24,14 @@ def test_matching_lines_counted():
 
 
 def test_more_matches_score_lower():
+    """Test that more matches result in a lower violation score."""
     few = _parser(r"^E").parse(raw(stdout="E1\nok\nok"))
     many = _parser(r"^E").parse(raw(stdout="\n".join(f"E{i}" for i in range(20))))
     assert many.metrics["violations"] < few.metrics["violations"]
 
 
 def test_missing_pattern_raises():
+    """Test that a KeyError is raised when the pattern is missing."""
     with pytest.raises(KeyError):
         RegexCountParser({}).parse(raw(stdout="anything"))
 

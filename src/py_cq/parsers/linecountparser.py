@@ -12,6 +12,9 @@ class LineCountParser(AbstractParser):
     """
 
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """
+        Parse the raw result to count non-empty lines and calculate the violation score.
+        """
         lines = [ln for ln in (raw_result.stdout or "").splitlines() if ln.strip()]
         count = len(lines)
         scale = self.parser_config.get("scale_factor", 15)
@@ -19,6 +22,7 @@ class LineCountParser(AbstractParser):
         return ToolResult(raw=raw_result, metrics={"violations": score}, details={"lines": lines})
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        """Formats the ToolResult lines into a string for the LLM message."""
         lines = tr.details.get("lines", [])
         if not lines:
             return "No violations found"

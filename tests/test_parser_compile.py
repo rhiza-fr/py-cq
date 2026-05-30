@@ -33,6 +33,7 @@ Compiling '.\\src\\bad.py'...
 
 
 def test_compile_parse_with_error():
+    """Test parsing of compile output containing errors."""
     tr = CompileParser().parse(raw(COMPILE_OUTPUT_WITH_ERROR, return_code=1))
     assert "compile" in tr.metrics
     assert tr.metrics["compile"] < 1.0
@@ -44,12 +45,14 @@ def test_compile_parse_with_error():
 
 
 def test_compile_parse_clean():
+    """Test that a clean compile output is parsed correctly."""
     tr = CompileParser().parse(raw(COMPILE_OUTPUT_CLEAN, return_code=0))
     assert tr.metrics["compile"] == 1.0
     assert "failed_files" not in tr.details
 
 
 def test_compile_parse_empty():
+    """Test compilation and parsing of an empty input."""
     tr = CompileParser().parse(raw(""))
     assert tr.metrics["compile"] == 1.0
 
@@ -74,6 +77,7 @@ def test_compile_format_llm_message_includes_callee(tmp_path):
 
 
 def test_compile_parse_short_error_block():
+    """Test that short error blocks are correctly parsed."""
     tr = CompileParser().parse(raw(COMPILE_SHORT_ERROR, return_code=1))
     assert "failed_files" in tr.details
     info = next(iter(tr.details["failed_files"].values()))

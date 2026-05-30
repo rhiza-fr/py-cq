@@ -51,12 +51,14 @@ def test_complexity_parse_empty_input():
 
 
 def test_complexity_parse_missing_rank_defaults_f():
+    """Test that missing rank defaults to F."""
     output = json.dumps({"src/foo.py": [{"name": "f", "complexity": 5}]})
     tr = ComplexityParser().parse(raw(output))
     assert tr.details["src/foo.py"]["f"]["rank"] == "F"
 
 
 def test_complexity_parse_missing_complexity_uses_max():
+    """Test that missing complexity defaults to max complexity."""
     output = json.dumps({"src/foo.py": [{"name": "f", "rank": "A"}]})
     tr = ComplexityParser().parse(raw(output))
     # No complexity key → defaults to max_complexity (30) → score_logistic_variant(30, 30) = 0.5
@@ -64,6 +66,7 @@ def test_complexity_parse_missing_complexity_uses_max():
 
 
 def test_complexity_higher_complexity_lower_score():
+    """Test that higher complexity results in a lower simplicity score."""
     simple = json.dumps({"f.py": [{"name": "f", "complexity": 1, "rank": "A"}]})
     complex_ = json.dumps({"f.py": [{"name": "f", "complexity": 29, "rank": "F"}]})
     tr_s = ComplexityParser().parse(raw(simple))

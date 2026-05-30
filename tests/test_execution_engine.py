@@ -26,6 +26,7 @@ def _fake_config(name="fake", order=1):
 # --- _find_project_root ---
 
 def test_find_project_root_direct(tmp_path):
+    """Test that _find_project_root returns the tmp_path when pyproject.toml is present."""
     (tmp_path / "pyproject.toml").write_text("")
     py_file = tmp_path / "foo.py"
     py_file.write_text("")
@@ -33,6 +34,7 @@ def test_find_project_root_direct(tmp_path):
 
 
 def test_find_project_root_nested(tmp_path):
+    """Test finding project root when nested inside directories."""
     (tmp_path / "pyproject.toml").write_text("")
     sub = tmp_path / "src" / "pkg"
     sub.mkdir(parents=True)
@@ -42,6 +44,7 @@ def test_find_project_root_nested(tmp_path):
 
 
 def test_find_project_root_not_found(tmp_path, monkeypatch):
+    """Test that _find_project_root returns tmp_path when no project root is found in parents."""
     sub = tmp_path / "orphan"
     sub.mkdir()
     py_file = sub / "foo.py"
@@ -60,6 +63,7 @@ def test_find_project_root_not_found(tmp_path, monkeypatch):
 # --- run_tools ---
 
 def test_run_tools_returns_results():
+    """Test that run_tools returns the expected results."""
     cfg = _fake_config()
     fake_raw = RawResult(tool_name="fake", stdout="hi")
     with patch("py_cq.execution_engine.run_tool", return_value=fake_raw):
@@ -69,12 +73,14 @@ def test_run_tools_returns_results():
 
 
 def test_run_tools_sorted_by_order():
+    """Test that tools are executed in the order specified by their config."""
     cfg_low = _fake_config("low", order=10)
     cfg_high = _fake_config("high", order=1)
     fake_raw_low = RawResult(tool_name="low", stdout="")
     fake_raw_high = RawResult(tool_name="high", stdout="")
 
     def fake_run_tool(config, path, excludes=None):
+        """Mock implementation of run_tool."""
         return fake_raw_low if config.name == "low" else fake_raw_high
 
     with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
@@ -84,6 +90,7 @@ def test_run_tools_sorted_by_order():
 
 
 def test_run_tools_exception_is_logged():
+    """Test that exceptions during tool execution are logged."""
     cfg = _fake_config()
     with patch("py_cq.execution_engine.run_tool", side_effect=RuntimeError("boom")):
         with patch("py_cq.execution_engine.log") as mock_log:
@@ -93,6 +100,7 @@ def test_run_tools_exception_is_logged():
 
 
 def test_run_tools_empty():
+    """Test that run_tools returns an empty list when no tools are provided."""
     results = run_tools([], ".")
     assert results == []
 
@@ -100,10 +108,14 @@ def test_run_tools_empty():
 # --- run_tools early_exit ---
 
 def _fake_config_with_score(name, order, score, error_threshold=0.5):
+    """Create a fake ToolConfig with a custom parser that returns a specific score."""
     class FakeParser:
+        """A fake parser for testing purposes."""
         def __init__(self, parser_config=None, _score=score):
+            """Initialize the fake parser."""
             self._score = _score
         def parse(self, raw):
+            """Parse the raw output."""
             return ToolResult(metrics={"score": self._score}, raw=raw)
     return ToolConfig(
         name=name, command="echo hi", parser_class=FakeParser,

@@ -75,11 +75,14 @@ def test_ty_format_llm_no_callee_for_non_call_code(tmp_path):
 
 
 def test_ty_format_llm_no_details():
+    """Test that TyParser.format_llm_message handles empty details correctly."""
     tr = ToolResult(metrics={"type_check": 0.5}, details={}, raw=RawResult())
     assert "no details" in TyParser().format_llm_message(tr).lower()
 
 
 def test_ty_format_call_non_callable(tmp_path):
+    """Test formatting of a call-non-callable type error."""
+
     src = tmp_path / "embed.py"
     src.write_text("tokenizer = AutoTokenizer.from_pretrained('bert')\nresult = tokenizer(text)\n")
     tr = ToolResult(
@@ -94,6 +97,7 @@ def test_ty_format_call_non_callable(tmp_path):
 
 
 def test_ty_format_possibly_missing_submodule(tmp_path):
+    """Test formatting for possibly missing submodule error."""
     src = tmp_path / "extract.py"
     src.write_text("import spacy\nmatcher = spacy.matcher.Matcher(nlp.vocab)\n")
     tr = ToolResult(

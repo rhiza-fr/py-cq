@@ -82,6 +82,8 @@ def test_apply_user_config_threshold_unknown_tool():
 
 
 def test_apply_user_config_does_not_mutate_original():
+    """Test that applying user config does not mutate the original config."""
+    tc = _tc()
     tc = _tc()
     cfg = {"ruff": tc}
     _apply_user_config(cfg, {"thresholds": {"ruff": {"warning": 0.99}}})
@@ -89,6 +91,7 @@ def test_apply_user_config_does_not_mutate_original():
 
 
 def test_apply_user_config_missing_required_field_raises():
+    """Test that applying user config missing required fields raises ValueError."""
     user_cfg = {
         "tools": {
             "mycheck": {
@@ -164,12 +167,14 @@ def test_apply_user_config_cannot_override_builtin():
 # --- config command ---
 
 def test_config_no_pyproject(tmp_path):
+    """Test config command when no pyproject file exists."""
     result = runner.invoke(app, ["config", "--path", str(tmp_path)])
     assert result.exit_code == 0
     assert "not found" in result.output
 
 
 def test_config_no_cq_section(tmp_path):
+    """Test config command when no cq section is present in pyproject.toml."""
     (tmp_path / "pyproject.toml").write_text("[tool.pytest.ini_options]\n")
     result = runner.invoke(app, ["config", "--path", str(tmp_path)])
     assert result.exit_code == 0
@@ -177,6 +182,7 @@ def test_config_no_cq_section(tmp_path):
 
 
 def test_config_with_cq_section(tmp_path):
+    """Test configuration with a cq section."""
     (tmp_path / "pyproject.toml").write_text('[tool.cq]\ndisable = ["vulture"]\n')
     result = runner.invoke(app, ["config", "--path", str(tmp_path)])
     assert result.exit_code == 0
@@ -190,6 +196,7 @@ def test_config_defaults_to_cwd(tmp_path):
 
 
 def test_config_shows_user_defined_tool(tmp_path):
+    """Test that the config command shows user-defined tools."""
     toml = (
         "[tool.cq.tools.mycheck]\n"
         'command = "mycheck {context_path}"\n'
@@ -207,6 +214,7 @@ def test_config_shows_user_defined_tool(tmp_path):
 # --- config set ---
 
 def test_config_set_needs_warning_or_error(tmp_path):
+    """Test that config set needs warning or error when the key already exists."""
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
     result = runner.invoke(app, ["config", "set", "ruff", "--path", str(tmp_path)])
     assert result.exit_code != 0
@@ -214,6 +222,7 @@ def test_config_set_needs_warning_or_error(tmp_path):
 
 
 def test_config_set_unknown_tool(tmp_path):
+    """Test that setting a configuration for an unknown tool issues a warning/error."""
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
     result = runner.invoke(app, [
         "config", "set", "nonexistent", "--warning", "0.8", "--path", str(tmp_path),
@@ -223,7 +232,9 @@ def test_config_set_unknown_tool(tmp_path):
 
 
 def test_config_set_no_pyproject(tmp_path):
+    """Test config set when pyproject.toml is missing."""
     result = runner.invoke(app, [
+
         "config", "set", "ruff", "--warning", "0.8", "--path", str(tmp_path),
     ])
     assert result.exit_code != 0
@@ -231,6 +242,7 @@ def test_config_set_no_pyproject(tmp_path):
 
 
 def test_config_set_writes_warning(tmp_path):
+    """Test that config set with --warning writes the warning to the config file."""
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
     result = runner.invoke(app, [
         "config", "set", "ruff", "--warning", "0.8", "--path", str(tmp_path),

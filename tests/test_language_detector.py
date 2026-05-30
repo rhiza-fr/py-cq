@@ -39,21 +39,25 @@ def test_rust_cargo(tmp_path):
 
 
 def test_go_mod(tmp_path):
+    """Test detection of Go language using go.mod file."""
     (tmp_path / "go.mod").write_text("")
     assert detect_language(tmp_path) == "go"
 
 
 def test_ruby_gemfile(tmp_path):
+    """Test detection of Ruby Gemfile."""
     (tmp_path / "Gemfile").write_text("")
     assert detect_language(tmp_path) == "ruby"
 
 
 def test_java_pom(tmp_path):
+    """Test language detection for Java pom.xml."""
     (tmp_path / "pom.xml").write_text("")
     assert detect_language(tmp_path) == "java"
 
 
 def test_java_gradle(tmp_path):
+    """Test detection of Java with Gradle."""
     (tmp_path / "build.gradle").write_text("")
     assert detect_language(tmp_path) == "java"
 

@@ -36,10 +36,12 @@ def test_extract_callee_name_plain_statement_call():
 
 
 def test_extract_callee_name_no_call():
+    """Test extract_callee_name when no function call is present."""
     assert extract_callee_name("    x = 1 + 2") is None
 
 
 def test_find_in_project_same_file(tmp_path):
+    """Test that find_in_project correctly finds a function in the same file."""
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     f = tmp_path / "module.py"
     f.write_text("def my_func(a, b):\n    return a + b\n")
@@ -49,6 +51,7 @@ def test_find_in_project_same_file(tmp_path):
 
 
 def test_find_in_project_other_file(tmp_path):
+    """Test finding a definition in a different file within the same project."""
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     src = tmp_path / "utils.py"
     src.write_text("def helper(x):\n    return x * 2\n")
@@ -60,6 +63,7 @@ def test_find_in_project_other_file(tmp_path):
 
 
 def test_find_in_project_not_found(tmp_path):
+    """Test find_in_project when the function is not found in the project."""
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     f = tmp_path / "module.py"
     f.write_text("x = 1\n")
@@ -67,6 +71,7 @@ def test_find_in_project_not_found(tmp_path):
 
 
 def test_format_callee_context_includes_label(tmp_path):
+    """Test that format_callee_context includes the label."""
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     f = tmp_path / "module.py"
     f.write_text("def my_func(a, b):\n    return a + b\n")
@@ -77,6 +82,7 @@ def test_format_callee_context_includes_label(tmp_path):
 
 
 def test_format_callee_context_not_found(tmp_path):
+    """Test format_callee_context when callee context is not found."""
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     f = tmp_path / "module.py"
     f.write_text("x = 1\n")

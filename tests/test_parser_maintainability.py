@@ -55,11 +55,13 @@ def test_maintainability_error_file_recorded():
 
 
 def test_maintainability_error_file_not_counted_in_score():
+    """Test that files with errors are not counted in the maintainability score."""
     tr = MaintainabilityParser().parse(raw(_ERROR))
     assert tr.metrics["maintainability"] == 0.0
 
 
 def test_maintainability_error_does_not_affect_good_file_score():
+    """Test that maintainability error does not affect good file score."""
     tr_mixed = MaintainabilityParser().parse(raw(_MIXED))
     tr_good = MaintainabilityParser().parse(raw(
         json.dumps({"src/good.py": {"mi": 80.0, "rank": "A"}})
@@ -68,6 +70,7 @@ def test_maintainability_error_does_not_affect_good_file_score():
 
 
 def test_maintainability_empty():
+    """Test maintainability parsing with empty input."""
     tr = MaintainabilityParser().parse(raw(json.dumps({})))
     assert tr.metrics["maintainability"] == 0.0
     assert tr.details == {}

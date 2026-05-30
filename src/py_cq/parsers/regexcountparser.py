@@ -15,6 +15,9 @@ class RegexCountParser(AbstractParser):
     """
 
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """
+        Parses the raw result using a regex pattern and computes a score.
+        """
         pattern = re.compile(self.parser_config["pattern"])
         scale = self.parser_config.get("scale_factor", 15)
         lines = (raw_result.stdout or "").splitlines()
@@ -28,6 +31,7 @@ class RegexCountParser(AbstractParser):
         )
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        """Formats the LLM message with match details."""
         matches = tr.details.get("matches", [])
         if not matches:
             return "No violations found"

@@ -41,6 +41,7 @@ def _missing_docstrings(file_path: Path) -> list[tuple[int, str, str]]:
         return src_lines[lineno - 1].strip() if 0 < lineno <= len(src_lines) else ""
 
     def first_code_line() -> str:
+        """Return the first non-empty, non-comment line of the source."""
         for ln in src_lines:
             stripped = ln.strip()
             if stripped and not stripped.startswith("#"):
@@ -63,6 +64,7 @@ def _missing_docstrings(file_path: Path) -> list[tuple[int, str, str]]:
 
 
 def _is_file_empty(path: Path | None) -> bool:
+    """Check if the file is empty."""
     if path is None:
         return False
     try:

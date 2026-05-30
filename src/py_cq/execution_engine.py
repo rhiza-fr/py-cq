@@ -56,6 +56,8 @@ def _dep_in_venv(dep: str, project_root: Path) -> bool:
 
 
 def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: str) -> str:
+    """Builds an exclude string from a list of excludes and a format string."""
+
     if not exclude_format or not excludes:
         return ""
     parts = []

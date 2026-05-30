@@ -65,17 +65,20 @@ def test_apply_empty():
 
 
 def test_apply_disable():
+    """Test that disable rule works correctly."""
     result = _apply_user_config(_base(), {"disable": ["coverage"]})
     assert "coverage" not in result
     assert "ruff" in result
 
 
 def test_apply_disable_unknown_is_noop():
+    """Test that applying a disable for an unknown rule is a no-op."""
     result = _apply_user_config(_base(), {"disable": ["nonexistent"]})
     assert set(result) == {"ruff", "coverage"}
 
 
 def test_apply_thresholds():
+    """Test that user-defined thresholds are correctly applied."""
     result = _apply_user_config(_base(), {
         "thresholds": {"ruff": {"warning": 0.95, "error": 0.85}}
     })
@@ -85,6 +88,8 @@ def test_apply_thresholds():
 
 
 def test_load_tools_key(tmp_path):
+    """Test that tools key is correctly loaded from configuration."""
+
     (tmp_path / "pyproject.toml").write_text(
         "[tool.cq.tools.mycheck]\n"
         'parser = "RuffParser"\n'
@@ -101,6 +106,7 @@ def test_load_tools_key(tmp_path):
 
 
 def test_load_context_lines(tmp_path):
+    """Test loading context_lines from user config."""
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\ncontext_lines = 5\n")
     assert load_user_config(tmp_path) == {"context_lines": 5}
 

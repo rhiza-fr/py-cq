@@ -21,6 +21,7 @@ class BanditParser(AbstractParser):
     """Parses raw JSON output from ``bandit -f json`` into a ToolResult."""
 
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """Parses the raw bandit JSON output into a ToolResult."""
         try:
             data = json.loads(raw_result.stdout)
         except (json.JSONDecodeError, ValueError):
@@ -54,6 +55,8 @@ class BanditParser(AbstractParser):
         return ToolResult(raw=raw_result, metrics={"security": score}, details=files)
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        """Formats the bandit result into a LLM-friendly message string."""
+
         result = extract_first_issue(tr.details)
         if result is None:
             return "bandit reported issues (no details available)"

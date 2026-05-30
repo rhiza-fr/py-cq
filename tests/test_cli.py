@@ -12,6 +12,7 @@ runner = CliRunner()
 
 
 def _fake_tr(score=0.9):
+    """Create a fake ToolResult."""
     return ToolResult(metrics={"score": score}, raw=RawResult(tool_name="ruff"))
 
 
@@ -53,6 +54,7 @@ def test_check_nonexistent_path():
 
 
 def test_check_non_py_file(tmp_path):
+    """Test that checking a non-py file returns a non-zero exit code."""
     f = tmp_path / "data.txt"
     f.write_text("hello")
     result = runner.invoke(app, ["check", str(f)])
@@ -60,6 +62,7 @@ def test_check_non_py_file(tmp_path):
 
 
 def test_check_dir_without_pyproject(tmp_path):
+    """Test that checking a directory without a pyproject.toml returns a non-zero exit code."""
     result = runner.invoke(app, ["check", str(tmp_path)])
     assert result.exit_code != 0
 
@@ -67,6 +70,7 @@ def test_check_dir_without_pyproject(tmp_path):
 # --- check: output modes ---
 
 def _mock_check(project_dir, *extra_args):
+    """Mock the check command for testing purposes."""
     tr = _fake_tr()
     combined = _fake_combined(str(project_dir))
     with patch("py_cq.api.run_tools", return_value=[tr]), \
@@ -75,12 +79,14 @@ def _mock_check(project_dir, *extra_args):
 
 
 def test_check_score_output(project_dir):
+    """Test that check score output is correctly displayed."""
     result = _mock_check(project_dir, "-o", "score")
     assert result.exit_code == 0
     assert "0.9" in result.output
 
 
 def test_check_json_output(project_dir):
+    """Test that the check command can output results in JSON format."""
     import json
     result = _mock_check(project_dir, "-o", "json")
     assert result.exit_code == 0
@@ -89,6 +95,7 @@ def test_check_json_output(project_dir):
 
 
 def test_check_raw_output(project_dir):
+    """Test that the raw output format contains the expected fields."""
     result = _mock_check(project_dir, "-o", "raw")
     assert result.exit_code == 0
     assert '"tool_name"' in result.output
@@ -96,6 +103,7 @@ def test_check_raw_output(project_dir):
 
 
 def test_check_table_output(project_dir):
+    """Test that the check command produces a table output."""
     result = _mock_check(project_dir)
     assert result.exit_code == 0
     assert "ruff" in result.output

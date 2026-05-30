@@ -21,6 +21,7 @@ class VultureParser(AbstractParser):
     """Parses raw text output from ``vulture`` into a ToolResult."""
 
     def parse(self, raw_result: RawResult) -> ToolResult:
+        """Parses the raw text output from vulture."""
         files: dict[str, list] = {}
         for line in (raw_result.stdout or "").splitlines():
             m = _LINE_RE.match(line)
@@ -37,6 +38,7 @@ class VultureParser(AbstractParser):
         return ToolResult(raw=raw_result, metrics={"dead_code": score}, details=files)
 
     def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+        """Formats the LLM message from the ToolResult."""
         result = extract_first_issue(tr.details)
         if result is None:
             return "vulture reported issues (no details available)"
