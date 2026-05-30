@@ -377,7 +377,7 @@ python:
     error_threshold: 0.8
 
   interrogate:
-    command: "{python} -m interrogate \"{context_path}\" -e tests{exclude} -v --fail-under 0"
+    command: "{python} -m interrogate \"{context_path}\"{exclude} -v --fail-under 0"
     exclude_format: " -e {path}"
     parser: "InterrogateParser"
     order: 11
