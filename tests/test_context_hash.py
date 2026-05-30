@@ -26,6 +26,7 @@ def test_get_context_hash_file_changes_with_mtime(tmp_path):
 
 
 def test_get_context_hash_directory(tmp_path):
+    """Test get_context_hash with a directory."""
     (tmp_path / "a.py").write_text("a = 1")
     h = get_context_hash(str(tmp_path))
     assert isinstance(h, str) and len(h) == 32

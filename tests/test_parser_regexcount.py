@@ -10,6 +10,7 @@ def _parser(pattern, scale_factor=15):
 
 
 def test_no_matches_scores_1():
+    """Test that zero matches results in a score of 1.0."""
     result = _parser(r"^ERROR").parse(raw(stdout="info: all good\ninfo: done"))
     assert result.metrics["violations"] == 1.0
 

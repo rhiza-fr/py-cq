@@ -6,7 +6,9 @@ from py_cq.metric_aggregator import aggregate_metrics
 
 class MinimalParser(AbstractParser):
     """A minimal implementation of AbstractParser."""
-    def parse(self, raw_result): return ToolResult()
+    def parse(self, raw_result):
+        """Parses the raw result."""
+        return ToolResult()
 
 
 def test_raw_result_to_dict():
@@ -45,8 +47,11 @@ def test_abstract_format_llm_message_no_metrics():
 
 
 def test_abstract_parse_body_via_super():
+    """Test that the abstract parse method body is called via super()."""
     # Calls the abstract method body (pass) via super() to cover localtypes.py:129
+
     class SuperCaller(AbstractParser):
+        """A subclass of AbstractParser to test super()."""
         def parse(self, raw_result):
             return super().parse(raw_result)
     assert SuperCaller().parse(RawResult()) is None

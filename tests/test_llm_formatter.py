@@ -18,14 +18,18 @@ CQ = "cq run test.py --llm"
 
 class FakeParser(AbstractParser):
     """Minimal parser for pipeline tests; format_llm_message uses the default fallback."""
-    def parse(self, raw_result): return ToolResult()
+    def parse(self, raw_result):
+        """Parses the raw result."""
+        return ToolResult()
 
 
 def make_config(name: str, order: int) -> ToolConfig:
+    """Create a ToolConfig instance."""
     return ToolConfig(name=name, command="", parser_class=FakeParser, order=order)
 
 
 def make_tr(tool_name: str, score: float, details: dict | None = None, command: str = "") -> ToolResult:
+    """Helper function to create a ToolResult."""
     return ToolResult(
         metrics={"score": score},
         details=details or {},
@@ -34,6 +38,7 @@ def make_tr(tool_name: str, score: float, details: dict | None = None, command: 
 
 
 def make_combined(tool_results: list[ToolResult]) -> CombinedToolResults:
+    """Create a CombinedToolResults object."""
     return CombinedToolResults(path="test.py", tool_results=tool_results)
 
 

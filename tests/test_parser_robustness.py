@@ -40,6 +40,7 @@ def test_compile_parse_never_crashes(text):
 
 @given(st.text())
 def test_complexity_parse_never_crashes(text):
+    """Test that the complexity parser never crashes on any text input."""
     tr = ComplexityParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())
@@ -47,6 +48,7 @@ def test_complexity_parse_never_crashes(text):
 
 @given(st.text())
 def test_coverage_parse_never_crashes(text):
+    """Test that coverage parsing never crashes on arbitrary text input."""
     tr = CoverageParser().parse(raw(text))
     assert isinstance(tr, ToolResult)
     assert all(0.0 <= v <= 1.0 for v in tr.metrics.values())

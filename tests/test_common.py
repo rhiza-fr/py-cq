@@ -19,16 +19,19 @@ def test_inv_normalize():
 
 
 def test_read_source_lines_valid(tmp_path):
+    """Test reading source lines with valid parameters."""
     f = tmp_path / "foo.py"
     f.write_text("line one\nline two\nline three\nline four")
     assert read_source_lines(str(f), 2, count=2) == "line two\nline three"
 
 
 def test_read_source_lines_missing_file():
+    """Test read_source_lines with a non-existent file."""
     assert read_source_lines("/nonexistent/path.py", 1) == ""
 
 
 def test_format_source_context_non_int_line():
+    """Test format_source_context with a non-integer line argument."""
     assert format_source_context("any_file.py", "not-an-int") == ""
 
 

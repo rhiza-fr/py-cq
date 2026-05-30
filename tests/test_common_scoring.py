@@ -1,3 +1,4 @@
+"""Module for testing common scoring functions."""
 import pytest
 
 from py_cq.parsers.common import (
@@ -9,6 +10,7 @@ from py_cq.parsers.common import (
 
 
 def test_extract_callee_name_assignment():
+    """Test extracting callee name from an assignment."""
     assert extract_callee_name("    result = make_registry(oink=2)") == "make_registry"
 
 

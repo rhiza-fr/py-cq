@@ -26,6 +26,8 @@ def test_complexity_parse_metric_present():
 
 
 def test_complexity_parse_details_structure():
+    """Test the structure of complexity parse details."""
+    tr = ComplexityParser().parse(raw(_ONE_FILE))
     tr = ComplexityParser().parse(raw(_ONE_FILE))
     assert "src/foo.py" in tr.details
     assert "bar" in tr.details["src/foo.py"]

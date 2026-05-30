@@ -16,14 +16,17 @@ def _tc(name="ruff", order=3):
     class FakeParser:
         """Fake parser for testing."""
         def parse(self, raw):
+            """Parse the raw input."""
             return ToolResult(metrics={"score": 1.0}, raw=raw)
         def format_llm_message(self, tr):
+            """Format the tool result message for the LLM."""
             return "no issues"
     return ToolConfig(name=name, command="", parser_class=FakeParser, order=order,
                       warning_threshold=0.7, error_threshold=0.5)
 
 
 def _registry(name="ruff", warning=0.7, error=0.5):
+    """Return a registry of tool configurations."""
     return {name: ToolConfig(name=name, command="", parser_class=object, order=3,
                              warning_threshold=warning, error_threshold=error)}
 

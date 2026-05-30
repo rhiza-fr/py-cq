@@ -39,6 +39,7 @@ def _project(tmp_path, command, warning=0.9999, error=0.9999):
 
 
 def test_json_output_is_list(tmp_path):
+    """Test that the JSON output of the check command is a list."""
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, "-o", "json", "--workers", "1"])
     assert result.exit_code == 0

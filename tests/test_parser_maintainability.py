@@ -29,6 +29,8 @@ def test_maintainability_metric_present():
 
 
 def test_maintainability_details_structure():
+    """Test that the maintainability details structure is correctly parsed."""
+    tr = MaintainabilityParser().parse(raw(_NORMAL))
     tr = MaintainabilityParser().parse(raw(_NORMAL))
     assert "src/foo.py" in tr.details
     assert tr.details["src/foo.py"]["rank"] == "A"

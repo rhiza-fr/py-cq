@@ -39,6 +39,7 @@ def _status_cells(table: Table) -> list:
 
 
 def test_returns_rich_table():
+    """Test that format_as_table returns a Rich Table object."""
     result = format_as_table(_combined({"m": 0.9}), _make_registry())
     assert isinstance(result, Table)
 

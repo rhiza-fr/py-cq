@@ -10,6 +10,7 @@ def test_no_output_scores_1():
 
 
 def test_blank_lines_ignored():
+    """Test that blank lines are ignored."""
     result = LineCountParser().parse(raw(stdout="\n\n\n"))
     assert result.metrics["violations"] == 1.0
 

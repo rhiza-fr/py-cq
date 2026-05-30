@@ -111,6 +111,7 @@ def test_ruff_format_never_raises(details, metrics, raw):
 @given(_file_issues_details, _metrics, _raw)
 @settings(max_examples=50)
 def test_ty_format_never_raises(details, metrics, raw):
+    """Test that ty_format never raises an exception."""
     tr = ToolResult(metrics=metrics, details=details, raw=raw)
     assert isinstance(TyParser().format_llm_message(tr), str)
 
@@ -118,6 +119,7 @@ def test_ty_format_never_raises(details, metrics, raw):
 @given(_file_issues_details, _metrics, _raw)
 @settings(max_examples=50)
 def test_vulture_format_never_raises(details, metrics, raw):
+    """Test that VultureParser.format_llm_message never raises an exception."""
     tr = ToolResult(metrics=metrics, details=details, raw=raw)
     assert isinstance(VultureParser().format_llm_message(tr), str)
 

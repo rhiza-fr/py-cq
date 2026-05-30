@@ -13,6 +13,7 @@ src/baz.py:5: unused import 'os' (100% confidence)
 
 
 def test_vulture_parse_violations():
+    """Test that the parser correctly identifies violations."""
     tr = VultureParser().parse(raw(VULTURE_OUTPUT, return_code=1))
     assert "dead_code" in tr.metrics
     assert tr.metrics["dead_code"] < 1.0

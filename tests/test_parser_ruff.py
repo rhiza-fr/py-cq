@@ -34,6 +34,7 @@ def test_ruff_parse_clean():
 
 
 def test_ruff_format_llm_no_details():
+    """Test Ruff parser formatting when details are empty."""
     tr = ToolResult(metrics={"lint": 0.5}, details={}, raw=RawResult())
     assert "no details" in RuffParser().format_llm_message(tr).lower()
 

@@ -76,6 +76,7 @@ def test_coverage_parse_malformed_percentage():
 
 
 def test_coverage_parse_with_functions(tmp_path):
+    """Test coverage parsing with functions."""
     src_file = tmp_path / "foo.py"
     src_file.write_text("def first():\n    pass\n\ndef second():\n    pass\n")
     # lines 1-2: first, lines 4-5: second; missing lines 4-5
@@ -90,6 +91,7 @@ def test_coverage_parse_with_functions(tmp_path):
 
 
 def test_coverage_parse_sorted_worst_first():
+    """Test that coverage parsing sorts issues from worst to best."""
     output = (
         "src/good.py   10   1   90%   5\n"
         "src/bad.py    10   7   30%   1-7\n"

@@ -28,6 +28,8 @@ Status: PASSED ☑
 
 
 def test_interrogate_parse_violations():
+    """Test that parse violations are correctly identified."""
+    tr = InterrogateParser().parse(raw(INTERROGATE_OUTPUT, return_code=1))
     tr = InterrogateParser().parse(raw(INTERROGATE_OUTPUT, return_code=1))
     assert "doc_coverage" in tr.metrics
     assert tr.metrics["doc_coverage"] == 0.75

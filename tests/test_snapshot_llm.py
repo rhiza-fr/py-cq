@@ -85,6 +85,7 @@ def test_compile_defect_snapshot():
 
 
 def test_ty_defect_snapshot():
+    """Test that ty defect snapshot is correctly formatted."""
     cfg = ToolConfig(name="ty", command="", parser_class=TyParser, order=2)
     tr = ToolResult(
         metrics={"type_check": 0.5},

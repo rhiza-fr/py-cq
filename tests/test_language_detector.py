@@ -9,11 +9,13 @@ def test_python_pyproject(tmp_path):
 
 
 def test_python_setup_py(tmp_path):
+    """Test language detection with a python setup.py file."""
     (tmp_path / "setup.py").write_text("")
     assert detect_language(tmp_path) == "python"
 
 
 def test_python_requirements(tmp_path):
+    """Test language detection for Python using requirements.txt."""
     (tmp_path / "requirements.txt").write_text("")
     assert detect_language(tmp_path) == "python"
 

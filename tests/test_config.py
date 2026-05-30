@@ -28,11 +28,13 @@ def test_load_no_pyproject(tmp_path):
 
 
 def test_load_no_cq_section(tmp_path):
+    """Test loading config when no cq section is present."""
     (tmp_path / "pyproject.toml").write_text("[project]\nname = 'x'\n")
     assert load_user_config(tmp_path) == {}
 
 
 def test_load_disable(tmp_path):
+    """Test that the disable option is correctly loaded from the config file."""
     (tmp_path / "pyproject.toml").write_text('[tool.cq]\ndisable = ["coverage"]\n')
     assert load_user_config(tmp_path) == {"disable": ["coverage"]}
 
