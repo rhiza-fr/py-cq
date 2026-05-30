@@ -9,6 +9,10 @@
 - `is_fixed` targets the specific affected file for faster re-checks when the fingerprint includes a path and code.
 - Parallel execution now logs per-tool timing breakdown (e.g. `ruff=0.17s, ty=0.33s`).
 
+### Added
+
+- `-o llm-json` output mode returns a JSON object with `id`, `file`, `project`, and `message`. The `id` is a fingerprint (`tool::project::path::line::code`) that can be passed to `cq is-fixed <id>` (CLI) or `cq.is_fixed(id)` (library) to verify the issue is gone without re-running all tools.
+
 ## [0.1.16] - 2026-04-27
 
 ### Fixed

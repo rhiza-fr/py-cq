@@ -59,6 +59,7 @@ Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults
 ```bash
 cq check .                 # Table overview of scores for humans
 cq check . -o llm          # Top defect as markdown for LLMs
+cq check . -o llm-json     # Top defect as JSON with fingerprint (for automation)
 cq check . -o score        # Numeric score only for CI
 cq check . -o json         # Detailed parsed JSON output for jq
 cq check . -o raw          # Raw tool output for debug
@@ -70,6 +71,7 @@ cq check . --workers 1     # Run sequentially if you like things slow
 cq check . --clear-cache   # Clear cached results before running (rarely needed)
 cq check . -o llm --hint   # Append "run cq again to verify" (for human workflows)
 cq config path/to/project/ # Show effective tool configuration
+cq is-fixed <fingerprint>  # Check whether a specific issue has been resolved
 ```
 
 **Exit codes:** `cq check` exits with code `1` if any tool metric falls below its `error_threshold`, making it suitable as a CI gate:
@@ -103,14 +105,16 @@ combined = cq.check()
 print(combined.score)          # float
 print(combined.tool_results)   # list[ToolResult]
 
-# dict — top defect for LLM consumption (-o llm-json)
+# dict — top defect as JSON, equivalent to -o llm-json
 issue = cq.check_llm_json()
-issue["id"]       # fingerprint: "ruff:src/foo.py:42:E501"
+issue["id"]       # fingerprint: "ruff::project::src/foo.py::42::E501"
 issue["file"]     # "src/foo.py"
 issue["message"]  # markdown prompt ready to send to an LLM
 issue["project"]  # absolute project root path
 
-# bool — True if the fingerprinted issue is gone (verify command)
+# bool — True if the fingerprinted issue is gone
+# Reruns only the affected tool on the affected file — much faster than a full check.
+# Pass the id from check_llm_json; also available as `cq is-fixed <id>` on the CLI.
 fixed = cq.is_fixed(issue["id"])
 ```
 
