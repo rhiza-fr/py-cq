@@ -79,7 +79,7 @@ def test_run_tools_sorted_by_order():
     fake_raw_low = RawResult(tool_name="low", stdout="")
     fake_raw_high = RawResult(tool_name="high", stdout="")
 
-    def fake_run_tool(config, path, excludes=None):
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         """Mock implementation of run_tool."""
         return fake_raw_low if config.name == "low" else fake_raw_high
 
@@ -130,7 +130,7 @@ def test_run_tools_early_exit_stops_on_error():
     cfg3 = _fake_config_with_score("third", order=3, score=1.0)   # ok
 
     called = []
-    def fake_run_tool(config, path, excludes=None):
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -148,7 +148,7 @@ def test_run_tools_early_exit_continues_past_warning():
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
-    def fake_run_tool(config, path, excludes=None):
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -165,7 +165,7 @@ def test_run_tools_early_exit_exception_breaks_loop():
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)
 
     call_count = [0]
-    def fake_run_tool(config, path, excludes=None):
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         call_count[0] += 1
         if call_count[0] == 2:
             raise RuntimeError("parser exploded")
@@ -185,7 +185,7 @@ def test_run_tools_early_exit_false_runs_all_despite_error():
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
-    def fake_run_tool(config, path, excludes=None):
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -211,7 +211,7 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
     mock_result.returncode = 0
 
     mock_cache = MagicMock()
-    mock_cache.__contains__ = MagicMock(return_value=False)
+    mock_cache.get = MagicMock(return_value=None)
     with patch("py_cq.execution_engine._cache", mock_cache):
         with patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
             result = run_tool(cfg, str(tmp_path))
@@ -257,7 +257,7 @@ def test_run_tool_target_env_uv_not_found(tmp_path):
     )
     mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
     mock_cache = MagicMock()
-    mock_cache.__contains__ = MagicMock(return_value=False)
+    mock_cache.get = MagicMock(return_value=None)
     with patch("py_cq.execution_engine._cache", mock_cache), \
          patch("py_cq.execution_engine.shutil.which", return_value=None), \
          patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
@@ -278,7 +278,7 @@ def test_run_tool_target_env_uv_found_directory(tmp_path):
     )
     mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
     mock_cache = MagicMock()
-    mock_cache.__contains__ = MagicMock(return_value=False)
+    mock_cache.get = MagicMock(return_value=None)
     fake_uv = "/usr/bin/uv"
     with patch("py_cq.execution_engine._cache", mock_cache), \
          patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
@@ -303,7 +303,7 @@ def test_run_tool_target_env_uv_found_file(tmp_path):
     )
     mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
     mock_cache = MagicMock()
-    mock_cache.__contains__ = MagicMock(return_value=False)
+    mock_cache.get = MagicMock(return_value=None)
     fake_uv = "/usr/bin/uv"
     with patch("py_cq.execution_engine._cache", mock_cache), \
          patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
@@ -325,7 +325,7 @@ def test_run_tool_target_env_with_extra_deps(tmp_path):
     )
     mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
     mock_cache = MagicMock()
-    mock_cache.__contains__ = MagicMock(return_value=False)
+    mock_cache.get = MagicMock(return_value=None)
     fake_uv = "/usr/bin/uv"
     with patch("py_cq.execution_engine._cache", mock_cache), \
          patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
@@ -342,7 +342,7 @@ def test_run_tools_parallel_returns_all_results_sorted():
     """Parallel execution returns all results sorted by .order."""
     configs = [_fake_config(f"t{i}", order=i) for i in range(4, 0, -1)]  # order 4,3,2,1
 
-    def fake_run_tool(config, path, excludes=None):
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         return RawResult(tool_name=config.name, stdout="")
 
     with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
@@ -418,7 +418,7 @@ def test_run_tool_exclude_appears_in_command(tmp_path):
     )
     mock_result = MagicMock(stdout="", stderr="", returncode=0)
     mock_cache = MagicMock()
-    mock_cache.__contains__ = MagicMock(return_value=False)
+    mock_cache.get = MagicMock(return_value=None)
     with patch("py_cq.execution_engine._cache", mock_cache), \
          patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
         run_tool(cfg, str(tmp_path), excludes=["demo"])

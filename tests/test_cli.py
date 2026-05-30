@@ -241,8 +241,8 @@ def test_check_exclude_merge(project_dir):
     assert "tests" in excludes
 
 
-def test_check_py_file_passes_full_registry(tmp_path):
-    """When invoked on a .py file, run_tools receives the full (unfiltered) registry."""
+def test_check_py_file_skips_file_only_tools(tmp_path):
+    """When invoked on a .py file, tools with skip_for_file=True are excluded."""
     py_file = tmp_path / "foo.py"
     py_file.write_text("x = 1")
     tr = _fake_tr()
@@ -251,10 +251,10 @@ def test_check_py_file_passes_full_registry(tmp_path):
          patch("py_cq.cli.aggregate_metrics", return_value=combined):
         runner.invoke(app, ["check", str(py_file), "-o", "score"])
     passed_tools = list(mock_run.call_args[0][0])
-    # All tools from the registry are passed — CLAUDE.md says pytest/coverage are skipped,
-    # but the source has no such filter; this test documents the actual behaviour.
     from py_cq.tool_registry import tool_registry
-    assert len(passed_tools) == len(tool_registry)
+    expected = len([t for t in tool_registry.values() if not t.skip_for_file])
+    assert len(passed_tools) == expected
+    assert all(not t.skip_for_file for t in passed_tools)
 
 
 def test_main_entry_point():

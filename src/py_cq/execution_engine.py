@@ -90,7 +90,7 @@ def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: s
     return "".join(parts)
 
 
-def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | None = None) -> RawResult:
+def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | None = None, *, precomputed_hash: str | None = None) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
     Args:
@@ -146,17 +146,26 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
     scan_targets = _compute_scan_targets(context_path, tool_config.scan_exclude_names)
 
     command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, abs_context_path_posix=abs_context_path_posix, input_path_posix=input_path_posix, native_sep=native_sep, scan_targets=scan_targets, python=python, exclude=exclude)
-    cache_key = f"{command}:{get_context_hash(context_path)}"
-    if cache_key in _cache:
-        log.debug(f"Cache hit: {command}")
-        return RawResult(**cast(dict[str, Any], _cache[cache_key]))
-    log.debug(f"Running: {command}")
+    t_hash0 = time.perf_counter()
+    context_hash = precomputed_hash if precomputed_hash is not None else get_context_hash(context_path)
+    t_hash = time.perf_counter() - t_hash0
+    cache_key = f"{command}:{context_hash}"
+    t_cache0 = time.perf_counter()
+    cached = _cache.get(cache_key)
+    t_cache = time.perf_counter() - t_cache0
+    if cached is not None:
+        log.debug(f"{tool_config.name}: hash={t_hash*1000:.1f}ms cache_lookup={t_cache*1000:.1f}ms [HIT]")
+        return RawResult(**cast(dict[str, Any], cached))
+    log.debug(f"{tool_config.name}: hash={t_hash*1000:.1f}ms cache_lookup={t_cache*1000:.1f}ms [MISS] running...")
     # shell=True is required because commands use shell features (&&, |) and
     # variable substitution ({python} expands to a compound uv command).
     # All user-supplied values (context_path, excludes) are properly quoted
     # via shlex.quote() to prevent injection — see _build_exclude_str and
     # the uv command assembly above.
+    t_sub0 = time.perf_counter()
     result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace", env=run_env)  # nosec
+    t_sub = time.perf_counter() - t_sub0
+    log.debug(f"{tool_config.name}: subprocess={t_sub*1000:.0f}ms")
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     raw_result = RawResult(
         tool_name=tool_config.name,
@@ -211,16 +220,19 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
         ...     ToolConfig(name='scan', parser_class=ScanParser),
         ... ]
         >>> results = run_tools(configs, '/path/to/project', parallel=True)"""
-    def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
-        t0 = time.perf_counter()
-        raw_result = run_tool(tool_config, path, excludes)
-        tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
-        tr.duration_s = time.perf_counter() - t0
-        return tool_config.order, tr
-
     if not tool_configs:
         return []
     t_start = time.perf_counter()
+    t_hash0 = time.perf_counter()
+    shared_hash = get_context_hash(path)
+    log.debug(f"context_hash: {(time.perf_counter() - t_hash0) * 1000:.1f}ms")
+
+    def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
+        t0 = time.perf_counter()
+        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=shared_hash)
+        tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
+        tr.duration_s = time.perf_counter() - t0
+        return tool_config.order, tr
     prioritized: list[tuple[int, ToolResult]] = []
     if early_exit:
         sorted_configs = sorted(tool_configs, key=lambda tc: tc.order)

@@ -102,6 +102,9 @@ class CQ:
         self._context_lines: int = int(user_cfg.get("context_lines", 15))
         self._registry = _apply_user_config(tool_registry, user_cfg)
 
+        if self.path.is_file():
+            self._registry = {k: v for k, v in self._registry.items() if not v.skip_for_file}
+
         if only:
             keep = set(only)
             unknown = keep - set(self._registry)

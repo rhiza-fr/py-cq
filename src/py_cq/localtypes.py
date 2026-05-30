@@ -51,6 +51,7 @@ class ToolConfig:
     parser_config: dict[str, Any] = field(default_factory=dict)
     exclude_format: str = ""  # Per-path template for --exclude injection, e.g. " --exclude {path}"
     scan_exclude_names: list[str] = field(default_factory=list)  # Top-level dir/file names to omit from {scan_targets}
+    skip_for_file: bool = False  # If True, skip when context_path is a single file
 
 
 @dataclass

@@ -31,6 +31,7 @@ def load_tool_configs() -> dict[str, ToolConfig]:
             parser_config=tool_data.get("parser_config", {}),
             exclude_format=tool_data.get("exclude_format", ""),
             scan_exclude_names=tool_data.get("scan_exclude_names", []),
+            skip_for_file=tool_data.get("skip_for_file", False),
         )
     return registry
 

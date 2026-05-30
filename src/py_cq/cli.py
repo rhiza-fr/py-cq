@@ -13,6 +13,7 @@ results into a Rich Table for convenient console display.
 import io
 import json
 import logging
+import time
 import tomllib
 from enum import Enum
 from importlib.metadata import requires, version
@@ -169,7 +170,9 @@ def check(
         raise typer.BadParameter(str(e))
 
     is_llm = output in (OutputMode.LLM, OutputMode.LLM_JSON)
+    t0 = time.perf_counter()
     tool_results = cq.raw(early_exit=is_llm)
+    total_s = time.perf_counter() - t0
     combined = aggregate_metrics(path, tool_results)
 
     if output == OutputMode.SCORE:
@@ -186,7 +189,7 @@ def check(
         print(json.dumps(format_for_llm_json(cq._registry, combined, context_lines=cq._context_lines, hint=hint, limit=limit, silence=silence, project_root=cq._project_root)))
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
-        console.print(format_as_table(combined, cq._registry))
+        console.print(format_as_table(combined, cq._registry, total_s=total_s))
 
     tool_by_name = {tc.name: tc for tc in cq._registry.values()}
     if any(
