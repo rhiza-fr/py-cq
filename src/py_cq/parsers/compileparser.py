@@ -122,7 +122,9 @@ class CompileParser(AbstractParser):
             tr.details["failed_files"] = failed_files
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Return the first compilation failure as a defect description."""
         failed = tr.details.get("failed_files", {})
         if not failed:
@@ -131,11 +133,14 @@ class CompileParser(AbstractParser):
         line = info.get("line", "?")
         typ = info.get("type", "Error")
         help_msg = info.get("help", "")
-        code_block = format_source_context(file, line, count=context_lines) or (f"\n```python\n{info['src']}\n```" if info.get("src") else "")
+        code_block = format_source_context(file, line, count=context_lines) or (
+            f"\n```python\n{info['src']}\n```" if info.get("src") else ""
+        )
         callee = ""
         src_line = info.get("src", "")
         if src_line:
             from py_cq.parsers.common import extract_callee_name, format_callee_context
+
             func_name = extract_callee_name(src_line)
             if func_name:
                 callee = format_callee_context(func_name, file)

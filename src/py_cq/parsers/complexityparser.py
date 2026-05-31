@@ -1,7 +1,11 @@
 """Provides a `ComplexityParser` that converts raw complexity-analysis output into structured `ToolResult` objects for downstream use."""
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import find_function_source, parse_json_dict, score_logistic_variant
+from py_cq.parsers.common import (
+    find_function_source,
+    parse_json_dict,
+    score_logistic_variant,
+)
 
 
 class ComplexityParser(AbstractParser):
@@ -86,7 +90,9 @@ class ComplexityParser(AbstractParser):
         tr.metrics["simplicity"] = score / num_items if num_items > 0 else 0.0
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Formats the LLM message based on the tool result."""
         worst_file = worst_func = worst_rank = None
         worst_score = 1.0
@@ -110,5 +116,7 @@ class ComplexityParser(AbstractParser):
         parts = [header]
         if source:
             parts.append(source)
-        parts.append("Cyclomatic complexity is too high. Break this function into smaller, single-purpose helpers.")
+        parts.append(
+            "Cyclomatic complexity is too high. Break this function into smaller, single-purpose helpers."
+        )
         return "\n\n".join(parts)

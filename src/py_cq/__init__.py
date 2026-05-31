@@ -1,4 +1,5 @@
-""" Py cq """
+"""Py cq"""
+
 from py_cq.api import CQ
 
 __all__ = ["CQ"]

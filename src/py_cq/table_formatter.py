@@ -6,7 +6,12 @@ from rich.text import Text
 from py_cq.localtypes import CombinedToolResults, ToolConfig
 
 
-def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig], *, total_s: float | None = None) -> Table:
+def format_as_table(
+    data: CombinedToolResults,
+    registry: dict[str, ToolConfig],
+    *,
+    total_s: float | None = None,
+) -> Table:
     """Format combined tool results into a Rich Table."""
     table = Table(width=80)
     table.add_column("Tool", justify="left", no_wrap=True)
@@ -26,7 +31,13 @@ def format_as_table(data: CombinedToolResults, registry: dict[str, ToolConfig], 
                 status = "[green]OK[/]"
             time_str = f"{tr.duration_s:.2f}s" if i == 0 else ""
             table.add_row(tool_name, time_str, name, f"{value:0.3f}", status)
-    total_label = Text("Total", style="bold", justify="right") if total_s is not None else Text("")
+    total_label = (
+        Text("Total", style="bold", justify="right")
+        if total_s is not None
+        else Text("")
+    )
     total_time = f"[bold]{total_s:.2f}s[/]" if total_s is not None else ""
-    table.add_row(total_label, total_time, "[bold]Score[/]", f"[bold]{data.score:0.3f}[/]", "")
+    table.add_row(
+        total_label, total_time, "[bold]Score[/]", f"[bold]{data.score:0.3f}[/]", ""
+    )
     return table

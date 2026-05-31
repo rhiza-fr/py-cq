@@ -41,13 +41,16 @@ def _cq_invoke(args: list[str]) -> tuple[int, float]:
     elapsed = time.perf_counter() - t0
     return result.returncode, elapsed
 
+
 @pytest.mark.slow
 def test_cache_speeds_up_repeated_invocation():
     """Second cq check on unchanged code is served from cache: < 25% time, < 0.5 s."""
     tools = "compile,ruff,radon-cc,radon-mi,radon-hal"
 
     # First run - cold cache.
-    code1, t_first = _cq_invoke(["--clear-cache", "-o", "score", "--only", tools, "--workers", "1"])
+    code1, t_first = _cq_invoke(
+        ["--clear-cache", "-o", "score", "--only", tools, "--workers", "1"]
+    )
 
     # Second run - should hit cache.
     code2, t_second = _cq_invoke(["-o", "score", "--only", tools, "--workers", "1"])

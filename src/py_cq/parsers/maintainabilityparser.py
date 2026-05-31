@@ -63,7 +63,9 @@ class MaintainabilityParser(AbstractParser):
         tr.metrics["maintainability"] = score / num_items if num_items > 0 else 0.0
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Format the LLM message with details about the worst maintainability scores."""
         worst_file = worst_rank = None
         worst_score = 1.0

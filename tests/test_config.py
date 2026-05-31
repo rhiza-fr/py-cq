@@ -1,7 +1,5 @@
 """Tests for load_user_config and _apply_user_config."""
 
-
-
 from py_cq.cli import _apply_user_config
 from py_cq.config import load_user_config
 from py_cq.localtypes import ToolConfig
@@ -10,8 +8,12 @@ from py_cq.localtypes import ToolConfig
 def _cfg(name: str, order: int = 1) -> ToolConfig:
     """Create a default ToolConfig."""
     return ToolConfig(
-        name=name, command="", parser_class=object,
-        order=order, warning_threshold=0.7, error_threshold=0.5,
+        name=name,
+        command="",
+        parser_class=object,
+        order=order,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
 
 
@@ -21,6 +23,7 @@ def _base() -> dict[str, ToolConfig]:
 
 
 # --- load_user_config ---
+
 
 def test_load_no_pyproject(tmp_path):
     """Test that load_user_config returns an empty dict when no pyproject.toml is present."""
@@ -58,6 +61,7 @@ def test_load_file_path_reads_parent(tmp_path):
 
 # --- _apply_user_config ---
 
+
 def test_apply_empty():
     """Test that applying an empty user config does not remove any base configs."""
     result = _apply_user_config(_base(), {})
@@ -79,9 +83,9 @@ def test_apply_disable_unknown_is_noop():
 
 def test_apply_thresholds():
     """Test that user-defined thresholds are correctly applied."""
-    result = _apply_user_config(_base(), {
-        "thresholds": {"ruff": {"warning": 0.95, "error": 0.85}}
-    })
+    result = _apply_user_config(
+        _base(), {"thresholds": {"ruff": {"warning": 0.95, "error": 0.85}}}
+    )
     assert result["ruff"].warning_threshold == 0.95
     assert result["ruff"].error_threshold == 0.85
     assert result["coverage"].warning_threshold == 0.7  # unchanged
@@ -118,6 +122,8 @@ def test_load_exclude(tmp_path):
 
 def test_apply_does_not_mutate_base():
     base = _base()
-    _apply_user_config(base, {"disable": ["ruff"], "thresholds": {"coverage": {"warning": 0.99}}})
+    _apply_user_config(
+        base, {"disable": ["ruff"], "thresholds": {"coverage": {"warning": 0.99}}}
+    )
     assert "ruff" in base
     assert base["coverage"].warning_threshold == 0.7

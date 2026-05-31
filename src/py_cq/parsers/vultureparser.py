@@ -12,7 +12,11 @@ score stored under the ``dead_code`` metric key.
 import re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import extract_first_issue, format_source_context, score_logistic_variant
+from py_cq.parsers.common import (
+    extract_first_issue,
+    format_source_context,
+    score_logistic_variant,
+)
 
 _LINE_RE = re.compile(r"^(.+):(\d+): (unused \S+) '(.+)' \((\d+)% confidence\)$")
 
@@ -27,17 +31,21 @@ class VultureParser(AbstractParser):
             m = _LINE_RE.match(line)
             if m:
                 path = m.group(1).replace("\\", "/")
-                files.setdefault(path, []).append({
-                    "line": int(m.group(2)),
-                    "type": m.group(3),
-                    "name": m.group(4),
-                    "confidence": int(m.group(5)),
-                })
+                files.setdefault(path, []).append(
+                    {
+                        "line": int(m.group(2)),
+                        "type": m.group(3),
+                        "name": m.group(4),
+                        "confidence": int(m.group(5)),
+                    }
+                )
         count = sum(len(v) for v in files.values())
         score = score_logistic_variant(count, scale_factor=15)
         return ToolResult(raw=raw_result, metrics={"dead_code": score}, details=files)
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Formats the LLM message from the ToolResult."""
         result = extract_first_issue(tr.details)
         if result is None:

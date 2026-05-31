@@ -19,9 +19,13 @@ class LineCountParser(AbstractParser):
         count = len(lines)
         scale = self.parser_config.get("scale_factor", 15)
         score = score_logistic_variant(count, scale_factor=scale)
-        return ToolResult(raw=raw_result, metrics={"violations": score}, details={"lines": lines})
+        return ToolResult(
+            raw=raw_result, metrics={"violations": score}, details={"lines": lines}
+        )
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Formats the ToolResult lines into a string for the LLM message."""
         lines = tr.details.get("lines", [])
         if not lines:

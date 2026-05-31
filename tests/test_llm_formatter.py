@@ -4,8 +4,19 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from py_cq.llm_formatter import _fingerprint_from_slice, _severity, format_for_llm, format_for_llm_json
-from py_cq.localtypes import AbstractParser, CombinedToolResults, RawResult, ToolConfig, ToolResult
+from py_cq.llm_formatter import (
+    _fingerprint_from_slice,
+    _severity,
+    format_for_llm,
+    format_for_llm_json,
+)
+from py_cq.localtypes import (
+    AbstractParser,
+    CombinedToolResults,
+    RawResult,
+    ToolConfig,
+    ToolResult,
+)
 from py_cq.parsers.compileparser import CompileParser
 from py_cq.parsers.halsteadparser import HalsteadParser
 from py_cq.parsers.interrogateparser import InterrogateParser
@@ -18,6 +29,7 @@ CQ = "cq run test.py --llm"
 
 class FakeParser(AbstractParser):
     """Minimal parser for pipeline tests; format_llm_message uses the default fallback."""
+
     def parse(self, raw_result):
         """Parses the raw result."""
         return ToolResult()
@@ -28,7 +40,9 @@ def make_config(name: str, order: int) -> ToolConfig:
     return ToolConfig(name=name, command="", parser_class=FakeParser, order=order)
 
 
-def make_tr(tool_name: str, score: float, details: dict | None = None, command: str = "") -> ToolResult:
+def make_tr(
+    tool_name: str, score: float, details: dict | None = None, command: str = ""
+) -> ToolResult:
     """Helper function to create a ToolResult."""
     return ToolResult(
         metrics={"score": score},
@@ -48,6 +62,7 @@ def make_registry(*configs: ToolConfig) -> dict:
 
 
 # --- _severity ---
+
 
 def test_severity_ok_returns_2():
     """Test that severity 1.0 returns 2."""
@@ -79,20 +94,29 @@ def test_severity_at_warning_threshold_returns_ok():
     assert _severity(0.7, cfg) == 2  # exactly at boundary -> ok
 
 
-@pytest.mark.parametrize("score,warn,err,expected", [
-    (0.0, 0.8, 0.6, 0),   # deep error
-    (0.5, 0.8, 0.6, 0),   # below error
-    (0.6, 0.8, 0.6, 1),   # exactly at error_threshold -> warning
-    (0.7, 0.8, 0.6, 1),   # between thresholds -> warning
-    (0.8, 0.8, 0.6, 2),   # exactly at warning_threshold -> ok
-    (1.0, 0.8, 0.6, 2),   # perfect -> ok
-    (0.3, 0.3, 0.3, 2),   # equal thresholds, score at both -> ok
-    (0.29, 0.3, 0.3, 0),  # below both equal thresholds -> error
-])
+@pytest.mark.parametrize(
+    "score,warn,err,expected",
+    [
+        (0.0, 0.8, 0.6, 0),  # deep error
+        (0.5, 0.8, 0.6, 0),  # below error
+        (0.6, 0.8, 0.6, 1),  # exactly at error_threshold -> warning
+        (0.7, 0.8, 0.6, 1),  # between thresholds -> warning
+        (0.8, 0.8, 0.6, 2),  # exactly at warning_threshold -> ok
+        (1.0, 0.8, 0.6, 2),  # perfect -> ok
+        (0.3, 0.3, 0.3, 2),  # equal thresholds, score at both -> ok
+        (0.29, 0.3, 0.3, 0),  # below both equal thresholds -> error
+    ],
+)
 def test_severity_parametrized_custom_thresholds(score, warn, err, expected):
     """Test severity with custom thresholds."""
-    cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
-                     warning_threshold=warn, error_threshold=err)
+    cfg = ToolConfig(
+        name="t",
+        command="",
+        parser_class=FakeParser,
+        order=1,
+        warning_threshold=warn,
+        error_threshold=err,
+    )
     assert _severity(score, cfg) == expected
 
 
@@ -104,8 +128,14 @@ def test_severity_parametrized_custom_thresholds(score, warn, err, expected):
 @settings(max_examples=300)
 def test_severity_correct_region(score, error_threshold, warning_threshold):
     """Test that severity is correctly identified based on thresholds."""
-    cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
-                     error_threshold=error_threshold, warning_threshold=warning_threshold)
+    cfg = ToolConfig(
+        name="t",
+        command="",
+        parser_class=FakeParser,
+        order=1,
+        error_threshold=error_threshold,
+        warning_threshold=warning_threshold,
+    )
     result = _severity(score, cfg)
     assert result in (0, 1, 2)
     if score < error_threshold:
@@ -126,20 +156,29 @@ def test_severity_correct_region(score, error_threshold, warning_threshold):
 def test_severity_monotone(score_lo, delta, error_threshold, warning_threshold):
     """Test that severity is monotonic with respect to score."""
     score_hi = min(score_lo + delta, 1.0)
-    cfg = ToolConfig(name="t", command="", parser_class=FakeParser, order=1,
-                     error_threshold=error_threshold, warning_threshold=warning_threshold)
+    cfg = ToolConfig(
+        name="t",
+        command="",
+        parser_class=FakeParser,
+        order=1,
+        error_threshold=error_threshold,
+        warning_threshold=warning_threshold,
+    )
     assert _severity(score_lo, cfg) <= _severity(score_hi, cfg)
 
 
 # --- order ordering ---
 
+
 def test_order1_beats_order3_same_severity():
     """Within the same severity tier, lower order number wins."""
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
-    combined = make_combined([
-        make_tr("ruff", 0.4),    # error state
-        make_tr("compile", 0.3), # error state, lower order -> wins
-    ])
+    combined = make_combined(
+        [
+            make_tr("ruff", 0.4),  # error state
+            make_tr("compile", 0.3),  # error state, lower order -> wins
+        ]
+    )
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # compile selected
     assert "0.400" not in result
@@ -148,10 +187,12 @@ def test_order1_beats_order3_same_severity():
 def test_order2_beats_order5_same_severity():
     """Within the same severity tier, lower order number wins."""
     registry = make_registry(make_config("pytest", 2), make_config("interrogate", 5))
-    combined = make_combined([
-        make_tr("interrogate", 0.4), # error state
-        make_tr("pytest", 0.3),      # error state, lower order -> wins
-    ])
+    combined = make_combined(
+        [
+            make_tr("interrogate", 0.4),  # error state
+            make_tr("pytest", 0.3),  # error state, lower order -> wins
+        ]
+    )
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # pytest selected
     assert "0.400" not in result
@@ -160,10 +201,14 @@ def test_order2_beats_order5_same_severity():
 def test_severity_beats_order():
     """A tool in error state wins over a lower-order tool in warning/ok state."""
     registry = make_registry(make_config("compile", 1), make_config("interrogate", 5))
-    combined = make_combined([
-        make_tr("compile", 0.8),     # warning/ok state
-        make_tr("interrogate", 0.3), # error state -> wins despite higher order number
-    ])
+    combined = make_combined(
+        [
+            make_tr("compile", 0.8),  # warning/ok state
+            make_tr(
+                "interrogate", 0.3
+            ),  # error state -> wins despite higher order number
+        ]
+    )
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # interrogate selected
     assert "0.800" not in result
@@ -172,10 +217,12 @@ def test_severity_beats_order():
 def test_same_order_worst_score_wins():
     """Test that when scores are in the same order, the worst score wins."""
     registry = make_registry(make_config("ruff", 3), make_config("ty", 3))
-    combined = make_combined([
-        make_tr("ruff", 0.8),
-        make_tr("ty", 0.2),  # worse score -> wins
-    ])
+    combined = make_combined(
+        [
+            make_tr("ruff", 0.8),
+            make_tr("ty", 0.2),  # worse score -> wins
+        ]
+    )
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.200" in result  # ty selected
     assert "0.800" not in result
@@ -184,10 +231,12 @@ def test_same_order_worst_score_wins():
 def test_passing_tool_ignored():
     """Test that a tool with a passing threshold is ignored in the output."""
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
-    combined = make_combined([
-        make_tr("compile", 1.0), # passes -> ignored
-        make_tr("ruff", 0.5),
-    ])
+    combined = make_combined(
+        [
+            make_tr("compile", 1.0),  # passes -> ignored
+            make_tr("ruff", 0.5),
+        ]
+    )
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.500" in result  # ruff selected
     assert "1.000" not in result
@@ -196,7 +245,9 @@ def test_passing_tool_ignored():
 def test_all_passing_returns_no_issues():
     """Test that when all checks pass, no issues are reported."""
     registry = make_registry(make_config("ruff", 3))
-    result = format_for_llm(registry, make_combined([make_tr("ruff", 1.0)]), cq_invocation=CQ)
+    result = format_for_llm(
+        registry, make_combined([make_tr("ruff", 1.0)]), cq_invocation=CQ
+    )
     assert result.startswith("# No issues found")
 
 
@@ -209,22 +260,40 @@ def test_empty_results_returns_no_issues():
 def test_cq_invocation_in_footer():
     """Test if cq_invocation is present in the footer."""
     registry = make_registry(make_config("ruff", 3))
-    result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation="cq run myfile.py --llm", hint=True)
+    result = format_for_llm(
+        registry,
+        make_combined([make_tr("ruff", 0.5)]),
+        cq_invocation="cq run myfile.py --llm",
+        hint=True,
+    )
     assert "cq run myfile.py --llm" in result
 
 
 # --- parser format_llm_message ---
 
+
 def _tr(tool_name: str, details: dict) -> ToolResult:
     """Return a ToolResult representing a tool execution."""
-    return ToolResult(metrics={"score": 0.5}, details=details, raw=RawResult(tool_name=tool_name))
+    return ToolResult(
+        metrics={"score": 0.5}, details=details, raw=RawResult(tool_name=tool_name)
+    )
 
 
 def test_compile_format_llm_message():
     """Test that the compile format LLM message is correctly generated from a ToolResult."""
-    tr = _tr("compile", {"failed_files": {
-        "src/foo.py": {"line": 10, "src": "x = {a = b}", "type": "SyntaxError", "help": "invalid syntax"}
-    }})
+    tr = _tr(
+        "compile",
+        {
+            "failed_files": {
+                "src/foo.py": {
+                    "line": 10,
+                    "src": "x = {a = b}",
+                    "type": "SyntaxError",
+                    "help": "invalid syntax",
+                }
+            }
+        },
+    )
     msg = CompileParser().format_llm_message(tr)
     assert "src/foo.py:10" in msg
     assert "SyntaxError" in msg
@@ -240,7 +309,10 @@ def test_compile_format_llm_message_no_details():
 
 def test_ruff_format_llm_message():
     """Test Ruff parser formatting for LLM message."""
-    tr = _tr("ruff", {"src/bar.py": [{"line": 42, "code": "E501", "message": "line too long"}]})
+    tr = _tr(
+        "ruff",
+        {"src/bar.py": [{"line": 42, "code": "E501", "message": "line too long"}]},
+    )
     msg = RuffParser().format_llm_message(tr)
     assert "src/bar.py:42" in msg
     assert "E501" in msg
@@ -249,7 +321,14 @@ def test_ruff_format_llm_message():
 
 def test_ty_format_llm_message():
     """Test formatting of LLM messages for ty-style errors."""
-    tr = _tr("ty", {"src/baz.py": [{"line": 7, "code": "possibly-unbound", "message": "x may be unbound"}]})
+    tr = _tr(
+        "ty",
+        {
+            "src/baz.py": [
+                {"line": 7, "code": "possibly-unbound", "message": "x may be unbound"}
+            ]
+        },
+    )
     msg = TyParser().format_llm_message(tr)
     assert "src/baz.py:7" in msg
     assert "possibly-unbound" in msg
@@ -257,7 +336,18 @@ def test_ty_format_llm_message():
 
 def test_interrogate_format_llm_message():
     """Test formatting of LLM message for interrogate."""
-    tr = _tr("interrogate", {"src/qux.py": [{"line": 10, "code": "D103", "message": "missing docstring in function `my_func`"}]})
+    tr = _tr(
+        "interrogate",
+        {
+            "src/qux.py": [
+                {
+                    "line": 10,
+                    "code": "D103",
+                    "message": "missing docstring in function `my_func`",
+                }
+            ]
+        },
+    )
     msg = InterrogateParser().format_llm_message(tr)
     assert "src/qux.py" in msg
     assert "D103" in msg
@@ -265,7 +355,9 @@ def test_interrogate_format_llm_message():
 
 def test_pytest_format_llm_message():
     """Test that PytestParser correctly formats the LLM message."""
-    tr = _tr("pytest", {"tests/test_foo.py": {"test_bar": "FAILED", "test_baz": "PASSED"}})
+    tr = _tr(
+        "pytest", {"tests/test_foo.py": {"test_bar": "FAILED", "test_baz": "PASSED"}}
+    )
     msg = PytestParser().format_llm_message(tr)
     assert "tests/test_foo.py::test_bar" in msg
     assert "FAILED" in msg
@@ -281,16 +373,37 @@ def test_pytest_format_llm_message_no_failures():
 def test_halstead_format_llm_message_function_bugs():
     """Test Halstead parser formatting for function-level bugs."""
 
-    tr = _tr("radon hal", {
-        "src/foo.py": {
-            "bug_free": 0.9, "smallness": 0.9, "bugs": 0.05, "volume": 100,
-            "functions": {
-                "big_fn": {"no_bugs": 0.3, "smallness": 0.8, "bugs": 0.45, "volume": 200},
-                "small_fn": {"no_bugs": 0.95, "smallness": 0.95, "bugs": 0.01, "volume": 20},
-            },
-        }
-    })
-    tr.metrics = {"functions_bug_free": 0.3, "functions_smallness": 0.8, "file_bug_free": 0.9, "file_smallness": 0.9}
+    tr = _tr(
+        "radon hal",
+        {
+            "src/foo.py": {
+                "bug_free": 0.9,
+                "smallness": 0.9,
+                "bugs": 0.05,
+                "volume": 100,
+                "functions": {
+                    "big_fn": {
+                        "no_bugs": 0.3,
+                        "smallness": 0.8,
+                        "bugs": 0.45,
+                        "volume": 200,
+                    },
+                    "small_fn": {
+                        "no_bugs": 0.95,
+                        "smallness": 0.95,
+                        "bugs": 0.01,
+                        "volume": 20,
+                    },
+                },
+            }
+        },
+    )
+    tr.metrics = {
+        "functions_bug_free": 0.3,
+        "functions_smallness": 0.8,
+        "file_bug_free": 0.9,
+        "file_smallness": 0.9,
+    }
     msg = HalsteadParser().format_llm_message(tr)
     assert "src/foo.py" in msg
     assert "big_fn" in msg
@@ -300,13 +413,24 @@ def test_halstead_format_llm_message_function_bugs():
 
 def test_halstead_format_llm_message_file_volume():
     """Test Halstead parser with file volume metrics."""
-    tr = _tr("radon hal", {
-        "src/large.py": {
-            "bug_free": 0.8, "smallness": 0.2, "bugs": 0.1, "volume": 1900,
-            "functions": {},
-        }
-    })
-    tr.metrics = {"file_bug_free": 0.8, "file_smallness": 0.2, "functions_bug_free": 1.0, "functions_smallness": 1.0}
+    tr = _tr(
+        "radon hal",
+        {
+            "src/large.py": {
+                "bug_free": 0.8,
+                "smallness": 0.2,
+                "bugs": 0.1,
+                "volume": 1900,
+                "functions": {},
+            }
+        },
+    )
+    tr.metrics = {
+        "file_bug_free": 0.8,
+        "file_smallness": 0.2,
+        "functions_bug_free": 1.0,
+        "functions_smallness": 1.0,
+    }
     msg = HalsteadParser().format_llm_message(tr)
     assert "src/large.py" in msg
     assert "1900" in msg
@@ -346,14 +470,21 @@ def test_format_for_llm_passing_exact_format():
 def test_format_for_llm_defect_footer_exact():
     """Defect output ends with the exact footer (no hint by default)."""
     registry = make_registry(make_config("ruff", 3))
-    result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation=CQ)
+    result = format_for_llm(
+        registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation=CQ
+    )
     assert result.endswith("Please fix only this issue.")
+
 
 def test_format_for_llm_defect_footer_hint():
     """With hint=True the footer includes the run-again instruction."""
     registry = make_registry(make_config("ruff", 3))
-    result = format_for_llm(registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation=CQ, hint=True)
-    assert result.endswith(f"Please fix only this issue. After fixing, run `{CQ}` to verify.")
+    result = format_for_llm(
+        registry, make_combined([make_tr("ruff", 0.5)]), cq_invocation=CQ, hint=True
+    )
+    assert result.endswith(
+        f"Please fix only this issue. After fixing, run `{CQ}` to verify."
+    )
 
 
 def test_format_for_llm_context_lines_forwarded():
@@ -362,7 +493,10 @@ def test_format_for_llm_context_lines_forwarded():
 
     class RecordingParser(AbstractParser):
         """Mock parser for testing."""
-        def parse(self, raw_result): return ToolResult()
+
+        def parse(self, raw_result):
+            return ToolResult()
+
         def format_llm_message(self, tr, *, context_lines=15, limit=1):
             received["context_lines"] = context_lines
             return "recorded"
@@ -382,7 +516,9 @@ def test_format_for_llm_output_starts_with_heading(scores):
     trs = [make_tr(f"tool{i}", s) for i, s in enumerate(scores)]
     result = format_for_llm(registry, make_combined(trs), cq_invocation="cq check .")
     # Every output is either the passing header or a defect with the footer
-    assert result.startswith("# No issues found") or "Please fix only this issue" in result
+    assert (
+        result.startswith("# No issues found") or "Please fix only this issue" in result
+    )
 
 
 @given(st.lists(st.floats(min_value=0.0, max_value=1.0), min_size=0, max_size=5))
@@ -430,9 +566,9 @@ def test_format_for_llm_selection_is_shuffle_invariant(perm):
         make_config("interrogate", 5),
     ]
     trs = [
-        make_tr("compile", 0.90),   # ok - not in failing list
-        make_tr("ruff", 0.42),      # error, order 3 - lowest order among errors -> selected
-        make_tr("ty", 0.31),        # error, order 4
+        make_tr("compile", 0.90),  # ok - not in failing list
+        make_tr("ruff", 0.42),  # error, order 3 - lowest order among errors -> selected
+        make_tr("ty", 0.31),  # error, order 4
         make_tr("interrogate", 0.45),  # error, order 5
     ]
     registry = make_registry(*configs)
@@ -460,8 +596,12 @@ def test_context_lines_affects_output_length(tmp_path):
     )
     combined = CombinedToolResults(".", [tr])
 
-    r_small = format_for_llm({"pytest": cfg}, combined, cq_invocation=CQ, context_lines=1)
-    r_large = format_for_llm({"pytest": cfg}, combined, cq_invocation=CQ, context_lines=10)
+    r_small = format_for_llm(
+        {"pytest": cfg}, combined, cq_invocation=CQ, context_lines=1
+    )
+    r_large = format_for_llm(
+        {"pytest": cfg}, combined, cq_invocation=CQ, context_lines=10
+    )
     assert len(r_large) > len(r_small)
 
 
@@ -474,11 +614,13 @@ def test_format_for_llm_default_invocation():
         raw=RawResult(tool_name="ruff", command="python -m ruff check src/"),
     )
     combined = CombinedToolResults(path=".", tool_results=[tr])
-    result = format_for_llm(registry, combined, hint=True)  # no cq_invocation -> uses sys.argv
+    result = format_for_llm(
+        registry, combined, hint=True
+    )  # no cq_invocation -> uses sys.argv
     assert "cq" in result
     assert "src/foo.py" in result  # file from ruff details
-    assert "E501" in result         # specific violation code
-    assert "Please fix" in result   # LLM formatter footer
+    assert "E501" in result  # specific violation code
+    assert "Please fix" in result  # LLM formatter footer
 
 
 def test_format_for_llm_limit_multiple_issues():
@@ -486,19 +628,25 @@ def test_format_for_llm_limit_multiple_issues():
     registry = {"ruff": config}
     tr = ToolResult(
         metrics={"lint": 0.3},
-        details={"src/foo.py": [
-            {"line": 1, "code": "E501", "message": "line too long"},
-            {"line": 2, "code": "F401", "message": "[*] `os` imported but unused"},
-            {"line": 3, "code": "F841", "message": "Local variable `x` is assigned to but never used"},
-        ]},
+        details={
+            "src/foo.py": [
+                {"line": 1, "code": "E501", "message": "line too long"},
+                {"line": 2, "code": "F401", "message": "[*] `os` imported but unused"},
+                {
+                    "line": 3,
+                    "code": "F841",
+                    "message": "Local variable `x` is assigned to but never used",
+                },
+            ]
+        },
         raw=RawResult(tool_name="ruff"),
     )
     combined = CombinedToolResults(path=".", tool_results=[tr])
     result = format_for_llm(registry, combined, limit=2)
-    assert "---" in result          # separator between issues
+    assert "---" in result  # separator between issues
     assert "E501" in result
     assert "F401" in result
-    assert "F841" not in result     # third issue excluded
+    assert "F841" not in result  # third issue excluded
     assert "Please fix these 2 issues" in result
 
 
@@ -507,10 +655,12 @@ def test_format_for_llm_limit_1_unchanged():
     registry = {"ruff": config}
     tr = ToolResult(
         metrics={"lint": 0.3},
-        details={"src/foo.py": [
-            {"line": 1, "code": "E501", "message": "line too long"},
-            {"line": 2, "code": "F401", "message": "[*] `os` imported but unused"},
-        ]},
+        details={
+            "src/foo.py": [
+                {"line": 1, "code": "E501", "message": "line too long"},
+                {"line": 2, "code": "F401", "message": "[*] `os` imported but unused"},
+            ]
+        },
         raw=RawResult(tool_name="ruff"),
     )
     combined = CombinedToolResults(path=".", tool_results=[tr])
@@ -521,6 +671,7 @@ def test_format_for_llm_limit_1_unchanged():
 
 
 # --- _fingerprint_from_slice ---
+
 
 def test_fingerprint_list_details():
     tr = ToolResult(
@@ -543,7 +694,9 @@ def test_fingerprint_dict_details():
 
 
 def test_fingerprint_empty_details():
-    tr = ToolResult(metrics={"score": 0.3}, details={}, raw=RawResult(tool_name="pytest"))
+    tr = ToolResult(
+        metrics={"score": 0.3}, details={}, raw=RawResult(tool_name="pytest")
+    )
     fp = _fingerprint_from_slice("pytest", tr)
     assert fp == "pytest"
 
@@ -552,7 +705,11 @@ def test_fingerprint_relativizes_absolute_path(tmp_path):
     abs_file = tmp_path / "src" / "foo.py"
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(abs_file): [{"line": 10, "code": "E302", "message": "expected 2 blank lines"}]},
+        details={
+            str(abs_file): [
+                {"line": 10, "code": "E302", "message": "expected 2 blank lines"}
+            ]
+        },
         raw=RawResult(tool_name="ruff"),
     )
     fp = _fingerprint_from_slice("ruff", tr, project_root=tmp_path)
@@ -561,11 +718,14 @@ def test_fingerprint_relativizes_absolute_path(tmp_path):
 
 # --- format_for_llm_json ---
 
+
 def _ruff_registry_and_tr():
     config = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
     tr = ToolResult(
         metrics={"lint": 0.3},
-        details={"src/foo.py": [{"line": 42, "code": "E501", "message": "line too long"}]},
+        details={
+            "src/foo.py": [{"line": 42, "code": "E501", "message": "line too long"}]
+        },
         raw=RawResult(tool_name="ruff"),
     )
     return {"ruff": config}, CombinedToolResults(path=".", tool_results=[tr])

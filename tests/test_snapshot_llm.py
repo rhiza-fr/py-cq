@@ -24,8 +24,7 @@ from py_cq.parsers.vultureparser import VultureParser
 CQ = "cq run test.py --llm"
 
 RUFF_DEFECT_SNAPSHOT = (
-    "src/bar.py:42 - E501: line too long\n\n"
-    "Please fix only this issue."
+    "src/bar.py:42 - E501: line too long\n\nPlease fix only this issue."
 )
 
 COMPILE_DEFECT_SNAPSHOT = (
@@ -37,8 +36,7 @@ COMPILE_DEFECT_SNAPSHOT = (
 )
 
 BANDIT_DEFECT_SNAPSHOT = (
-    "src/vuln.py:5 - B101: [HIGH] Use of assert detected\n\n"
-    "Please fix only this issue."
+    "src/vuln.py:5 - B101: [HIGH] Use of assert detected\n\nPlease fix only this issue."
 )
 
 COVERAGE_DEFECT_SNAPSHOT = (
@@ -53,8 +51,7 @@ VULTURE_DEFECT_SNAPSHOT = (
 )
 
 TY_DEFECT_SNAPSHOT = (
-    "src/baz.py:7 - possibly-unbound: x may be unbound\n\n"
-    "Please fix only this issue."
+    "src/baz.py:7 - possibly-unbound: x may be unbound\n\nPlease fix only this issue."
 )
 
 
@@ -63,10 +60,14 @@ def test_ruff_defect_snapshot():
     cfg = ToolConfig(name="ruff", command="", parser_class=RuffParser, order=3)
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={"src/bar.py": [{"line": 42, "code": "E501", "message": "line too long"}]},
+        details={
+            "src/bar.py": [{"line": 42, "code": "E501", "message": "line too long"}]
+        },
         raw=RawResult(tool_name="ruff"),
     )
-    result = format_for_llm({"ruff": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"ruff": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == RUFF_DEFECT_SNAPSHOT
 
 
@@ -75,12 +76,21 @@ def test_compile_defect_snapshot():
     cfg = ToolConfig(name="compile", command="", parser_class=CompileParser, order=1)
     tr = ToolResult(
         metrics={"compile": 0.5},
-        details={"failed_files": {"src/foo.py": {
-            "line": 10, "type": "SyntaxError", "help": "invalid syntax", "src": "x = {a = b}",
-        }}},
+        details={
+            "failed_files": {
+                "src/foo.py": {
+                    "line": 10,
+                    "type": "SyntaxError",
+                    "help": "invalid syntax",
+                    "src": "x = {a = b}",
+                }
+            }
+        },
         raw=RawResult(tool_name="compile"),
     )
-    result = format_for_llm({"compile": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"compile": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == COMPILE_DEFECT_SNAPSHOT
 
 
@@ -89,10 +99,21 @@ def test_ty_defect_snapshot():
     cfg = ToolConfig(name="ty", command="", parser_class=TyParser, order=2)
     tr = ToolResult(
         metrics={"type_check": 0.5},
-        details={"src/baz.py": [{"line": 7, "code": "possibly-unbound", "severity": "error", "message": "x may be unbound"}]},
+        details={
+            "src/baz.py": [
+                {
+                    "line": 7,
+                    "code": "possibly-unbound",
+                    "severity": "error",
+                    "message": "x may be unbound",
+                }
+            ]
+        },
         raw=RawResult(tool_name="ty"),
     )
-    result = format_for_llm({"ty": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"ty": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == TY_DEFECT_SNAPSHOT
 
 
@@ -101,10 +122,22 @@ def test_bandit_defect_snapshot():
     cfg = ToolConfig(name="bandit", command="", parser_class=BanditParser, order=4)
     tr = ToolResult(
         metrics={"security": 0.5},
-        details={"src/vuln.py": [{"line": 5, "code": "B101", "severity": "HIGH", "confidence": "HIGH", "message": "Use of assert detected"}]},
+        details={
+            "src/vuln.py": [
+                {
+                    "line": 5,
+                    "code": "B101",
+                    "severity": "HIGH",
+                    "confidence": "HIGH",
+                    "message": "Use of assert detected",
+                }
+            ]
+        },
         raw=RawResult(tool_name="bandit"),
     )
-    result = format_for_llm({"bandit": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"bandit": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == BANDIT_DEFECT_SNAPSHOT
 
 
@@ -113,10 +146,16 @@ def test_coverage_defect_snapshot():
     cfg = ToolConfig(name="coverage", command="", parser_class=CoverageParser, order=6)
     tr = ToolResult(
         metrics={"coverage": 0.6},
-        details={"src/low.py": [{"code": None, "line": None, "missing": 40, "file_coverage": 0.60}]},
+        details={
+            "src/low.py": [
+                {"code": None, "line": None, "missing": 40, "file_coverage": 0.60}
+            ]
+        },
         raw=RawResult(tool_name="coverage"),
     )
-    result = format_for_llm({"coverage": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"coverage": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == COVERAGE_DEFECT_SNAPSHOT
 
 
@@ -125,17 +164,25 @@ def test_vulture_defect_snapshot():
     cfg = ToolConfig(name="vulture", command="", parser_class=VultureParser, order=9)
     tr = ToolResult(
         metrics={"dead_code": 0.5},
-        details={"src/dead.py": [{"line": 10, "type": "unused function", "name": "old_helper", "confidence": 80}]},
+        details={
+            "src/dead.py": [
+                {
+                    "line": 10,
+                    "type": "unused function",
+                    "name": "old_helper",
+                    "confidence": 80,
+                }
+            ]
+        },
         raw=RawResult(tool_name="vulture"),
     )
-    result = format_for_llm({"vulture": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"vulture": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == VULTURE_DEFECT_SNAPSHOT
 
 
-EXITCODE_DEFECT_SNAPSHOT = (
-    "error: command failed\n\n"
-    "Please fix only this issue."
-)
+EXITCODE_DEFECT_SNAPSHOT = "error: command failed\n\nPlease fix only this issue."
 
 HALSTEAD_BUG_DEFECT_SNAPSHOT = (
     "src/heavy.py has high estimated bug density (bugs: 2.500)\n\n"
@@ -148,15 +195,9 @@ INTERROGATE_DEFECT_SNAPSHOT = (
     "Please fix only this issue."
 )
 
-LINECOUNT_DEFECT_SNAPSHOT = (
-    "violation: something wrong\n\n"
-    "Please fix only this issue."
-)
+LINECOUNT_DEFECT_SNAPSHOT = "violation: something wrong\n\nPlease fix only this issue."
 
-REGEXCOUNT_DEFECT_SNAPSHOT = (
-    "match: error found here\n\n"
-    "Please fix only this issue."
-)
+REGEXCOUNT_DEFECT_SNAPSHOT = "match: error found here\n\nPlease fix only this issue."
 
 
 def test_exitcode_defect_snapshot():
@@ -166,7 +207,9 @@ def test_exitcode_defect_snapshot():
         metrics={"exit_code": 0.0},
         raw=RawResult(tool_name="mycheck", stdout="error: command failed"),
     )
-    result = format_for_llm({"mycheck": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"mycheck": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == EXITCODE_DEFECT_SNAPSHOT
 
 
@@ -178,73 +221,101 @@ def test_halstead_bug_defect_snapshot():
         details={"src/heavy.py": {"bug_free": 0.3, "bugs": 2.5, "smallness": 0.8}},
         raw=RawResult(tool_name="radon-hal"),
     )
-    result = format_for_llm({"radon-hal": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"radon-hal": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == HALSTEAD_BUG_DEFECT_SNAPSHOT
 
 
 def test_interrogate_defect_snapshot():
     """Test the interrogation of a defect snapshot."""
-    cfg = ToolConfig(name="interrogate", command="", parser_class=InterrogateParser, order=11)
+    cfg = ToolConfig(
+        name="interrogate", command="", parser_class=InterrogateParser, order=11
+    )
     tr = ToolResult(
         metrics={"doc_coverage": 0.6},
-        details={"src/undoc.py": [{"line": 5, "code": "D103", "message": "missing docstring in function `some_func`"}]},
+        details={
+            "src/undoc.py": [
+                {
+                    "line": 5,
+                    "code": "D103",
+                    "message": "missing docstring in function `some_func`",
+                }
+            ]
+        },
         raw=RawResult(tool_name="interrogate"),
     )
-    result = format_for_llm({"interrogate": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"interrogate": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == INTERROGATE_DEFECT_SNAPSHOT
 
 
 def test_linecount_defect_snapshot():
     """Test linecount defect snapshot."""
-    cfg = ToolConfig(name="linecount", command="", parser_class=LineCountParser, order=10)
+    cfg = ToolConfig(
+        name="linecount", command="", parser_class=LineCountParser, order=10
+    )
     tr = ToolResult(
         metrics={"violations": 0.5},
         details={"lines": ["violation: something wrong"]},
         raw=RawResult(tool_name="linecount"),
     )
-    result = format_for_llm({"linecount": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"linecount": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == LINECOUNT_DEFECT_SNAPSHOT
 
 
 def test_regexcount_defect_snapshot():
-    cfg = ToolConfig(name="regexcount", command="", parser_class=RegexCountParser, order=10)
+    cfg = ToolConfig(
+        name="regexcount", command="", parser_class=RegexCountParser, order=10
+    )
     tr = ToolResult(
         metrics={"violations": 0.5},
         details={"count": 1, "matches": ["match: error found here"]},
         raw=RawResult(tool_name="regexcount"),
     )
-    result = format_for_llm({"regexcount": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"regexcount": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == REGEXCOUNT_DEFECT_SNAPSHOT
 
 
 COMPLEXITY_DEFECT_SNAPSHOT = (
-    "**complexity** score: 0.600\n\n"
-    "Please fix only this issue."
+    "**complexity** score: 0.600\n\nPlease fix only this issue."
 )
 
 MAINTAINABILITY_DEFECT_SNAPSHOT = (
-    "**maintainability** score: 0.550\n\n"
-    "Please fix only this issue."
+    "**maintainability** score: 0.550\n\nPlease fix only this issue."
 )
 
 
 def test_complexity_defect_snapshot():
-    cfg = ToolConfig(name="radon-cc", command="", parser_class=ComplexityParser, order=7)
+    cfg = ToolConfig(
+        name="radon-cc", command="", parser_class=ComplexityParser, order=7
+    )
     tr = ToolResult(
         metrics={"complexity": 0.6},
         raw=RawResult(tool_name="radon-cc"),
     )
-    result = format_for_llm({"radon-cc": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"radon-cc": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == COMPLEXITY_DEFECT_SNAPSHOT
 
 
 def test_maintainability_defect_snapshot():
-    cfg = ToolConfig(name="radon-mi", command="", parser_class=MaintainabilityParser, order=8)
+    cfg = ToolConfig(
+        name="radon-mi", command="", parser_class=MaintainabilityParser, order=8
+    )
     tr = ToolResult(
         metrics={"maintainability": 0.55},
         raw=RawResult(tool_name="radon-mi"),
     )
-    result = format_for_llm({"radon-mi": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"radon-mi": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert result == MAINTAINABILITY_DEFECT_SNAPSHOT
 
 
@@ -267,7 +338,9 @@ def test_pytest_defect_snapshot(tmp_path):
         details={str(test_file): {"test_bar": "FAILED"}},
         raw=RawResult(tool_name="pytest", stdout=stdout),
     )
-    result = format_for_llm({"pytest": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ)
+    result = format_for_llm(
+        {"pytest": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
+    )
     assert f"{str(test_file)}::test_bar" in result
     assert "test **FAILED**" in result
     assert "AssertionError" in result

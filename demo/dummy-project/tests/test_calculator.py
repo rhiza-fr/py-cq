@@ -1,7 +1,8 @@
-""" doc """
+"""doc"""
+
 from myapp.calculator import add
 
 
 def test_add():
-    """ doc """
+    """doc"""
     assert add(1, 2) == 3

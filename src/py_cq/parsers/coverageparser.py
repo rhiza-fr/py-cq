@@ -74,6 +74,7 @@ def _find_test_file(source_file: str) -> str | None:
 
 class CoverageParser(AbstractParser):
     """Parser for coverage results."""
+
     def parse(self, raw_result: RawResult) -> ToolResult:
         """Parse the coverage result."""
         tr = ToolResult(raw=raw_result, project_path=raw_result.project_path)
@@ -110,7 +111,9 @@ class CoverageParser(AbstractParser):
         # Build list-based details sorted worst-coverage-first so _single_issue_slices
         # picks the most urgent file and function first.
         details: dict[str, list] = {}
-        for file_name, data in sorted(file_data.items(), key=lambda x: x[1].get("coverage", 1.0)):
+        for file_name, data in sorted(
+            file_data.items(), key=lambda x: x[1].get("coverage", 1.0)
+        ):
             if data.get("missing") == 0:
                 continue
             missing_lines_str = data.get("missing_lines")
@@ -121,19 +124,33 @@ class CoverageParser(AbstractParser):
                 funcs = _extract_functions(resolved, missing_lines_str)
                 if funcs:
                     details[file_name] = [
-                        {"code": name, "line": lineno, "signature": sig,
-                         "file_coverage": coverage_pct, "missing": missing_count}
+                        {
+                            "code": name,
+                            "line": lineno,
+                            "signature": sig,
+                            "file_coverage": coverage_pct,
+                            "missing": missing_count,
+                        }
                         for name, lineno, sig in funcs
                     ]
                     continue
             # Fallback when --show-missing wasn't used or AST parsing failed
-            details[file_name] = [{"code": None, "line": None, "missing": missing_count,
-                                    "missing_lines": missing_lines_str, "file_coverage": coverage_pct}]
+            details[file_name] = [
+                {
+                    "code": None,
+                    "line": None,
+                    "missing": missing_count,
+                    "missing_lines": missing_lines_str,
+                    "file_coverage": coverage_pct,
+                }
+            ]
 
         tr.details = details
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         for file, issues in tr.details.items():
             if not isinstance(issues, list) or not issues:
                 continue
@@ -157,7 +174,11 @@ class CoverageParser(AbstractParser):
                 if fn_src:
                     parts.append(fn_src)
             else:
-                pct = f"{file_coverage:.0%} " if isinstance(file_coverage, float) and file_coverage else ""
+                pct = (
+                    f"{file_coverage:.0%} "
+                    if isinstance(file_coverage, float) and file_coverage
+                    else ""
+                )
                 miss_info = f"{missing} uncovered lines" if missing else "uncovered"
                 parts.append(f"{file} - {pct}coverage ({miss_info})")
                 if missing_lines:
@@ -167,10 +188,14 @@ class CoverageParser(AbstractParser):
             if test_file:
                 try:
                     resolved_test = resolve_path(tr.project_path, test_file)
-                    last_line = len(Path(resolved_test).read_text(encoding="utf-8").splitlines())
+                    last_line = len(
+                        Path(resolved_test).read_text(encoding="utf-8").splitlines()
+                    )
                 except (OSError, ValueError):
                     last_line = None
-                location = f"{test_file} after line {last_line}" if last_line else test_file
+                location = (
+                    f"{test_file} after line {last_line}" if last_line else test_file
+                )
                 parts.append(f"\nAdd tests to: {location}")
 
             return "\n".join(parts)

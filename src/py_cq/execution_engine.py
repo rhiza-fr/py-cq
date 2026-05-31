@@ -31,7 +31,9 @@ from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 log = logging.getLogger("cq")
 
-_cache = Cache(Path.home() / ".cache" / "cq", size_limit=100 * 1024 * 1024, disk=JSONDisk)
+_cache = Cache(
+    Path.home() / ".cache" / "cq", size_limit=100 * 1024 * 1024, disk=JSONDisk
+)
 
 
 def _find_project_root(path: Path) -> Path | None:
@@ -55,7 +57,11 @@ def _dep_in_venv(dep: str, project_root: Path) -> bool:
     return False
 
 
-def _compute_scan_targets(context_path: str, scan_exclude_names: list[str], user_excludes: list[str] | None = None) -> str:
+def _compute_scan_targets(
+    context_path: str,
+    scan_exclude_names: list[str],
+    user_excludes: list[str] | None = None,
+) -> str:
     """Return space-separated quoted absolute paths for bandit-style scanning.
 
     When context_path is a directory, enumerates its top-level children and
@@ -72,7 +78,9 @@ def _compute_scan_targets(context_path: str, scan_exclude_names: list[str], user
     return " ".join(f'"{p}"' for p in paths)
 
 
-def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: str) -> str:
+def _build_exclude_str(
+    exclude_format: str, excludes: list[str], **extra_vars: str
+) -> str:
     """Builds an exclude string from a list of excludes and a format string."""
 
     if not exclude_format or not excludes:
@@ -82,16 +90,24 @@ def _build_exclude_str(exclude_format: str, excludes: list[str], **extra_vars: s
         abs_posix_path = Path(exc).resolve().as_posix()
         abs_native_path = str(Path(exc).resolve())
         # shlex.quote prevents shell injection via exclude paths
-        parts.append(exclude_format.format(
-            path=shlex.quote(exc),
-            abs_posix_path=shlex.quote(abs_posix_path),
-            abs_native_path=shlex.quote(abs_native_path),
-            **{k: shlex.quote(v) for k, v in extra_vars.items()},
-        ))
+        parts.append(
+            exclude_format.format(
+                path=shlex.quote(exc),
+                abs_posix_path=shlex.quote(abs_posix_path),
+                abs_native_path=shlex.quote(abs_native_path),
+                **{k: shlex.quote(v) for k, v in extra_vars.items()},
+            )
+        )
     return "".join(parts)
 
 
-def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | None = None, *, precomputed_hash: str | None = None) -> RawResult:
+def run_tool(
+    tool_config: ToolConfig,
+    context_path: str,
+    excludes: list[str] | None = None,
+    *,
+    precomputed_hash: str | None = None,
+) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
     Args:
@@ -126,47 +142,92 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
                 path = str(resolved)
             project_dir = Path(abs_dir).as_posix()
             project_root_path = Path(abs_dir)
-            missing_deps = [d for d in tool_config.extra_deps if not _dep_in_venv(d, project_root_path)]
+            missing_deps = [
+                d
+                for d in tool_config.extra_deps
+                if not _dep_in_venv(d, project_root_path)
+            ]
             # Quote deps with shlex.quote to prevent injection via extra_deps.
             # The uv path and abs_dir use standard double-quoting which is
             # compatible with both POSIX and MSYS bash on Windows.
             with_flags = " ".join(f"--with {shlex.quote(dep)}" for dep in missing_deps)
             no_sync = "--no-sync" if sys.executable.startswith(abs_dir) else ""
-            python = f'"{uv}" run {no_sync} --directory "{abs_dir}" {with_flags}'.strip()
+            python = (
+                f'"{uv}" run {no_sync} --directory "{abs_dir}" {with_flags}'.strip()
+            )
             # Strip venv env vars so the target project's environment is used cleanly.
             # VIRTUAL_ENV pointing to cq's own venv would cause uv to warn and can
             # corrupt the subprocess's sys.path, mixing packages from both projects.
-            run_env = {k: v for k, v in os.environ.items() if k not in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH")}
+            run_env = {
+                k: v
+                for k, v in os.environ.items()
+                if k not in ("VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH")
+            }
     abs_context_path = str(Path(context_path).resolve())
     abs_context_path_posix = Path(context_path).resolve().as_posix()
     native_sep = os.sep
     if not project_dir:
-        project_dir = Path(abs_context_path).as_posix() if Path(abs_context_path).is_dir() else Path(abs_context_path).parent.as_posix()
+        project_dir = (
+            Path(abs_context_path).as_posix()
+            if Path(abs_context_path).is_dir()
+            else Path(abs_context_path).parent.as_posix()
+        )
     input_path_posix = Path(context_path).as_posix().rstrip("/")
-    exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix, abs_context_path_posix=abs_context_path_posix)
-    scan_targets = _compute_scan_targets(context_path, tool_config.scan_exclude_names, excludes)
+    exclude = _build_exclude_str(
+        tool_config.exclude_format,
+        excludes or [],
+        input_path_posix=input_path_posix,
+        abs_context_path_posix=abs_context_path_posix,
+    )
+    scan_targets = _compute_scan_targets(
+        context_path, tool_config.scan_exclude_names, excludes
+    )
 
-    command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, abs_context_path_posix=abs_context_path_posix, input_path_posix=input_path_posix, native_sep=native_sep, scan_targets=scan_targets, python=python, exclude=exclude)
-    t_hash0 = time.perf_counter()
-    context_hash = precomputed_hash if precomputed_hash is not None else get_context_hash(context_path)
-    t_hash = time.perf_counter() - t_hash0
+    command = tool_config.command.format(
+        context_path=path,
+        abs_context_path=abs_context_path,
+        abs_context_path_posix=abs_context_path_posix,
+        input_path_posix=input_path_posix,
+        native_sep=native_sep,
+        scan_targets=scan_targets,
+        python=python,
+        exclude=exclude,
+    )
+    context_hash = (
+        precomputed_hash
+        if precomputed_hash is not None
+        else get_context_hash(context_path)
+    )
     cache_key = f"{command}:{context_hash}"
+
     t_cache0 = time.perf_counter()
     cached = _cache.get(cache_key)
     t_cache = time.perf_counter() - t_cache0
     if cached is not None:
-        log.debug(f"{tool_config.name}: hash={t_hash*1000:.1f}ms cache_lookup={t_cache*1000:.1f}ms [HIT]")
+        log.debug(
+            f"{tool_config.name}: [CACHE HIT] cache={t_cache * 1000:.1f}ms {command}"
+        )
         return RawResult(**cast(dict[str, Any], cached))
-    log.debug(f"{tool_config.name}: hash={t_hash*1000:.1f}ms cache_lookup={t_cache*1000:.1f}ms [MISS] running...")
+
     # shell=True is required because commands use shell features (&&, |) and
     # variable substitution ({python} expands to a compound uv command).
     # All user-supplied values (context_path, excludes) are properly quoted
     # via shlex.quote() to prevent injection - see _build_exclude_str and
     # the uv command assembly above.
     t_sub0 = time.perf_counter()
-    result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace", env=run_env)  # nosec
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+        shell=True,
+        encoding="utf-8",
+        errors="replace",
+        env=run_env,
+    )  # nosec
     t_sub = time.perf_counter() - t_sub0
-    log.debug(f"{tool_config.name}: subprocess={t_sub*1000:.0f}ms")
+    log.debug(
+        f"{tool_config.name}: [MISS] cache={t_cache * 1000:.1f}ms tool={t_sub * 1000:.0f}ms: {command}"
+    )
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
     raw_result = RawResult(
         tool_name=tool_config.name,
@@ -181,7 +242,13 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
     return raw_result
 
 
-def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int = 0, early_exit: bool = False, excludes: list[str] | None = None) -> list[ToolResult]:
+def run_tools(
+    tool_configs: Collection[ToolConfig],
+    path: str,
+    max_workers: int = 0,
+    early_exit: bool = False,
+    excludes: list[str] | None = None,
+) -> list[ToolResult]:
     """Run multiple tools and return their parsed results.
 
     Runs each tool specified in *tool_configs* on the file or directory at
@@ -234,6 +301,7 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr
+
     prioritized: list[tuple[int, ToolResult]] = []
     if early_exit:
         sorted_configs = sorted(tool_configs, key=lambda tc: tc.order)
@@ -245,17 +313,19 @@ def run_tools(tool_configs: Collection[ToolConfig], path: str, max_workers: int 
                 log.error(f"{tool_config.name} generated an exception: {exc}")
                 n_skipped = n_total - i - 1
                 if n_skipped:
-                    remaining = ", ".join(tc.name for tc in sorted_configs[i + 1:])
+                    remaining = ", ".join(tc.name for tc in sorted_configs[i + 1 :])
                     log.warning(f"Early exit: skipped {n_skipped} tool(s): {remaining}")
                 break
             _, tr = prioritized[-1]
             if tr.metrics and min(tr.metrics.values()) < tool_config.error_threshold:
                 n_skipped = n_total - i - 1
                 if n_skipped:
-                    remaining = ", ".join(tc.name for tc in sorted_configs[i + 1:])
-                    log.debug(f"Error threshold hit at {tool_config.name}: skipped {n_skipped} tool(s): {remaining}")
+                    remaining = ", ".join(tc.name for tc in sorted_configs[i + 1 :])
+                    log.debug(
+                        f"Error threshold hit at {tool_config.name}: skipped {n_skipped} tool(s): {remaining}"
+                    )
                 break
-        log.info(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
+        log.info(f"cq run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
         return [tr for _, tr in sorted(prioritized)]
     with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
         future_to_tool = {

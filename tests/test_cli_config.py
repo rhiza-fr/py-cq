@@ -13,25 +13,44 @@ runner = CliRunner()
 
 def _tc(name="ruff", order=3):
     """Helper to create a ToolConfig for testing."""
+
     class FakeParser:
         """Fake parser for testing."""
+
         def parse(self, raw):
             """Parse the raw input."""
             return ToolResult(metrics={"score": 1.0}, raw=raw)
+
         def format_llm_message(self, tr):
             """Format the tool result message for the LLM."""
             return "no issues"
-    return ToolConfig(name=name, command="", parser_class=FakeParser, order=order,
-                      warning_threshold=0.7, error_threshold=0.5)
+
+    return ToolConfig(
+        name=name,
+        command="",
+        parser_class=FakeParser,
+        order=order,
+        warning_threshold=0.7,
+        error_threshold=0.5,
+    )
 
 
 def _registry(name="ruff", warning=0.7, error=0.5):
     """Return a registry of tool configurations."""
-    return {name: ToolConfig(name=name, command="", parser_class=object, order=3,
-                             warning_threshold=warning, error_threshold=error)}
+    return {
+        name: ToolConfig(
+            name=name,
+            command="",
+            parser_class=object,
+            order=3,
+            warning_threshold=warning,
+            error_threshold=error,
+        )
+    }
 
 
 # --- _apply_user_config ---
+
 
 def test_apply_user_config_empty():
     """Test applying user config when it is empty."""
@@ -166,6 +185,7 @@ def test_apply_user_config_cannot_override_builtin():
 
 # --- config command ---
 
+
 def test_config_no_pyproject(tmp_path):
     """Test config command when no pyproject file exists."""
     result = runner.invoke(app, ["config", "--path", str(tmp_path)])
@@ -213,6 +233,7 @@ def test_config_shows_user_defined_tool(tmp_path):
 
 # --- config set ---
 
+
 def test_config_set_needs_warning_or_error(tmp_path):
     """Test that config set needs warning or error when the key already exists."""
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
@@ -224,19 +245,36 @@ def test_config_set_needs_warning_or_error(tmp_path):
 def test_config_set_unknown_tool(tmp_path):
     """Test that setting a configuration for an unknown tool issues a warning/error."""
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
-    result = runner.invoke(app, [
-        "config", "set", "nonexistent", "--warning", "0.8", "--path", str(tmp_path),
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "nonexistent",
+            "--warning",
+            "0.8",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code != 0
     assert "Unknown tool" in result.output
 
 
 def test_config_set_no_pyproject(tmp_path):
     """Test config set when pyproject.toml is missing."""
-    result = runner.invoke(app, [
-
-        "config", "set", "ruff", "--warning", "0.8", "--path", str(tmp_path),
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "ruff",
+            "--warning",
+            "0.8",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code != 0
     assert "pyproject.toml" in result.output
 
@@ -244,14 +282,24 @@ def test_config_set_no_pyproject(tmp_path):
 def test_config_set_writes_warning(tmp_path):
     """Test that config set with --warning writes the warning to the config file."""
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
-    result = runner.invoke(app, [
-        "config", "set", "ruff", "--warning", "0.8", "--path", str(tmp_path),
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "ruff",
+            "--warning",
+            "0.8",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code == 0
     assert "ruff" in result.output
     assert "warning=0.8" in result.output
     # Verify the file was written correctly
     import tomllib
+
     with (tmp_path / "pyproject.toml").open("rb") as f:
         data = tomllib.load(f)
     assert data["tool"]["cq"]["thresholds"]["ruff"]["warning"] == 0.8
@@ -259,11 +307,21 @@ def test_config_set_writes_warning(tmp_path):
 
 def test_config_set_writes_error(tmp_path):
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
-    result = runner.invoke(app, [
-        "config", "set", "ruff", "--error", "0.4", "--path", str(tmp_path),
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "ruff",
+            "--error",
+            "0.4",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code == 0
     import tomllib
+
     with (tmp_path / "pyproject.toml").open("rb") as f:
         data = tomllib.load(f)
     assert data["tool"]["cq"]["thresholds"]["ruff"]["error"] == 0.4
@@ -271,12 +329,23 @@ def test_config_set_writes_error(tmp_path):
 
 def test_config_set_writes_both(tmp_path):
     (tmp_path / "pyproject.toml").write_text("[tool.cq]\n")
-    result = runner.invoke(app, [
-        "config", "set", "ruff", "--warning", "0.8", "--error", "0.4",
-        "--path", str(tmp_path),
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "ruff",
+            "--warning",
+            "0.8",
+            "--error",
+            "0.4",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code == 0
     import tomllib
+
     with (tmp_path / "pyproject.toml").open("rb") as f:
         data = tomllib.load(f)
     assert data["tool"]["cq"]["thresholds"]["ruff"]["warning"] == 0.8
@@ -285,16 +354,26 @@ def test_config_set_writes_both(tmp_path):
 
 def test_config_set_updates_existing(tmp_path):
     existing = (
-        '[tool.cq]\n'
-        '[tool.cq.thresholds]\n'
+        "[tool.cq]\n"
+        "[tool.cq.thresholds]\n"
         '"radon-hal" = { warning = 0.5, error = 0.3 }\n'
     )
     (tmp_path / "pyproject.toml").write_text(existing)
-    result = runner.invoke(app, [
-        "config", "set", "radon-hal", "--warning", "0.45", "--path", str(tmp_path),
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "radon-hal",
+            "--warning",
+            "0.45",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code == 0
     import tomllib
+
     with (tmp_path / "pyproject.toml").open("rb") as f:
         data = tomllib.load(f)
     thresholds = data["tool"]["cq"]["thresholds"]["radon-hal"]
@@ -304,18 +383,24 @@ def test_config_set_updates_existing(tmp_path):
 
 def test_config_set_preserves_other_sections(tmp_path):
     toml_content = (
-        "[project]\n"
-        'name = "demo"\n'
-        "version = \"1.0\"\n"
-        "[tool.cq]\n"
-        "exclude = [\"demo\"]\n"
+        '[project]\nname = "demo"\nversion = "1.0"\n[tool.cq]\nexclude = ["demo"]\n'
     )
     (tmp_path / "pyproject.toml").write_text(toml_content)
-    result = runner.invoke(app, [
-        "config", "set", "ruff", "--error", "0.5", "--path", str(tmp_path),
-    ])
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "ruff",
+            "--error",
+            "0.5",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code == 0
     import tomllib
+
     with (tmp_path / "pyproject.toml").open("rb") as f:
         data = tomllib.load(f)
     assert data["project"]["name"] == "demo"  # preserved
@@ -324,12 +409,22 @@ def test_config_set_preserves_other_sections(tmp_path):
 
 
 def test_config_set_creates_cq_section_if_missing(tmp_path):
-    (tmp_path / "pyproject.toml").write_text("[project]\nname = \"x\"\n")
-    result = runner.invoke(app, [
-        "config", "set", "ruff", "--error", "0.5", "--path", str(tmp_path),
-    ])
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+    result = runner.invoke(
+        app,
+        [
+            "config",
+            "set",
+            "ruff",
+            "--error",
+            "0.5",
+            "--path",
+            str(tmp_path),
+        ],
+    )
     assert result.exit_code == 0
     import tomllib
+
     with (tmp_path / "pyproject.toml").open("rb") as f:
         data = tomllib.load(f)
     assert data["tool"]["cq"]["thresholds"]["ruff"]["error"] == 0.5
@@ -337,9 +432,11 @@ def test_config_set_creates_cq_section_if_missing(tmp_path):
 
 # --- format_as_table ---
 
+
 def _render(table) -> str:
     from io import StringIO
     from rich.console import Console
+
     buf = StringIO()
     Console(file=buf, no_color=True, width=120).print(table)
     return buf.getvalue()
@@ -403,5 +500,5 @@ def test_config_command_end_to_end(tmp_path):
     result = runner.invoke(app, ["config", "--path", str(tmp_path)])
     assert result.exit_code == 0
     assert "mycheck" in result.output
-    assert "99" in result.output   # order column
+    assert "99" in result.output  # order column
     assert "enabled" in result.output

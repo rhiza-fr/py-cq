@@ -67,7 +67,15 @@ def test_interrogate_format_llm_no_issues():
 def test_interrogate_format_llm_with_missing():
     tr = ToolResult(
         metrics={"doc_coverage": 0.75},
-        details={"src/foo.py": [{"line": 17, "code": "D101", "message": "missing docstring in class `Foo`"}]},
+        details={
+            "src/foo.py": [
+                {
+                    "line": 17,
+                    "code": "D101",
+                    "message": "missing docstring in class `Foo`",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = InterrogateParser().format_llm_message(tr)

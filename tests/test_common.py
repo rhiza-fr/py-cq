@@ -59,11 +59,7 @@ def test_format_source_context_stops_at_next_def(tmp_path):
     """Test that format_source_context stops at the next function definition."""
     f = tmp_path / "foo.py"
     f.write_text(
-        "def test_one():\n"
-        "    x = bad_call(oink=1)\n"
-        "\n"
-        "def test_two():\n"
-        "    pass\n"
+        "def test_one():\n    x = bad_call(oink=1)\n\ndef test_two():\n    pass\n"
     )
     result = format_source_context(str(f), 2, context=0, count=10)
     assert "bad_call" in result
@@ -74,11 +70,7 @@ def test_format_source_context_includes_def_containing_error(tmp_path):
     """Test that format_source_context includes the definition containing the error."""
     f = tmp_path / "foo.py"
     f.write_text(
-        "def test_one():\n"
-        "    x = bad_call(oink=1)\n"
-        "\n"
-        "def test_two():\n"
-        "    pass\n"
+        "def test_one():\n    x = bad_call(oink=1)\n\ndef test_two():\n    pass\n"
     )
     result = format_source_context(str(f), 2, context=3, count=10)
     assert "test_one" in result
@@ -175,12 +167,7 @@ def test_find_project_root_reaches_filesystem_root(tmp_path, monkeypatch):
 
 def test_find_enclosing_function_basic(tmp_path):
     src = tmp_path / "ex.py"
-    src.write_text(
-        "def outer():\n"
-        "    x = 1\n"
-        "    y = x + 1\n"
-        "    return y\n"
-    )
+    src.write_text("def outer():\n    x = 1\n    y = x + 1\n    return y\n")
     result = find_enclosing_function(str(src), 3)
     assert "def outer" in result
     assert "y = x + 1" in result
@@ -188,12 +175,7 @@ def test_find_enclosing_function_basic(tmp_path):
 
 def test_find_enclosing_function_nested(tmp_path):
     src = tmp_path / "ex.py"
-    src.write_text(
-        "def outer():\n"
-        "    def inner():\n"
-        "        z = 42\n"
-        "    inner()\n"
-    )
+    src.write_text("def outer():\n    def inner():\n        z = 42\n    inner()\n")
     result = find_enclosing_function(str(src), 3)
     assert "def inner" in result
     assert "def outer" not in result
@@ -214,6 +196,7 @@ def test_find_enclosing_function_out_of_range(tmp_path):
 def test_find_in_project_not_found_multiple_files(tmp_path):
     """Loop visits other project files but find_function_source returns '' - branch 105->101."""
     from py_cq.parsers.common import find_in_project
+
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     hint = tmp_path / "module.py"
     hint.write_text("def known(): pass\n")

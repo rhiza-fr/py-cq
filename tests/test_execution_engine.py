@@ -3,27 +3,41 @@
 import sys
 from unittest.mock import MagicMock, patch
 
-from py_cq.execution_engine import _build_exclude_str, _dep_in_venv, _find_project_root, run_tools
+from py_cq.execution_engine import (
+    _build_exclude_str,
+    _dep_in_venv,
+    _find_project_root,
+    run_tools,
+)
 from py_cq.localtypes import RawResult, ToolConfig, ToolResult
 
 
 def _fake_config(name="fake", order=1):
     """Create a fake ToolConfig for testing purposes."""
+
     class FakeParser:
         """Fake parser for testing."""
+
         def __init__(self, parser_config=None):
             """Initialize FakeParser."""
             pass
+
         def parse(self, raw):
             """Parse the raw output."""
             return ToolResult(metrics={"score": 1.0}, raw=raw)
+
     return ToolConfig(
-        name=name, command="echo hi", parser_class=FakeParser,
-        order=order, warning_threshold=0.7, error_threshold=0.5,
+        name=name,
+        command="echo hi",
+        parser_class=FakeParser,
+        order=order,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
 
 
 # --- _find_project_root ---
+
 
 def test_find_project_root_direct(tmp_path):
     """Test that _find_project_root returns the tmp_path when pyproject.toml is present."""
@@ -51,16 +65,23 @@ def test_find_project_root_not_found(tmp_path, monkeypatch):
     py_file.write_text("")
     # Patch Path.parents so the walk never escapes tmp_path into the real project tree
     from pathlib import Path
+
     real_parents = Path.parents.fget
     monkeypatch.setattr(
-        Path, "parents",
-        property(lambda self: [p for p in real_parents(self) if str(p).startswith(str(tmp_path))]),
+        Path,
+        "parents",
+        property(
+            lambda self: [
+                p for p in real_parents(self) if str(p).startswith(str(tmp_path))
+            ]
+        ),
     )
     result = _find_project_root(py_file)
     assert result is None
 
 
 # --- run_tools ---
+
 
 def test_run_tools_returns_results():
     """Test that run_tools returns the expected results."""
@@ -107,29 +128,39 @@ def test_run_tools_empty():
 
 # --- run_tools early_exit ---
 
+
 def _fake_config_with_score(name, order, score, error_threshold=0.5):
     """Create a fake ToolConfig with a custom parser that returns a specific score."""
+
     class FakeParser:
         """A fake parser for testing purposes."""
+
         def __init__(self, parser_config=None, _score=score):
             """Initialize the fake parser."""
             self._score = _score
+
         def parse(self, raw):
             """Parse the raw output."""
             return ToolResult(metrics={"score": self._score}, raw=raw)
+
     return ToolConfig(
-        name=name, command="echo hi", parser_class=FakeParser,
-        order=order, warning_threshold=0.7, error_threshold=error_threshold,
+        name=name,
+        command="echo hi",
+        parser_class=FakeParser,
+        order=order,
+        warning_threshold=0.7,
+        error_threshold=error_threshold,
     )
 
 
 def test_run_tools_early_exit_stops_on_error():
     """When a tool returns an error-level score, subsequent tools must not run."""
-    cfg1 = _fake_config_with_score("first", order=1, score=0.0)   # error
+    cfg1 = _fake_config_with_score("first", order=1, score=0.0)  # error
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
-    cfg3 = _fake_config_with_score("third", order=3, score=1.0)   # ok
+    cfg3 = _fake_config_with_score("third", order=3, score=1.0)  # ok
 
     called = []
+
     def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
@@ -144,10 +175,13 @@ def test_run_tools_early_exit_stops_on_error():
 
 def test_run_tools_early_exit_continues_past_warning():
     """A warning-level result should not trigger early exit."""
-    cfg1 = _fake_config_with_score("first", order=1, score=0.6)   # warning (0.5 < 0.6 < 0.7)
+    cfg1 = _fake_config_with_score(
+        "first", order=1, score=0.6
+    )  # warning (0.5 < 0.6 < 0.7)
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
+
     def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
@@ -165,6 +199,7 @@ def test_run_tools_early_exit_exception_breaks_loop():
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)
 
     call_count = [0]
+
     def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         call_count[0] += 1
         if call_count[0] == 2:
@@ -181,10 +216,11 @@ def test_run_tools_early_exit_exception_breaks_loop():
 
 def test_run_tools_early_exit_false_runs_all_despite_error():
     """Without early_exit, all tools run even when one errors."""
-    cfg1 = _fake_config_with_score("first", order=1, score=0.0)   # error
+    cfg1 = _fake_config_with_score("first", order=1, score=0.0)  # error
     cfg2 = _fake_config_with_score("second", order=2, score=1.0)  # ok
 
     called = []
+
     def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
@@ -198,12 +234,17 @@ def test_run_tools_early_exit_false_runs_all_despite_error():
 
 # --- run_tool (cache miss path) ---
 
+
 def test_run_tool_cache_miss_calls_subprocess(tmp_path):
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="echo", command="echo {context_path}",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="echo",
+        command="echo {context_path}",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
     mock_result = MagicMock()
     mock_result.stdout = "hello"
@@ -213,7 +254,9 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
     mock_cache = MagicMock()
     mock_cache.get = MagicMock(return_value=None)
     with patch("py_cq.execution_engine._cache", mock_cache):
-        with patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+        with patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub:
             result = run_tool(cfg, str(tmp_path))
     mock_sub.assert_called_once()
     assert result.tool_name == "echo"
@@ -222,18 +265,29 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
 
 def test_run_tool_cache_hit_skips_subprocess(tmp_path):
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="echo", command="echo {context_path}",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="echo",
+        command="echo {context_path}",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
     cached = RawResult(tool_name="echo", stdout="cached!")
     # Build the cache key the same way run_tool does
     from pathlib import Path
 
     from py_cq.context_hash import get_context_hash
+
     input_path_posix = Path(str(tmp_path)).as_posix().rstrip("/")
-    command = cfg.command.format(context_path=str(tmp_path), abs_context_path=str(tmp_path), input_path_posix=input_path_posix, python=sys.executable, exclude="")
+    command = cfg.command.format(
+        context_path=str(tmp_path),
+        abs_context_path=str(tmp_path),
+        input_path_posix=input_path_posix,
+        python=sys.executable,
+        exclude="",
+    )
     cache_key = f"{command}:{get_context_hash(str(tmp_path))}"
     fake_cache = {cache_key: cached.to_dict()}
 
@@ -246,21 +300,30 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
 
 # --- run_tool: run_in_target_env ---
 
+
 def test_run_tool_target_env_uv_not_found(tmp_path):
     """When uv is not on PATH, python stays as sys.executable."""
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="check", command="{python} -m check {context_path}",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="check",
+        command="{python} -m check {context_path}",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
         run_in_target_env=True,
     )
     mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
     mock_cache = MagicMock()
     mock_cache.get = MagicMock(return_value=None)
-    with patch("py_cq.execution_engine._cache", mock_cache), \
-         patch("py_cq.execution_engine.shutil.which", return_value=None), \
-         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch("py_cq.execution_engine.shutil.which", return_value=None),
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
+    ):
         run_tool(cfg, str(tmp_path))
     # uv not found -> python stays as sys.executable
     called_cmd = mock_sub.call_args[0][0]
@@ -270,19 +333,27 @@ def test_run_tool_target_env_uv_not_found(tmp_path):
 def test_run_tool_target_env_uv_found_directory(tmp_path):
     """When uv is found and path is a directory, python becomes uv run."""
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="check", command="{python} -m check {context_path}",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="check",
+        command="{python} -m check {context_path}",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
         run_in_target_env=True,
     )
     mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
     mock_cache = MagicMock()
     mock_cache.get = MagicMock(return_value=None)
     fake_uv = "/usr/bin/uv"
-    with patch("py_cq.execution_engine._cache", mock_cache), \
-         patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
-         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch("py_cq.execution_engine.shutil.which", return_value=fake_uv),
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
+    ):
         run_tool(cfg, str(tmp_path))
     called_cmd = mock_sub.call_args[0][0]
     assert "uv" in called_cmd
@@ -292,22 +363,30 @@ def test_run_tool_target_env_uv_found_directory(tmp_path):
 def test_run_tool_target_env_uv_found_file(tmp_path):
     """When uv is found and path is a file, project root is found."""
     from py_cq.execution_engine import run_tool
+
     (tmp_path / "pyproject.toml").write_text("")
     py_file = tmp_path / "foo.py"
     py_file.write_text("x = 1")
     cfg = ToolConfig(
-        name="check", command="{python} -m check {context_path}",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="check",
+        command="{python} -m check {context_path}",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
         run_in_target_env=True,
     )
     mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
     mock_cache = MagicMock()
     mock_cache.get = MagicMock(return_value=None)
     fake_uv = "/usr/bin/uv"
-    with patch("py_cq.execution_engine._cache", mock_cache), \
-         patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
-         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch("py_cq.execution_engine.shutil.which", return_value=fake_uv),
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
+    ):
         run_tool(cfg, str(py_file))
     called_cmd = mock_sub.call_args[0][0]
     assert "uv" in called_cmd
@@ -316,10 +395,14 @@ def test_run_tool_target_env_uv_found_file(tmp_path):
 def test_run_tool_target_env_with_extra_deps(tmp_path):
     """Extra deps are included in the uv command as --with flags."""
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="check", command="{python} -m check {context_path}",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="check",
+        command="{python} -m check {context_path}",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
         run_in_target_env=True,
         extra_deps=["pytest", "coverage"],
     )
@@ -327,9 +410,13 @@ def test_run_tool_target_env_with_extra_deps(tmp_path):
     mock_cache = MagicMock()
     mock_cache.get = MagicMock(return_value=None)
     fake_uv = "/usr/bin/uv"
-    with patch("py_cq.execution_engine._cache", mock_cache), \
-         patch("py_cq.execution_engine.shutil.which", return_value=fake_uv), \
-         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch("py_cq.execution_engine.shutil.which", return_value=fake_uv),
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
+    ):
         run_tool(cfg, str(tmp_path))
     called_cmd = mock_sub.call_args[0][0]
     assert "--with pytest" in called_cmd
@@ -337,6 +424,7 @@ def test_run_tool_target_env_with_extra_deps(tmp_path):
 
 
 # --- parallel execution ---
+
 
 def test_run_tools_parallel_returns_all_results_sorted():
     """Parallel execution returns all results sorted by .order."""
@@ -388,6 +476,7 @@ def test_dep_in_venv_venv_exists_but_dep_absent(tmp_path):
 
 # --- _build_exclude_str ---
 
+
 def test_build_exclude_str_single_entry():
     result = _build_exclude_str(" --exclude {path}", ["src/bad.py"])
     assert "--exclude src/bad.py" in result
@@ -410,17 +499,25 @@ def test_build_exclude_str_no_format():
 def test_run_tool_exclude_appears_in_command(tmp_path):
     """Excludes passed to run_tool are injected into the subprocess command string."""
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="check", command="mytool {context_path} {exclude}",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="check",
+        command="mytool {context_path} {exclude}",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
         exclude_format=" --ignore {path}",
     )
     mock_result = MagicMock(stdout="", stderr="", returncode=0)
     mock_cache = MagicMock()
     mock_cache.get = MagicMock(return_value=None)
-    with patch("py_cq.execution_engine._cache", mock_cache), \
-         patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
+    ):
         run_tool(cfg, str(tmp_path), excludes=["demo"])
     called_cmd = mock_sub.call_args[0][0]
     assert "--ignore demo" in called_cmd
@@ -428,14 +525,19 @@ def test_run_tool_exclude_appears_in_command(tmp_path):
 
 # --- run_tool real subprocess invocation ---
 
+
 def test_run_tool_captures_stdout(tmp_path):
     """run_tool actually invokes subprocess and captures stdout."""
     from diskcache import Cache, JSONDisk
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="fake", command="{python} -c \"print('hello')\"",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="fake",
+        command="{python} -c \"print('hello')\"",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
     test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
     with patch("py_cq.execution_engine._cache", test_cache):
@@ -450,10 +552,14 @@ def test_run_tool_captures_nonzero_exit(tmp_path):
     """run_tool records non-zero exit codes."""
     from diskcache import Cache, JSONDisk
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="fake", command="{python} -c \"import sys; sys.exit(42)\"",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="fake",
+        command='{python} -c "import sys; sys.exit(42)"',
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
     test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
     with patch("py_cq.execution_engine._cache", test_cache):
@@ -465,10 +571,14 @@ def test_run_tool_result_is_cached(tmp_path):
     """Second call with identical inputs returns cached result (same timestamp)."""
     from diskcache import Cache, JSONDisk
     from py_cq.execution_engine import run_tool
+
     cfg = ToolConfig(
-        name="fake", command="echo hi",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="fake",
+        command="echo hi",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
     test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
     with patch("py_cq.execution_engine._cache", test_cache):
@@ -482,16 +592,24 @@ def test_run_tool_cache_invalidated_on_content_change(tmp_path):
     import subprocess as real_subprocess
     from diskcache import Cache, JSONDisk
     from py_cq.execution_engine import run_tool
+
     py_file = tmp_path / "module.py"
     py_file.write_text("x = 1")
     cfg = ToolConfig(
-        name="fake", command="echo check",
-        parser_class=MagicMock, order=1,
-        warning_threshold=0.7, error_threshold=0.5,
+        name="fake",
+        command="echo check",
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
     )
     test_cache = Cache(str(tmp_path / "cache"), disk=JSONDisk)
-    with patch("py_cq.execution_engine._cache", test_cache), \
-         patch("py_cq.execution_engine.subprocess.run", wraps=real_subprocess.run) as mock_sub:
+    with (
+        patch("py_cq.execution_engine._cache", test_cache),
+        patch(
+            "py_cq.execution_engine.subprocess.run", wraps=real_subprocess.run
+        ) as mock_sub,
+    ):
         run_tool(cfg, str(py_file))
         # Write different-length content so size changes -> new hash -> cache miss
         py_file.write_text("x = 2\ny = 3\n")

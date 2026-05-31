@@ -1,4 +1,5 @@
 """Tests for ExitCodeParser."""
+
 from conftest import raw
 from py_cq.parsers.exitcodeparser import ExitCodeParser
 
@@ -24,9 +25,12 @@ def test_exit_code_2_scores_0():
 def test_llm_message_shows_stdout():
     """Test that the LLM message shows stdout."""
     from py_cq.localtypes import RawResult, ToolResult
+
     tr = ToolResult(
         metrics={"exit_code": 0.0},
-        raw=RawResult(tool_name="t", command="c", stdout="line1\nline2\nline3", return_code=1),
+        raw=RawResult(
+            tool_name="t", command="c", stdout="line1\nline2\nline3", return_code=1
+        ),
     )
     msg = ExitCodeParser().format_llm_message(tr, context_lines=2)
     assert "line1" in msg
@@ -35,9 +39,12 @@ def test_llm_message_shows_stdout():
 
 def test_llm_message_falls_back_to_stderr():
     from py_cq.localtypes import RawResult, ToolResult
+
     tr = ToolResult(
         metrics={"exit_code": 0.0},
-        raw=RawResult(tool_name="t", command="c", stdout="", stderr="fatal error", return_code=1),
+        raw=RawResult(
+            tool_name="t", command="c", stdout="", stderr="fatal error", return_code=1
+        ),
     )
     msg = ExitCodeParser().format_llm_message(tr, context_lines=5)
     assert "fatal error" in msg

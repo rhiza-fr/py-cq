@@ -84,5 +84,5 @@ def test_get_sigs_sig_format(tmp_path):
     sigs = get_sigs(str(tmp_path))
     assert len(sigs) == 1
     parts = sigs[0].split(":")
-    assert parts[-2].isdigit()   # size
-    assert "." in parts[-1]      # mtime float
+    assert parts[-2].isdigit()  # size
+    assert "." in parts[-1]  # mtime float

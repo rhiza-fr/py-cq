@@ -10,6 +10,7 @@ analysis.
 Helper functions such as `format_as_table` convert the aggregated tool
 results into a Rich Table for convenient console display.
 """
+
 import io
 import json
 import logging
@@ -57,6 +58,7 @@ app = typer.Typer(
 
 class OutputMode(str, Enum):
     """Enum of output types."""
+
     TABLE = "table"
     SCORE = "score"
     JSON = "json"
@@ -69,10 +71,11 @@ def _version_callback(value: bool) -> None:
     if not value:
         return
     import re
+
     pkg = "python-code-quality"
     pkg_version = version(pkg)
     dep_versions: list[tuple[str, str]] = []
-    for req in (requires(pkg) or []):
+    for req in requires(pkg) or []:
         if "; extra ==" in req:
             continue
         dep_name = re.split(r"[>=<!;\s\[]", req)[0]
@@ -89,13 +92,21 @@ def _version_callback(value: bool) -> None:
 @app.callback()
 def callback(
     _: bool = typer.Option(
-        False, "--version", "-V", callback=_version_callback, is_eager=True, help="Show version and dependencies"
+        False,
+        "--version",
+        "-V",
+        callback=_version_callback,
+        is_eager=True,
+        help="Show version and dependencies",
     ),
 ) -> None:
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""
     import sys
+
     if isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(encoding="utf-8")
+
+
 console = Console()
 
 
@@ -103,7 +114,10 @@ console = Console()
 def check(
     path: str = typer.Argument(".", help="Path to Python file or project directory"),
     output: OutputMode = typer.Option(
-        OutputMode.TABLE, "--output", "-o", help="Output mode: table (default), score, json, llm"
+        OutputMode.TABLE,
+        "--output",
+        "-o",
+        help="Output mode: table (default), score, json, llm",
     ),
     log_level: str = typer.Option(
         "CRITICAL",
@@ -114,10 +128,15 @@ def check(
         False, "--clear-cache", help="Clear cached tool results before running"
     ),
     workers: int = typer.Option(
-        0, "--workers", help="Max parallel workers (default: one per tool, use 1 for sequential)"
+        0,
+        "--workers",
+        help="Max parallel workers (default: one per tool, use 1 for sequential)",
     ),
     language: str | None = typer.Option(
-        None, "--language", "-l", help="Override language detection (e.g. python, typescript, rust)"
+        None,
+        "--language",
+        "-l",
+        help="Override language detection (e.g. python, typescript, rust)",
     ),
     only: str | None = typer.Option(
         None, "--only", help="Comma-separated tool IDs to run (e.g. ruff,ty,pytest)"
@@ -135,10 +154,13 @@ def check(
         1, "--limit", help="Number of issues to show with -o llm (default: 1)"
     ),
     silence: list[str] = typer.Option(
-        [], "--silence", "-s", help="Silence issues from -o llm output (e.g. -s src/foo.py or -s src/foo.py:42:E501)"
+        [],
+        "--silence",
+        "-s",
+        help="Silence issues from -o llm output (e.g. -s src/foo.py or -s src/foo.py:42:E501)",
     ),
 ):
-    """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm""" # --help
+    """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""  # --help
     path_obj = Path(path)
     if not path_obj.exists():
         raise typer.BadParameter(f"Path does not exist: {path}")
@@ -165,7 +187,14 @@ def check(
     exclude_list = [e.strip() for e in exclude.split(",")] if exclude else None
 
     try:
-        cq = CQ(path_obj, only=only_list, skip=skip_list, exclude=exclude_list, workers=workers, clear_cache=clear_cache)
+        cq = CQ(
+            path_obj,
+            only=only_list,
+            skip=skip_list,
+            exclude=exclude_list,
+            workers=workers,
+            clear_cache=clear_cache,
+        )
     except ValueError as e:
         raise typer.BadParameter(str(e))
 
@@ -183,10 +212,33 @@ def check(
         print(json.dumps([tr.raw.to_dict() for tr in tool_results], indent=2))
     elif output == OutputMode.LLM:
         from py_cq.llm_formatter import format_for_llm
-        print(format_for_llm(cq._registry, combined, context_lines=cq._context_lines, hint=hint, limit=limit, silence=silence))
+
+        print(
+            format_for_llm(
+                cq._registry,
+                combined,
+                context_lines=cq._context_lines,
+                hint=hint,
+                limit=limit,
+                silence=silence,
+            )
+        )
     elif output == OutputMode.LLM_JSON:
         from py_cq.llm_formatter import format_for_llm_json
-        print(json.dumps(format_for_llm_json(cq._registry, combined, context_lines=cq._context_lines, hint=hint, limit=limit, silence=silence, project_root=cq._project_root)))
+
+        print(
+            json.dumps(
+                format_for_llm_json(
+                    cq._registry,
+                    combined,
+                    context_lines=cq._context_lines,
+                    hint=hint,
+                    limit=limit,
+                    silence=silence,
+                    project_root=cq._project_root,
+                )
+            )
+        )
     else:
         console.print(f"[bold green]{path_obj.resolve()}[/]")
         console.print(format_as_table(combined, cq._registry, total_s=total_s))
@@ -207,7 +259,9 @@ app.add_typer(config_app, name="config")
 @config_app.callback(invoke_without_command=True)
 def config(
     ctx: typer.Context,
-    path: str = typer.Option(".", "--path", "-p", help="Path to Python file or project directory"),
+    path: str = typer.Option(
+        ".", "--path", "-p", help="Path to Python file or project directory"
+    ),
 ) -> None:
     """Show the effective tool configuration for a project."""
     if ctx.invoked_subcommand is not None:
@@ -249,7 +303,10 @@ def config(
     table.add_column("Status", justify="center")
 
     all_tool_ids = set(tool_registry) | set(effective_registry)
-    for tool_id in sorted(all_tool_ids, key=lambda t: (effective_registry.get(t) or tool_registry[t]).order):
+    for tool_id in sorted(
+        all_tool_ids,
+        key=lambda t: (effective_registry.get(t) or tool_registry[t]).order,
+    ):
         tc = effective_registry.get(tool_id) or tool_registry[tool_id]
         is_disabled = tool_id in disabled_ids
         status = "[red]disabled[/red]" if is_disabled else "[green]enabled[/green]"
@@ -267,8 +324,12 @@ def config(
 @config_app.command("set")
 def config_set(
     tool_id: str = typer.Argument(..., help="Tool ID (e.g. radon-hal, ruff)"),
-    warning: float | None = typer.Option(None, "--warning", "-w", help="Warning threshold (0-1)"),
-    error: float | None = typer.Option(None, "--error", "-e", help="Error threshold (0-1)"),
+    warning: float | None = typer.Option(
+        None, "--warning", "-w", help="Warning threshold (0-1)"
+    ),
+    error: float | None = typer.Option(
+        None, "--error", "-e", help="Error threshold (0-1)"
+    ),
     path: str = typer.Option(".", "--path", "-p", help="Path to project directory"),
 ) -> None:
     """Set warning/error thresholds for a tool in pyproject.toml."""
@@ -322,18 +383,21 @@ def config_set(
     if error is not None:
         parts.append(f"error={error}")
     console.print(
-        f"[green]Set {tool_id} thresholds ({', '.join(parts)}) "
-        f"in {toml_path}[/green]"
+        f"[green]Set {tool_id} thresholds ({', '.join(parts)}) in {toml_path}[/green]"
     )
 
     from py_cq.execution_engine import _cache
+
     _cache.clear()
     console.print("[dim]Tool cache cleared[/dim]")
 
 
 @app.command()
 def is_fixed(
-    fingerprint: str = typer.Argument(..., help="Fingerprint from -o llm-json output (tool::project::path[::line[::code]])"),
+    fingerprint: str = typer.Argument(
+        ...,
+        help="Fingerprint from -o llm-json output (tool::project::path[::line[::code]])",
+    ),
 ) -> None:
     """Return True if the fingerprinted issue is no longer present."""
     try:

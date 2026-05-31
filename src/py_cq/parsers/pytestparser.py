@@ -100,7 +100,11 @@ def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
     # Prefer E-lines (the actual assertion / exception messages).
     e_lines = [ln for ln in section if ln.startswith("E ") or ln.strip() == "E"]
     if e_lines:
-        arrow_lines = [ln.lstrip("> \t") for ln in section if ln.startswith(">") and ln.lstrip("> \t")]
+        arrow_lines = [
+            ln.lstrip("> \t")
+            for ln in section
+            if ln.startswith(">") and ln.lstrip("> \t")
+        ]
         cleaned = [_re.sub(r"^E\s*", "", ln) for ln in e_lines]
         # Drop "At index N diff:" lines - always redundant with the first E-line.
         cleaned = [ln for ln in cleaned if not _re.match(r"At index \d+ diff:", ln)]
@@ -164,7 +168,10 @@ class PytestParser(AbstractParser):
             passed_tests = 0
             for line in lines:
                 # tests/test_common.py::test_name[param] PASSED    [ 8%]
-                tests_match = _re.search(r"(.*\.py)::([\w\[\].,+\- ]+) (PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)", line)
+                tests_match = _re.search(
+                    r"(.*\.py)::([\w\[\].,+\- ]+) (PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)",
+                    line,
+                )
                 if tests_match:
                     test_file = tests_match.group(1)
                     test_name = tests_match.group(2).strip()
@@ -176,7 +183,9 @@ class PytestParser(AbstractParser):
             if num_tests == 0:
                 # No individual test lines found (e.g. non-verbose output);
                 # fall back to parsing the pytest summary line.
-                summary = _re.search(r"(\d+) passed(?:.*?(\d+) failed)?", raw_result.stdout)
+                summary = _re.search(
+                    r"(\d+) passed(?:.*?(\d+) failed)?", raw_result.stdout
+                )
                 if summary:
                     passed_tests = int(summary.group(1))
                     failed_tests = int(summary.group(2)) if summary.group(2) else 0
@@ -185,13 +194,16 @@ class PytestParser(AbstractParser):
             tr.details = tests_found
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Return the first failing test with function body, failure output, and callee signature."""
         from py_cq.parsers.common import (
             extract_callee_name,
             find_function_source,
             format_callee_context,
         )
+
         for file, tests in tr.details.items():
             if not isinstance(tests, dict):
                 continue
@@ -201,8 +213,14 @@ class PytestParser(AbstractParser):
                 header = f"`{file}::{test_name}` - test **FAILED**"
                 bare_name = test_name.split("[")[0]
                 tdir = _target_dir(tr.raw.command)
-                resolved = (_Path(tdir) / file).as_posix() if tdir and not _Path(file).is_absolute() else file
-                body = find_function_source(resolved, bare_name, max_lines=context_lines)
+                resolved = (
+                    (_Path(tdir) / file).as_posix()
+                    if tdir and not _Path(file).is_absolute()
+                    else file
+                )
+                body = find_function_source(
+                    resolved, bare_name, max_lines=context_lines
+                )
                 failure = _extract_failure(tr.raw.stdout, test_name, max_lines=50)
                 callee = ""
                 call_line = _last_call_line_for_test(tr.raw.stdout, test_name)
@@ -228,10 +246,16 @@ class PytestParser(AbstractParser):
             format_callee_context,
             format_source_context,
         )
+
         combined = tr.raw.stdout + tr.raw.stderr
         err = _extract_collection_error(combined)
         if err:
-            file, line, typ, help_msg = err["file"], err["line"], err["type"], err["help"]
+            file, line, typ, help_msg = (
+                err["file"],
+                err["line"],
+                err["type"],
+                err["help"],
+            )
             code_block = format_source_context(file, line, count=context_lines) or ""
             callee = ""
             # try to find callee from the offending source line via format_source_context result

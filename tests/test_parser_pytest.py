@@ -24,7 +24,9 @@ def test_pytest_parse_mixed():
 
 def test_pytest_parse_all_pass():
     """Test that all tests pass in pytest parse."""
-    tr = PytestParser().parse(raw("tests/test_foo.py::test_one PASSED    [100%]\n", return_code=0))
+    tr = PytestParser().parse(
+        raw("tests/test_foo.py::test_one PASSED    [100%]\n", return_code=0)
+    )
     assert tr.metrics["tests"] == 1.0
 
 
@@ -66,6 +68,7 @@ tests/test_foo.py:5: AssertionError
 FAILED tests/test_foo.py::test_bar - AssertionError: assert 1 == 2
 """
 
+
 def test_format_llm_message_includes_failure_output(tmp_path):
     test_file = tmp_path / "tests" / "test_foo.py"
     test_file.parent.mkdir()
@@ -98,7 +101,14 @@ def test_format_llm_message_no_tests_ran():
 def test_format_llm_message_no_details_shows_stderr():
     """When no test details exist, fallback shows stderr content."""
     from py_cq.localtypes import RawResult
-    raw_result = RawResult(tool_name="pytest", command="cmd", stdout="", stderr="No module named pytest\n", return_code=1)
+
+    raw_result = RawResult(
+        tool_name="pytest",
+        command="cmd",
+        stdout="",
+        stderr="No module named pytest\n",
+        return_code=1,
+    )
     tr = PytestParser().parse(raw_result)
     msg = PytestParser().format_llm_message(tr, context_lines=15)
     assert "No module named pytest" in msg
@@ -131,6 +141,7 @@ def test_format_llm_message_parameterized_finds_body(tmp_path):
 
 def test_last_call_line_for_test():
     from py_cq.parsers.pytestparser import _last_call_line_for_test
+
     stdout = """\
 ________ test_foo ________
 
@@ -150,7 +161,9 @@ def test_format_llm_message_includes_callee(tmp_path):
     test_file = tmp_path / "test_foo.py"
     helper_file = tmp_path / "helpers.py"
     helper_file.write_text("def make_thing(x, y):\n    return x + y\n")
-    test_file.write_text("def test_foo():\n    result = make_thing(bad=1)\n    assert result == 2\n")
+    test_file.write_text(
+        "def test_foo():\n    result = make_thing(bad=1)\n    assert result == 2\n"
+    )
     stdout = f"""\
 {test_file}::test_foo FAILED    [100%]
 
@@ -170,9 +183,9 @@ E       TypeError: make_thing() got unexpected keyword argument 'bad'
 
 def test_format_llm_message_no_body_fallback():
     """When test file doesn't exist, header is returned without function body."""
-    tr = PytestParser().parse(raw(
-        "tests/nonexistent.py::test_missing FAILED    [100%]\n", return_code=1
-    ))
+    tr = PytestParser().parse(
+        raw("tests/nonexistent.py::test_missing FAILED    [100%]\n", return_code=1)
+    )
     msg = PytestParser().format_llm_message(tr, context_lines=15)
     assert "FAILED" in msg
     assert "def test_missing" not in msg  # no body since file doesn't exist
@@ -197,6 +210,7 @@ def test_collection_error_returns_error_not_generic_failure():
 def test_last_call_line_breaks_on_separator_line():
     """_last_call_line_for_test stops and doesn't include the trailing === separator."""
     from py_cq.parsers.pytestparser import _last_call_line_for_test
+
     stdout = """\
 ____ test_foo ____
 
@@ -213,6 +227,7 @@ ____ test_foo ____
 def test_extract_failure_max_lines():
     """_extract_failure truncates at max_lines."""
     from py_cq.parsers.pytestparser import _extract_failure
+
     stdout = """\
 ____test_long____
 line1
@@ -230,9 +245,11 @@ line5
 def test_format_llm_message_skips_non_dict_test_entry():
     """format_llm_message skips details entries that are not dicts."""
     from py_cq.localtypes import RawResult
+
     raw_result = RawResult(tool_name="pytest", stdout="", stderr="", return_code=1)
     from py_cq.parsers.pytestparser import PytestParser
     from py_cq.localtypes import ToolResult
+
     tr = ToolResult(
         metrics={"tests": 0.0},
         details={"tests/test_foo.py": "not-a-dict"},
@@ -240,7 +257,11 @@ def test_format_llm_message_skips_non_dict_test_entry():
     )
     msg = PytestParser().format_llm_message(tr)
     # Falls through to the generic fallback since no dict test entries
-    assert "pytest" in msg.lower() or "no details" in msg.lower() or "failure" in msg.lower()
+    assert (
+        "pytest" in msg.lower()
+        or "no details" in msg.lower()
+        or "failure" in msg.lower()
+    )
 
 
 def test_format_llm_message_collection_error_with_callee(tmp_path):
@@ -253,6 +274,7 @@ def test_format_llm_message_collection_error_with_callee(tmp_path):
         "E         my_func(bad_arg)\n"
     )
     from py_cq.localtypes import RawResult
+
     raw_result = RawResult(tool_name="pytest", stdout=stdout, stderr="", return_code=2)
     tr = PytestParser().parse(raw_result)
     msg = PytestParser().format_llm_message(tr)
@@ -274,6 +296,7 @@ def test_skipped_tests_do_not_reduce_pass_rate():
 def test_extract_failure_truncates_at_max_lines():
     """_extract_failure stops collecting at max_lines (line 85 coverage)."""
     from py_cq.parsers.pytestparser import _extract_failure
+
     body = "\n".join(f"    line_{i} = {i}" for i in range(10))
     stdout = f"____ test_foo ____\n{body}\n=== short test summary ===\n"
     result = _extract_failure(stdout, "test_foo", max_lines=3)
@@ -296,6 +319,7 @@ def test_format_llm_message_skips_passed_tests():
 def test_last_call_line_whitespace_only_line():
     """_last_call_line_for_test ignores lines that strip to empty - branch 38->26."""
     from py_cq.parsers.pytestparser import _last_call_line_for_test
+
     stdout = """\
 ________ test_foo ________
 
@@ -325,6 +349,7 @@ def test_format_llm_message_all_passed_then_failed():
 def test_format_llm_message_collection_error_no_src_line():
     """Collection error with no deeply-indented E source line - branch 210->214 (src_line empty)."""
     from py_cq.localtypes import RawResult
+
     stdout = (
         "ERROR collecting tests/test_bad.py\n"
         'E   File "tests/test_bad.py", line 3\n'
@@ -350,6 +375,7 @@ E   ImportError: cannot import name 'setup_db' from 'mymodule' (mymodule/__init_
 def test_realistic_collection_error_details_populated():
     """A realistic multi-line conftest ImportError populates failed_files correctly."""
     from py_cq.localtypes import RawResult
+
     raw_result = RawResult(
         tool_name="pytest",
         stdout=REALISTIC_COLLECTION_ERROR,

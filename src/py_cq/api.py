@@ -11,16 +11,29 @@ from py_cq.localtypes import CombinedToolResults, Fingerprint, ToolConfig, ToolR
 from py_cq.metric_aggregator import aggregate_metrics
 from py_cq.tool_registry import tool_registry
 
-_KNOWN_PARSER_CLASSES = frozenset({
-    "CompileParser", "RuffParser", "TyParser", "BanditParser",
-    "PytestParser", "CoverageParser", "ComplexityParser",
-    "MaintainabilityParser", "HalsteadParser", "VultureParser",
-    "InterrogateParser",
-    "ExitCodeParser", "LineCountParser", "RegexCountParser",
-})
+_KNOWN_PARSER_CLASSES = frozenset(
+    {
+        "CompileParser",
+        "RuffParser",
+        "TyParser",
+        "BanditParser",
+        "PytestParser",
+        "CoverageParser",
+        "ComplexityParser",
+        "MaintainabilityParser",
+        "HalsteadParser",
+        "VultureParser",
+        "InterrogateParser",
+        "ExitCodeParser",
+        "LineCountParser",
+        "RegexCountParser",
+    }
+)
 
 
-def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str, ToolConfig]:
+def _apply_user_config(
+    base: dict[str, ToolConfig], user_cfg: dict
+) -> dict[str, ToolConfig]:
     """Return a modified copy of base with user overrides applied.
 
     Raises ValueError on invalid config (caller wraps for CLI context).
@@ -45,7 +58,9 @@ def _apply_user_config(base: dict[str, ToolConfig], user_cfg: dict) -> dict[str,
         try:
             parser_name = tool_data["parser"]
         except KeyError:
-            raise ValueError(f"[tool.cq.tools.{tool_id}] missing required field 'parser'")
+            raise ValueError(
+                f"[tool.cq.tools.{tool_id}] missing required field 'parser'"
+            )
         if parser_name not in _KNOWN_PARSER_CLASSES:
             allowed = ", ".join(sorted(_KNOWN_PARSER_CLASSES))
             raise ValueError(
@@ -103,24 +118,32 @@ class CQ:
         self._registry = _apply_user_config(tool_registry, user_cfg)
 
         if self.path.is_file():
-            self._registry = {k: v for k, v in self._registry.items() if not v.skip_for_file}
+            self._registry = {
+                k: v for k, v in self._registry.items() if not v.skip_for_file
+            }
 
         if only:
             keep = set(only)
             unknown = keep - set(self._registry)
             if unknown:
-                raise ValueError(f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {', '.join(sorted(self._registry))}")
+                raise ValueError(
+                    f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {', '.join(sorted(self._registry))}"
+                )
             self._registry = {k: v for k, v in self._registry.items() if k in keep}
         if skip:
             drop = set(skip)
             unknown = drop - set(self._registry)
             if unknown:
-                raise ValueError(f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {', '.join(sorted(self._registry))}")
+                raise ValueError(
+                    f"Unknown tool(s): {', '.join(sorted(unknown))}. Available: {', '.join(sorted(self._registry))}"
+                )
             self._registry = {k: v for k, v in self._registry.items() if k not in drop}
 
         config_excludes: list[str] = user_cfg.get("exclude", [])
         self._excludes = list(dict.fromkeys(config_excludes + (exclude or [])))
-        self._project_root = self.path.resolve() if self.path.is_dir() else self.path.resolve().parent
+        self._project_root = (
+            self.path.resolve() if self.path.is_dir() else self.path.resolve().parent
+        )
 
         if clear_cache:
             _cache.clear()
@@ -128,8 +151,11 @@ class CQ:
     def raw(self, *, early_exit: bool = False) -> list[ToolResult]:
         """Run all tools and return parsed results before aggregation."""
         return run_tools(
-            self._registry.values(), str(self.path), self._workers,
-            early_exit=early_exit, excludes=self._excludes,
+            self._registry.values(),
+            str(self.path),
+            self._workers,
+            early_exit=early_exit,
+            excludes=self._excludes,
         )
 
     def check(self) -> CombinedToolResults:
@@ -150,9 +176,12 @@ class CQ:
         results = self.raw(early_exit=True)
         combined = aggregate_metrics(str(self.path), results)
         return format_for_llm_json(
-            self._registry, combined,
+            self._registry,
+            combined,
             context_lines=self._context_lines,
-            hint=hint, limit=limit, silence=silence or [],
+            hint=hint,
+            limit=limit,
+            silence=silence or [],
             project_root=self._project_root,
         )
 
@@ -163,7 +192,9 @@ class CQ:
         """
         fp = Fingerprint.from_string(fingerprint)
         if not fp.tool:
-            raise ValueError(f"Expected tool::project::path[::line[::code]], got: {fingerprint!r}")
+            raise ValueError(
+                f"Expected tool::project::path[::line[::code]], got: {fingerprint!r}"
+            )
         if fp.tool not in tool_registry:
             raise ValueError(f"Unknown tool: {fp.tool!r}")
 
@@ -179,13 +210,19 @@ class CQ:
         elif fp.path:
             file_path = Path(fp.path)
             if not file_path.is_absolute():
-                file_path = (self._project_root / file_path) if self._project_root else file_path
+                file_path = (
+                    (self._project_root / file_path)
+                    if self._project_root
+                    else file_path
+                )
             target = str(file_path)
         else:
             target = str(self.path)
 
         only_registry = {fp.tool: tool_registry[fp.tool]}
-        tool_results = run_tools(only_registry.values(), target, max_workers=1, early_exit=False, excludes=[])
+        tool_results = run_tools(
+            only_registry.values(), target, max_workers=1, early_exit=False, excludes=[]
+        )
 
         if not tool_results:
             return False

@@ -45,7 +45,16 @@ def test_ruff_format_E721(tmp_path):
     src.write_text("def f(output_type):\n    if output_type == str:\n        pass\n")
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 2, "col": 20, "code": "E721", "message": "Use `is` and `is not` for type comparisons, or `isinstance()` for isinstance checks"}]},
+        details={
+            str(src): [
+                {
+                    "line": 2,
+                    "col": 20,
+                    "code": "E721",
+                    "message": "Use `is` and `is not` for type comparisons, or `isinstance()` for isinstance checks",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -59,7 +68,16 @@ def test_ruff_format_E701(tmp_path):
     src.write_text("x = 1\nif x: pass\n")
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 2, "col": 5, "code": "E701", "message": "Multiple statements on one line (colon)"}]},
+        details={
+            str(src): [
+                {
+                    "line": 2,
+                    "col": 5,
+                    "code": "E701",
+                    "message": "Multiple statements on one line (colon)",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -73,11 +91,19 @@ def test_ruff_hint_F841_referenced_elsewhere(tmp_path):
     src.write_text(
         "def foo():\n"
         "    n_pending = get_count()\n"  # line 2 - the violation
-        "    return n_pending + 1\n"     # line 3 - other reference
+        "    return n_pending + 1\n"  # line 3 - other reference
     )
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 2, "code": "F841", "message": "Local variable `n_pending` is assigned to but never used"}]},
+        details={
+            str(src): [
+                {
+                    "line": 2,
+                    "code": "F841",
+                    "message": "Local variable `n_pending` is assigned to but never used",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -96,7 +122,15 @@ def test_ruff_hint_F841_not_referenced(tmp_path):
     )
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 2, "code": "F841", "message": "Local variable `unused_var` is assigned to but never used"}]},
+        details={
+            str(src): [
+                {
+                    "line": 2,
+                    "code": "F841",
+                    "message": "Local variable `unused_var` is assigned to but never used",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -109,7 +143,15 @@ def test_ruff_hint_F541(tmp_path):
     src.write_text('x = f"no placeholders here"\n')
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 1, "code": "F541", "message": "[*] f-string without any placeholders"}]},
+        details={
+            str(src): [
+                {
+                    "line": 1,
+                    "code": "F541",
+                    "message": "[*] f-string without any placeholders",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -122,7 +164,11 @@ def test_ruff_hint_F401_safe_to_delete(tmp_path):
     src.write_text("import os\n\ndef foo():\n    return 42\n")
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 1, "code": "F401", "message": "[*] `os` imported but unused"}]},
+        details={
+            str(src): [
+                {"line": 1, "code": "F401", "message": "[*] `os` imported but unused"}
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -140,7 +186,15 @@ def test_ruff_hint_F401_soft_uses(tmp_path):
     )
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 1, "code": "F401", "message": "[*] `typing.Optional` imported but unused"}]},
+        details={
+            str(src): [
+                {
+                    "line": 1,
+                    "code": "F401",
+                    "message": "[*] `typing.Optional` imported but unused",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -151,13 +205,17 @@ def test_ruff_hint_F401_soft_uses(tmp_path):
 def test_ruff_hint_F821_with_conditional_import(tmp_path):
     src = tmp_path / "server.py"
     src.write_text(
-        'def create_server() -> "FastMCP":\n'       # line 1 - violation
+        'def create_server() -> "FastMCP":\n'  # line 1 - violation
         "    from mcp.server.fastmcp import FastMCP\n"  # line 2 - ref
-        '    return FastMCP("app")\n'               # line 3 - ref
+        '    return FastMCP("app")\n'  # line 3 - ref
     )
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 1, "code": "F821", "message": "Undefined name `FastMCP`"}]},
+        details={
+            str(src): [
+                {"line": 1, "code": "F821", "message": "Undefined name `FastMCP`"}
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)
@@ -171,7 +229,11 @@ def test_ruff_hint_F821_not_found(tmp_path):
     src.write_text("def foo():\n    return Unknown()\n")
     tr = ToolResult(
         metrics={"lint": 0.5},
-        details={str(src): [{"line": 2, "code": "F821", "message": "Undefined name `Unknown`"}]},
+        details={
+            str(src): [
+                {"line": 2, "code": "F821", "message": "Undefined name `Unknown`"}
+            ]
+        },
         raw=RawResult(),
     )
     msg = RuffParser().format_llm_message(tr)

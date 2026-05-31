@@ -1,4 +1,5 @@
 """Tests for RegexCountParser."""
+
 import pytest
 from conftest import raw
 from py_cq.parsers.regexcountparser import RegexCountParser
@@ -38,6 +39,7 @@ def test_missing_pattern_raises():
 
 def test_llm_message_shows_first_match():
     from py_cq.localtypes import RawResult, ToolResult
+
     tr = ToolResult(
         metrics={"violations": 0.5},
         raw=RawResult(tool_name="t", command="c", stdout=""),
@@ -49,5 +51,10 @@ def test_llm_message_shows_first_match():
 
 def test_format_llm_message_no_violations():
     from py_cq.localtypes import RawResult, ToolResult
-    tr = ToolResult(metrics={"violations": 1.0}, raw=RawResult(), details={"count": 0, "matches": []})
+
+    tr = ToolResult(
+        metrics={"violations": 1.0},
+        raw=RawResult(),
+        details={"count": 0, "matches": []},
+    )
     assert _parser(r"^ERROR").format_llm_message(tr) == "No violations found"

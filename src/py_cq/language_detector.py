@@ -4,7 +4,10 @@ from pathlib import Path
 
 # Ordered: first match wins. Python is listed first so it takes priority.
 _MARKERS: list[tuple[str, list[str]]] = [
-    ("python", ["pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile"]),
+    (
+        "python",
+        ["pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile"],
+    ),
     ("typescript", ["tsconfig.json", "package.json"]),
     ("rust", ["Cargo.toml"]),
     ("go", ["go.mod"]),

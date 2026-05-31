@@ -61,7 +61,9 @@ def test_compile_format_llm_message_includes_callee(tmp_path):
     """When the error src line calls a project function, its definition is appended."""
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     bad_file = tmp_path / "bad.py"
-    bad_file.write_text("def make_thing(a, b):\n    return a + b\n\nresult = make_thing(oink=2)\n")
+    bad_file.write_text(
+        "def make_thing(a, b):\n    return a + b\n\nresult = make_thing(oink=2)\n"
+    )
     compile_output = (
         f"Compiling '{bad_file}'...\n"
         f'***   File "{bad_file}", line 4\n'

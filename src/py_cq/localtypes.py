@@ -18,7 +18,7 @@ class Fingerprint:
 
     tool: str
     project: str  # absolute path to project root
-    path: str     # path relative to project
+    path: str  # path relative to project
     line: str = ""
     code: str = ""
 
@@ -32,7 +32,9 @@ class Fingerprint:
     def from_string(cls, s: str) -> "Fingerprint":
         parts = s.split("::")
         parts += [""] * (5 - len(parts))
-        return cls(tool=parts[0], project=parts[1], path=parts[2], line=parts[3], code=parts[4])
+        return cls(
+            tool=parts[0], project=parts[1], path=parts[2], line=parts[3], code=parts[4]
+        )
 
 
 @dataclass
@@ -47,10 +49,16 @@ class ToolConfig:
     warning_threshold: float = 0.7  # Yellow warning if below this
     error_threshold: float = 0.5  # Red error if below this
     run_in_target_env: bool = False  # If True, run in target project's env via uv
-    extra_deps: list[str] = field(default_factory=list)  # Extra deps to inject via uv --with
+    extra_deps: list[str] = field(
+        default_factory=list
+    )  # Extra deps to inject via uv --with
     parser_config: dict[str, Any] = field(default_factory=dict)
-    exclude_format: str = ""  # Per-path template for --exclude injection, e.g. " --exclude {path}"
-    scan_exclude_names: list[str] = field(default_factory=list)  # Top-level dir/file names to omit from {scan_targets}
+    exclude_format: str = (
+        ""  # Per-path template for --exclude injection, e.g. " --exclude {path}"
+    )
+    scan_exclude_names: list[str] = field(
+        default_factory=list
+    )  # Top-level dir/file names to omit from {scan_targets}
     skip_for_file: bool = False  # If True, skip when context_path is a single file
 
 
@@ -133,7 +141,12 @@ class CombinedToolResults:
         self.tool_results = tool_results
         self.path = path
         scored = [tr for tr in tool_results if tr.metrics]
-        self.score = sum(sum(tr.metrics.values()) / len(tr.metrics) for tr in scored) / len(scored) if scored else 0.0
+        self.score = (
+            sum(sum(tr.metrics.values()) / len(tr.metrics) for tr in scored)
+            / len(scored)
+            if scored
+            else 0.0
+        )
 
     score: float = 0.0
     path: str = ""
@@ -160,7 +173,9 @@ class AbstractParser(ABC):
         """Converts raw tool output into a structured ToolResult."""
         pass
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Return a single-defect description for LLM consumption.
 
         Default implementation reports the worst metric by name and score.

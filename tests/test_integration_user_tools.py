@@ -12,12 +12,29 @@ from py_cq.cli import app
 runner = CliRunner()
 
 _DISABLE_ALL = [
-    "compile", "ruff", "ty", "bandit", "pytest", "coverage",
-    "radon-cc", "radon-mi", "radon-hal", "vulture", "interrogate",
+    "compile",
+    "ruff",
+    "ty",
+    "bandit",
+    "pytest",
+    "coverage",
+    "radon-cc",
+    "radon-mi",
+    "radon-hal",
+    "vulture",
+    "interrogate",
 ]
 
 
-def _project(tmp_path, tool_name, command, parser, warning=0.9999, error=0.9999, parser_config=None):
+def _project(
+    tmp_path,
+    tool_name,
+    command,
+    parser,
+    warning=0.9999,
+    error=0.9999,
+    parser_config=None,
+):
     """Write a pyproject.toml with all built-in tools disabled and one user tool."""
     disable = ", ".join(f'"{t}"' for t in _DISABLE_ALL)
     lines = [
@@ -40,6 +57,7 @@ def _project(tmp_path, tool_name, command, parser, warning=0.9999, error=0.9999,
 
 
 # --- ExitCodeParser ---
+
 
 def test_exitcode_pass(tmp_path):
     """ExitCodeParser: exit 0 -> score 1.0, process exits 0."""
@@ -73,6 +91,7 @@ def test_exitcode_llm_output(tmp_path):
 
 # --- LineCountParser ---
 
+
 def test_linecount_no_output(tmp_path):
     """LineCountParser: no stdout lines -> score 1.0."""
     script = tmp_path / "silent.py"
@@ -102,12 +121,19 @@ def test_linecount_custom_scale_factor(tmp_path):
     cmd = f"{{python}} {script.as_posix()}"
 
     (tmp_path / "strict").mkdir()
-    path_strict = _project(tmp_path / "strict", "mycheck", cmd, "LineCountParser",
-                            error=0.0, parser_config={"scale_factor": 1})
+    path_strict = _project(
+        tmp_path / "strict",
+        "mycheck",
+        cmd,
+        "LineCountParser",
+        error=0.0,
+        parser_config={"scale_factor": 1},
+    )
 
     (tmp_path / "default").mkdir()
-    path_default = _project(tmp_path / "default", "mycheck", cmd, "LineCountParser",
-                             error=0.0)
+    path_default = _project(
+        tmp_path / "default", "mycheck", cmd, "LineCountParser", error=0.0
+    )
 
     r_strict = runner.invoke(app, ["check", path_strict, "-o", "score"])
     r_default = runner.invoke(app, ["check", path_default, "-o", "score"])
@@ -116,13 +142,19 @@ def test_linecount_custom_scale_factor(tmp_path):
 
 # --- RegexCountParser ---
 
+
 def test_regexcount_no_match(tmp_path):
     """RegexCountParser: no lines match pattern -> score 1.0."""
     script = tmp_path / "info.py"
     script.write_text("print('INFO: all good')")
     cmd = f"{{python}} {script.as_posix()}"
-    path = _project(tmp_path, "mycheck", cmd, "RegexCountParser",
-                    parser_config={"pattern": "^ERROR"})
+    path = _project(
+        tmp_path,
+        "mycheck",
+        cmd,
+        "RegexCountParser",
+        parser_config={"pattern": "^ERROR"},
+    )
     result = runner.invoke(app, ["check", path, "-o", "score"])
     assert result.exit_code == 0
     assert "1.0" in result.output
@@ -133,8 +165,14 @@ def test_regexcount_with_match(tmp_path):
     script = tmp_path / "errors.py"
     script.write_text("print('ERROR: bad')\nprint('INFO: ok')\n")
     cmd = f"{{python}} {script.as_posix()}"
-    path = _project(tmp_path, "mycheck", cmd, "RegexCountParser",
-                    error=0.0, parser_config={"pattern": "^ERROR"})
+    path = _project(
+        tmp_path,
+        "mycheck",
+        cmd,
+        "RegexCountParser",
+        error=0.0,
+        parser_config={"pattern": "^ERROR"},
+    )
     result = runner.invoke(app, ["check", path, "-o", "score"])
     assert result.exit_code == 0
     assert 0.0 < float(result.output.strip()) < 1.0
@@ -145,8 +183,14 @@ def test_regexcount_llm_output_shows_matching_line(tmp_path):
     script = tmp_path / "mixed.py"
     script.write_text("print('ERROR: something broke')\nprint('INFO: other')\n")
     cmd = f"{{python}} {script.as_posix()}"
-    path = _project(tmp_path, "mycheck", cmd, "RegexCountParser",
-                    error=0.0, parser_config={"pattern": "^ERROR"})
+    path = _project(
+        tmp_path,
+        "mycheck",
+        cmd,
+        "RegexCountParser",
+        error=0.0,
+        parser_config={"pattern": "^ERROR"},
+    )
     result = runner.invoke(app, ["check", path, "-o", "llm"])
     assert result.exit_code == 0
     assert "ERROR: something broke" in result.output

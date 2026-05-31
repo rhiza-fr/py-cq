@@ -6,19 +6,25 @@ from conftest import raw
 
 from py_cq.parsers.maintainabilityparser import MaintainabilityParser
 
-_NORMAL = json.dumps({
-    "src/foo.py": {"mi": 73.0, "rank": "A"},
-    "src\\bar.py": {"mi": 45.0, "rank": "C"},
-})
+_NORMAL = json.dumps(
+    {
+        "src/foo.py": {"mi": 73.0, "rank": "A"},
+        "src\\bar.py": {"mi": 45.0, "rank": "C"},
+    }
+)
 
-_ERROR = json.dumps({
-    "src/bad.py": {"error": "syntax error in file"},
-})
+_ERROR = json.dumps(
+    {
+        "src/bad.py": {"error": "syntax error in file"},
+    }
+)
 
-_MIXED = json.dumps({
-    "src/good.py": {"mi": 80.0, "rank": "A"},
-    "src/bad.py": {"error": "oops"},
-})
+_MIXED = json.dumps(
+    {
+        "src/good.py": {"mi": 80.0, "rank": "A"},
+        "src/bad.py": {"error": "oops"},
+    }
+)
 
 
 def test_maintainability_metric_present():
@@ -63,9 +69,9 @@ def test_maintainability_error_file_not_counted_in_score():
 def test_maintainability_error_does_not_affect_good_file_score():
     """Test that maintainability error does not affect good file score."""
     tr_mixed = MaintainabilityParser().parse(raw(_MIXED))
-    tr_good = MaintainabilityParser().parse(raw(
-        json.dumps({"src/good.py": {"mi": 80.0, "rank": "A"}})
-    ))
+    tr_good = MaintainabilityParser().parse(
+        raw(json.dumps({"src/good.py": {"mi": 80.0, "rank": "A"}}))
+    )
     assert tr_mixed.metrics["maintainability"] == tr_good.metrics["maintainability"]
 
 
@@ -93,10 +99,12 @@ def test_maintainability_format_llm_message_uses_base_fallback():
 
 def test_maintainability_unknown_keys_skipped():
     """File entry with neither 'error' nor 'mi' is ignored - branch 54->47."""
-    data = json.dumps({
-        "src/foo.py": {"mi": 70.0, "rank": "B"},
-        "src/weird.py": {"some_other_key": 42},
-    })
+    data = json.dumps(
+        {
+            "src/foo.py": {"mi": 70.0, "rank": "B"},
+            "src/weird.py": {"some_other_key": 42},
+        }
+    )
     tr = MaintainabilityParser().parse(raw(data))
     assert "src/weird.py" not in tr.details
     assert "src/foo.py" in tr.details

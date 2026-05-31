@@ -1,4 +1,5 @@
 """Tests for language_detector."""
+
 from py_cq.language_detector import detect_language
 
 

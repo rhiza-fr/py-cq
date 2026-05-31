@@ -15,7 +15,14 @@ import re
 from collections.abc import Callable
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import extract_first_issue, find_enclosing_function, format_issue_header, format_source_context, resolve_path, score_logistic_variant
+from py_cq.parsers.common import (
+    extract_first_issue,
+    find_enclosing_function,
+    format_issue_header,
+    format_source_context,
+    resolve_path,
+    score_logistic_variant,
+)
 
 _DIAG_RE = re.compile(r"^(.+):(\d+):\d+:\s+(error|warning)\[([^\]]+)\] (.+)$")
 _EXPECTED_FOUND_RE = re.compile(r"Expected `([^`]+)`, found `([^`]+)`")
@@ -35,14 +42,18 @@ def _format_invalid_argument_type(file: str, line: int, message: str) -> str:
         Markdown-formatted issue report with fix hints.
     """
     display_msg = re.sub(r": (Expected `)", r":\n\1", message)
-    base = format_issue_header(file, line, "invalid-argument-type", display_msg) + format_source_context(file, line)
+    base = format_issue_header(
+        file, line, "invalid-argument-type", display_msg
+    ) + format_source_context(file, line)
     m = _EXPECTED_FOUND_RE.search(message)
     if not m or "Unknown" not in m.group(2):
         return base
     enclosing = find_enclosing_function(file, line)
     note = "\n\n`Unknown` means ty cannot infer this argument's type - the variable has no annotation."
     if enclosing:
-        note += f" Trace the argument back to its source and annotate its type:{enclosing}"
+        note += (
+            f" Trace the argument back to its source and annotate its type:{enclosing}"
+        )
     else:
         note += " Annotate the variable's type or cast the argument explicitly."
     return base + note
@@ -66,7 +77,9 @@ def _format_call_non_callable(file: str, line: int, message: str) -> str:
     Returns:
         Markdown-formatted issue report with fix hints.
     """
-    base = format_issue_header(file, line, "call-non-callable", message) + format_source_context(file, line, context=3, count=8)
+    base = format_issue_header(
+        file, line, "call-non-callable", message
+    ) + format_source_context(file, line, context=3, count=8)
     m = _TYPE_NAME_RE.search(message)
     type_name = f"`{m.group(1)}`" if m else "this type"
     return base + (
@@ -89,10 +102,15 @@ def _format_possibly_missing_submodule(file: str, line: int, message: str) -> st
     Returns:
         Markdown-formatted issue report with fix hints.
     """
-    base = format_issue_header(file, line, "possibly-missing-submodule", message) + format_source_context(file, line, context=1, count=3)
+    base = format_issue_header(
+        file, line, "possibly-missing-submodule", message
+    ) + format_source_context(file, line, context=1, count=3)
     m = _MODULE_RE.search(message)
     submodule = m.group(1) if m else "the submodule"
-    return base + f"\n\nFix: add `import <package>.{submodule}` before accessing it as an attribute."
+    return (
+        base
+        + f"\n\nFix: add `import <package>.{submodule}` before accessing it as an attribute."
+    )
 
 
 def _format_unresolved_import(file: str, line: int, message: str) -> str:
@@ -108,7 +126,9 @@ def _format_unresolved_import(file: str, line: int, message: str) -> str:
     Returns:
         Markdown-formatted issue report with fix hints.
     """
-    base = format_issue_header(file, line, "unresolved-import", message) + format_source_context(file, line, context=1, count=3)
+    base = format_issue_header(
+        file, line, "unresolved-import", message
+    ) + format_source_context(file, line, context=1, count=3)
     m = _IMPORT_MODULE_RE.search(message)
     module = f"`{m.group(1)}`" if m else "the module"
     return base + (
@@ -144,19 +164,27 @@ class TyParser(AbstractParser):
                 if key in seen:
                     continue
                 seen.add(key)
-                files.setdefault(path, []).append({
-                    "line": lineno,
-                    "code": code,
-                    "severity": severity,
-                    "message": m.group(5),
-                })
+                files.setdefault(path, []).append(
+                    {
+                        "line": lineno,
+                        "code": code,
+                        "severity": severity,
+                        "message": m.group(5),
+                    }
+                )
                 weighted += 3 if severity == "error" else 1
 
         score = score_logistic_variant(weighted, scale_factor=10)
-        return ToolResult(raw=raw_result, metrics={"type_check": score}, details=files,
-                          project_path=raw_result.project_path)
+        return ToolResult(
+            raw=raw_result,
+            metrics={"type_check": score},
+            details=files,
+            project_path=raw_result.project_path,
+        )
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Return a markdown description of the most important ty defect.
 
         Delegates to a custom formatter when the code has a registered handler
@@ -182,4 +210,6 @@ class TyParser(AbstractParser):
         fmt_fn = _CUSTOM_FORMAT.get(code)
         if fmt_fn and isinstance(line, int):
             return fmt_fn(resolved_file, line, message)
-        return format_issue_header(resolved_file, line, code, message) + format_source_context(resolved_file, line, count=context_lines)
+        return format_issue_header(
+            resolved_file, line, code, message
+        ) + format_source_context(resolved_file, line, count=context_lines)

@@ -133,22 +133,26 @@ def test_vulture_parse_never_crashes(text):
 
 # --- Idempotency: parse(raw) == parse(raw) ---
 
-@pytest.mark.parametrize("parser_cls,kwargs", [
-    (BanditParser, {}),
-    (CompileParser, {}),
-    (ComplexityParser, {}),
-    (CoverageParser, {}),
-    (ExitCodeParser, {}),
-    (HalsteadParser, {}),
-    (InterrogateParser, {}),
-    (LineCountParser, {}),
-    (MaintainabilityParser, {}),
-    (PytestParser, {}),
-    (RegexCountParser, {"parser_config": {"pattern": ".*"}}),
-    (RuffParser, {}),
-    (TyParser, {}),
-    (VultureParser, {}),
-])
+
+@pytest.mark.parametrize(
+    "parser_cls,kwargs",
+    [
+        (BanditParser, {}),
+        (CompileParser, {}),
+        (ComplexityParser, {}),
+        (CoverageParser, {}),
+        (ExitCodeParser, {}),
+        (HalsteadParser, {}),
+        (InterrogateParser, {}),
+        (LineCountParser, {}),
+        (MaintainabilityParser, {}),
+        (PytestParser, {}),
+        (RegexCountParser, {"parser_config": {"pattern": ".*"}}),
+        (RuffParser, {}),
+        (TyParser, {}),
+        (VultureParser, {}),
+    ],
+)
 @given(st.text())
 @settings(max_examples=30)
 def test_parse_is_idempotent(parser_cls, kwargs, text):

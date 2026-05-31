@@ -20,14 +20,18 @@ from pathlib import Path
 def read_source_lines(file_path: str, line: int, count: int = 5) -> str:
     """Return up to `count` source lines starting at the given 1-based line number."""
     try:
-        all_lines = Path(file_path).read_text(encoding="utf-8", errors="replace").splitlines()
+        all_lines = (
+            Path(file_path).read_text(encoding="utf-8", errors="replace").splitlines()
+        )
         start = max(0, line - 1)
         return "\n".join(all_lines[start : start + count])
     except (OSError, ValueError):
         return ""
 
 
-def format_source_context(file: str, line: int | str, context: int = 3, count: int = 8) -> str:
+def format_source_context(
+    file: str, line: int | str, context: int = 3, count: int = 8
+) -> str:
     """Return a fenced python code block for the source around `line`, or '' if unavailable.
 
     Stops before spilling into the next top-level ``def`` or ``class`` definition.
@@ -52,12 +56,39 @@ def format_source_context(file: str, line: int | str, context: int = 3, count: i
     return f"\n```python\n{src}\n```"
 
 
-_PYTHON_KEYWORDS = frozenset([
-    "if", "elif", "else", "for", "while", "with", "assert", "return",
-    "raise", "import", "from", "class", "def", "lambda", "yield",
-    "del", "pass", "break", "continue", "not", "and", "or", "in", "is",
-    "print", "super", "type", "len", "range",
-])
+_PYTHON_KEYWORDS = frozenset(
+    [
+        "if",
+        "elif",
+        "else",
+        "for",
+        "while",
+        "with",
+        "assert",
+        "return",
+        "raise",
+        "import",
+        "from",
+        "class",
+        "def",
+        "lambda",
+        "yield",
+        "del",
+        "pass",
+        "break",
+        "continue",
+        "not",
+        "and",
+        "or",
+        "in",
+        "is",
+        "print",
+        "super",
+        "type",
+        "len",
+        "range",
+    ]
+)
 
 
 def extract_callee_name(source_line: str) -> str | None:
@@ -90,10 +121,21 @@ def _find_project_root(hint_file: str) -> Path:
     return root
 
 
-_SKIP_DIRS = {".venv", "venv", "__pycache__", ".git", "node_modules", ".tox", "dist", "build"}
+_SKIP_DIRS = {
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".git",
+    "node_modules",
+    ".tox",
+    "dist",
+    "build",
+}
 
 
-def find_in_project(func_name: str, hint_file: str, max_lines: int = 10) -> tuple[str, str]:
+def find_in_project(
+    func_name: str, hint_file: str, max_lines: int = 10
+) -> tuple[str, str]:
     """Find func_name definition in project files; same file first, then project-wide.
 
     Returns ``(file_path, code_block)`` for the first match, or ``("", "")`` if not found.
@@ -172,7 +214,7 @@ def enclosing_function_range(file: str, line: int) -> tuple[int, int] | None:
         return None
     end_idx = start_idx
     in_body = ":" in all_lines[start_idx].split("#")[0]
-    for i, ln in enumerate(all_lines[start_idx + 1:], start=start_idx + 1):
+    for i, ln in enumerate(all_lines[start_idx + 1 :], start=start_idx + 1):
         stripped = ln.lstrip()
         if not in_body:
             if ":" in ln.split("#")[0]:
@@ -230,7 +272,9 @@ def find_function_source(file: str, func_name: str, max_lines: int = 15) -> str:
             break
         if not past_docstring:
             if not in_docstring:
-                quote = next((q for q in ('"""', "'''") if stripped.startswith(q)), None)
+                quote = next(
+                    (q for q in ('"""', "'''") if stripped.startswith(q)), None
+                )
                 if quote:
                     in_docstring = quote not in stripped[3:]
                     past_docstring = not in_docstring

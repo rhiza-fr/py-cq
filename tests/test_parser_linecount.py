@@ -1,4 +1,5 @@
 """Tests for LineCountParser."""
+
 from conftest import raw
 from py_cq.parsers.linecountparser import LineCountParser
 
@@ -38,6 +39,7 @@ def test_custom_scale_factor():
 
 def test_llm_message_shows_first_line():
     from py_cq.localtypes import RawResult, ToolResult
+
     tr = ToolResult(
         metrics={"violations": 0.5},
         raw=RawResult(tool_name="t", command="c", stdout="first error\nsecond error"),
@@ -49,5 +51,6 @@ def test_llm_message_shows_first_line():
 
 def test_format_llm_message_no_violations():
     from py_cq.localtypes import RawResult, ToolResult
+
     tr = ToolResult(metrics={"violations": 1.0}, raw=RawResult(), details={"lines": []})
     assert LineCountParser().format_llm_message(tr) == "No violations found"

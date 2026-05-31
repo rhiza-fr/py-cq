@@ -10,7 +10,9 @@ from py_cq.localtypes import RawResult
 
 def raw(stdout="", return_code=0):
     """Returns a RawResult instance."""
-    return RawResult(tool_name="test", command="cmd", stdout=stdout, return_code=return_code)
+    return RawResult(
+        tool_name="test", command="cmd", stdout=stdout, return_code=return_code
+    )
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -23,6 +25,8 @@ def _isolated_cache(tmp_path_factory):
     """
     cache_dir = tmp_path_factory.mktemp("cq_cache", numbered=False)
     isolated = Cache(str(cache_dir), disk=JSONDisk)
-    with patch("py_cq.execution_engine._cache", isolated), \
-         patch("py_cq.api._cache", isolated):
+    with (
+        patch("py_cq.execution_engine._cache", isolated),
+        patch("py_cq.api._cache", isolated),
+    ):
         yield isolated

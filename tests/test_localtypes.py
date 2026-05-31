@@ -6,6 +6,7 @@ from py_cq.metric_aggregator import aggregate_metrics
 
 class MinimalParser(AbstractParser):
     """A minimal implementation of AbstractParser."""
+
     def parse(self, raw_result):
         """Parses the raw result."""
         return ToolResult()
@@ -13,7 +14,13 @@ class MinimalParser(AbstractParser):
 
 def test_raw_result_to_dict():
     """Test that raw result is correctly converted to a dictionary."""
-    r = RawResult(tool_name="ruff", command="ruff check .", stdout="out", stderr="err", return_code=1)
+    r = RawResult(
+        tool_name="ruff",
+        command="ruff check .",
+        stdout="out",
+        stderr="err",
+        return_code=1,
+    )
     d = r.to_dict()
     assert d["tool_name"] == "ruff"
     assert d["stdout"] == "out"
@@ -22,7 +29,9 @@ def test_raw_result_to_dict():
 
 def test_tool_result_to_dict():
     """Test that ToolResult.to_dict correctly converts the result to a dictionary."""
-    tr = ToolResult(metrics={"lint": 0.9}, details={"f.py": []}, raw=RawResult(tool_name="ruff"))
+    tr = ToolResult(
+        metrics={"lint": 0.9}, details={"f.py": []}, raw=RawResult(tool_name="ruff")
+    )
     d = tr.to_dict()
     assert d["tool_name"] == "ruff"
     assert d["metrics"] == {"lint": 0.9}
@@ -52,9 +61,11 @@ def test_abstract_parse_body_via_super():
 
     class SuperCaller(AbstractParser):
         """A subclass of AbstractParser to test super()."""
+
         def parse(self, raw_result):
             """Parse the raw result."""
             return super().parse(raw_result)
+
     assert SuperCaller().parse(RawResult()) is None
 
 
@@ -76,6 +87,7 @@ def test_aggregate_metrics_empty():
 def test_toolconfig_parser_config_defaults_to_empty_dict():
     """Test that parser_config defaults to an empty dictionary."""
     from py_cq.localtypes import ToolConfig
+
     tc = ToolConfig(name="x", command="cmd", parser_class=object)
     assert tc.parser_config == {}
 
@@ -86,6 +98,7 @@ def test_abstract_parser_stores_parser_config():
 
     class MyParser(AbstractParser):
         """Mock parser for testing."""
+
         def parse(self, raw_result: RawResult) -> ToolResult:
             """Parse the raw result."""
             return ToolResult()
@@ -100,6 +113,7 @@ def test_abstract_parser_defaults_config_to_empty():
 
     class MyParser(AbstractParser):
         """A test parser implementation."""
+
         def parse(self, raw_result: RawResult) -> ToolResult:
             """Parse the raw result."""
             return ToolResult()
@@ -123,20 +137,30 @@ def test_tool_result_coerces_list_metrics():
 
 # --- json.dumps serializability ---
 
+
 def test_raw_result_to_dict_json_serializable():
     import json
-    r = RawResult(tool_name="ruff", command="ruff check .", stdout="out", stderr="err", return_code=1)
+
+    r = RawResult(
+        tool_name="ruff",
+        command="ruff check .",
+        stdout="out",
+        stderr="err",
+        return_code=1,
+    )
     assert json.dumps(r.to_dict()) is not None
 
 
 def test_tool_result_to_dict_json_serializable_empty():
     import json
+
     tr = ToolResult()
     assert json.dumps(tr.to_dict()) is not None
 
 
 def test_tool_result_to_dict_json_serializable_typical():
     import json
+
     tr = ToolResult(
         metrics={"lint": 0.9},
         details={"src/foo.py": [{"line": 1, "code": "E501", "message": "too long"}]},
@@ -148,6 +172,7 @@ def test_tool_result_to_dict_json_serializable_typical():
 
 def test_tool_result_to_dict_json_serializable_multi_metric():
     import json
+
     tr = ToolResult(
         metrics={"coverage": 0.8, "tests": 1.0},
         details={"src/a.py": {"coverage": 0.7, "missing": 5}},
@@ -158,6 +183,7 @@ def test_tool_result_to_dict_json_serializable_multi_metric():
 
 def test_combined_to_dict_json_serializable():
     import json
+
     tr = ToolResult(metrics={"lint": 0.8}, raw=RawResult(tool_name="ruff"))
     c = CombinedToolResults(path="src/", tool_results=[tr])
     assert json.dumps(c.to_dict()) is not None
@@ -165,5 +191,6 @@ def test_combined_to_dict_json_serializable():
 
 def test_combined_to_dict_json_serializable_empty():
     import json
+
     c = CombinedToolResults(path=".", tool_results=[])
     assert json.dumps(c.to_dict()) is not None

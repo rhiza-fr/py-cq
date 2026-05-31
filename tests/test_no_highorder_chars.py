@@ -8,7 +8,7 @@ SOURCE_DIRS = ["src", "tests"]
 
 
 def collect_python_files() -> list[Path]:
-    """ src + tests """
+    """src + tests"""
     root = Path(__file__).parent.parent
     files = []
     for d in SOURCE_DIRS:
@@ -16,7 +16,11 @@ def collect_python_files() -> list[Path]:
     return files
 
 
-@pytest.mark.parametrize("path", collect_python_files(), ids=lambda p: str(p.relative_to(Path(__file__).parent.parent)))
+@pytest.mark.parametrize(
+    "path",
+    collect_python_files(),
+    ids=lambda p: str(p.relative_to(Path(__file__).parent.parent)),
+)
 def test_no_high_order_characters(path: Path) -> None:
     """Ensure compatible output"""
     text = path.read_bytes()

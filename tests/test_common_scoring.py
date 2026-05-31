@@ -1,4 +1,5 @@
 """Module for testing common scoring functions."""
+
 import pytest
 
 from py_cq.parsers.common import (
@@ -97,6 +98,7 @@ def test_score_logistic_large_base():
 def test_score_logistic_steepness_zero():
     """steepness=0 raises ZeroDivisionError due to 709/steepness; document the behavior."""
     import pytest
+
     with pytest.raises(ZeroDivisionError):
         score_logistic_variant(10, scale_factor=30, steepness=0)
 
@@ -129,31 +131,39 @@ def test_score_logistic_variant(errors, scale_factor, steepness, expected):
     assert result == expected
 
 
-@pytest.mark.parametrize("errors,scale,steepness,lo,hi", [
-    (0, 10, 1.0, 0.95, 1.0),
-    (1, 10, 1.0, 0.85, 1.0),
-    (10, 10, 1.0, 0.4, 0.6),
-    (100, 10, 1.0, 0.0, 0.1),
-    (0, 1, 0.1, 0.95, 1.0),
-])
+@pytest.mark.parametrize(
+    "errors,scale,steepness,lo,hi",
+    [
+        (0, 10, 1.0, 0.95, 1.0),
+        (1, 10, 1.0, 0.85, 1.0),
+        (10, 10, 1.0, 0.4, 0.6),
+        (100, 10, 1.0, 0.0, 0.1),
+        (0, 1, 0.1, 0.95, 1.0),
+    ],
+)
 def test_score_logistic_variant_boundaries(errors, scale, steepness, lo, hi):
     result = score_logistic_variant(errors, scale, steepness)
     assert lo <= result <= hi
 
 
-@pytest.mark.parametrize("value,max_value,expected", [
-    (0.0, 100.0, 1.0),
-    (100.0, 100.0, 0.0),
-    (50.0, 100.0, 0.5),
-])
+@pytest.mark.parametrize(
+    "value,max_value,expected",
+    [
+        (0.0, 100.0, 1.0),
+        (100.0, 100.0, 0.0),
+        (50.0, 100.0, 0.5),
+    ],
+)
 def test_inv_normalize_parametrized(value, max_value, expected):
     from py_cq.parsers.common import inv_normalize
+
     assert inv_normalize(value, max_value) == pytest.approx(expected)
 
 
 def test_inv_normalize_zero_max():
     """inv_normalize(v, 0) returns 1.0 - zero-sized reference means no deviation."""
     from py_cq.parsers.common import inv_normalize
+
     assert inv_normalize(0.0, 0.0) == 1.0
     assert inv_normalize(5.0, 0.0) == 1.0
 
@@ -172,14 +182,18 @@ def test_score_logistic_negative_errors_returns_one(errors):
     assert score_logistic_variant(errors, scale_factor=30, steepness=2) == 1.0
 
 
-@pytest.mark.parametrize("value,max_value,expected", [
-    (0.0, 50.0, 1.0),
-    (50.0, 50.0, 0.0),
-    (150.0, 50.0, 0.0),
-    (25.0, 50.0, 0.5),
-    (1.0, 1.0, 0.0),
-    (0.0, 1.0, 1.0),
-])
+@pytest.mark.parametrize(
+    "value,max_value,expected",
+    [
+        (0.0, 50.0, 1.0),
+        (50.0, 50.0, 0.0),
+        (150.0, 50.0, 0.0),
+        (25.0, 50.0, 0.5),
+        (1.0, 1.0, 0.0),
+        (0.0, 1.0, 1.0),
+    ],
+)
 def test_inv_normalize_extended(value, max_value, expected):
     from py_cq.parsers.common import inv_normalize
+
     assert inv_normalize(value, max_value) == pytest.approx(expected)

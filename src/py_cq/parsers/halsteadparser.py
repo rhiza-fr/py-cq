@@ -59,7 +59,12 @@ class HalsteadParser(AbstractParser):
         tr = ToolResult(raw=raw_result)
         data = parse_json_dict(raw_result.stdout)
         if data is None:
-            tr.metrics = {"file_bug_free": 1.0, "file_smallness": 1.0, "functions_bug_free": 1.0, "functions_smallness": 1.0}
+            tr.metrics = {
+                "file_bug_free": 1.0,
+                "file_smallness": 1.0,
+                "functions_bug_free": 1.0,
+                "functions_smallness": 1.0,
+            }
             return tr
         MAX_FILE_BUGS = 1
         MAX_FILE_VOLUME = 3000
@@ -115,7 +120,9 @@ class HalsteadParser(AbstractParser):
         }
         return tr
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         """Return the worst Halstead offender as an actionable defect description."""
         if not tr.metrics:
             return "No Halstead details available"
@@ -164,13 +171,21 @@ class HalsteadParser(AbstractParser):
             if worst_difficulty is not None:
                 parts.append(f"difficulty: {worst_difficulty:.1f}")
             detail = f" ({', '.join(parts)})" if parts else ""
-            if worst_difficulty is not None and worst_volume is not None and worst_difficulty > worst_volume / 50:
+            if (
+                worst_difficulty is not None
+                and worst_volume is not None
+                and worst_difficulty > worst_volume / 50
+            ):
                 advice = "Simplify branching logic, reduce nesting, or consolidate repeated operator patterns."
             else:
-                advice = "Extract helper functions to reduce the function's size and scope."
+                advice = (
+                    "Extract helper functions to reduce the function's size and scope."
+                )
             return f"{location} has high estimated bug density{detail}\n\n{advice}"
         else:
-            detail = f" (volume: {worst_volume:.0f})" if worst_volume is not None else ""
+            detail = (
+                f" (volume: {worst_volume:.0f})" if worst_volume is not None else ""
+            )
             return (
                 f"{location} is too large{detail}\n\n"
                 f"Split into smaller functions or modules."

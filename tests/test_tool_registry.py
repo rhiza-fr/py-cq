@@ -1,4 +1,5 @@
 """Tests for tool_registry."""
+
 from py_cq.tool_registry import load_tool_configs, tool_registry
 
 

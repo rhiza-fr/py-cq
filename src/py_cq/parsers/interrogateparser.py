@@ -15,9 +15,15 @@ import re
 from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
-from py_cq.parsers.common import extract_first_issue, format_issue_header, format_source_context
+from py_cq.parsers.common import (
+    extract_first_issue,
+    format_issue_header,
+    format_source_context,
+)
 
-_ROW_RE = re.compile(r"^\|\s+(.+?)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+\d+\s+\|\s+(\d+(?:\.\d+)?)%\s*\|")
+_ROW_RE = re.compile(
+    r"^\|\s+(.+?)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+\d+\s+\|\s+(\d+(?:\.\d+)?)%\s*\|"
+)
 _CONTEXT_PATH_RE = re.compile(r'interrogate\s+"([^"]+)"')
 _COVERAGE_FOR_RE = re.compile(r"Coverage for\s+(.+?)[\s=]*$")
 
@@ -100,7 +106,11 @@ class InterrogateParser(AbstractParser):
             if hm:
                 coverage_root = hm.group(1).strip().rstrip("\\/")
                 try:
-                    rel = Path(coverage_root).resolve().relative_to(Path(context_path).resolve())
+                    rel = (
+                        Path(coverage_root)
+                        .resolve()
+                        .relative_to(Path(context_path).resolve())
+                    )
                     prefix = rel.as_posix()
                 except ValueError:
                     pass
@@ -115,13 +125,18 @@ class InterrogateParser(AbstractParser):
             total = int(m.group(2))
             miss = int(m.group(3))
             cover = float(m.group(4))
-            if name != "TOTAL" and total > 0 and '.venv' not in name:
+            if name != "TOTAL" and total > 0 and ".venv" not in name:
                 file_key = f"{prefix}/{name}" if prefix else name
-                summaries[file_key] = {"total": total, "missing": miss, "coverage": cover / 100.0}
+                summaries[file_key] = {
+                    "total": total,
+                    "missing": miss,
+                    "coverage": cover / 100.0,
+                }
 
         if self.parser_config.get("skip_empty_init", True):
             summaries = {
-                f: d for f, d in summaries.items()
+                f: d
+                for f, d in summaries.items()
                 if not (
                     Path(f).name == "__init__.py"
                     and _is_file_empty(_resolve(context_path, f))
@@ -135,7 +150,9 @@ class InterrogateParser(AbstractParser):
         # Build per-issue list details (sorted worst-first) so _fingerprint_from_slice
         # can produce a specific line+code fingerprint for is_fixed checks.
         files: dict[str, list] = {}
-        for rel_file, summary in sorted(summaries.items(), key=lambda x: x[1]["coverage"]):
+        for rel_file, summary in sorted(
+            summaries.items(), key=lambda x: x[1]["coverage"]
+        ):
             if summary["missing"] == 0:
                 continue
             resolved = _resolve(context_path, rel_file)
@@ -153,13 +170,23 @@ class InterrogateParser(AbstractParser):
                     nm = re.search(r"def\s+(\w+)", source_line)
                     name = nm.group(1) if nm else source_line
                     code, message = "D103", f"missing docstring in function `{name}`"
-                issues.append({"line": lineno if lineno > 0 else 1, "code": code, "message": message})
+                issues.append(
+                    {
+                        "line": lineno if lineno > 0 else 1,
+                        "code": code,
+                        "message": message,
+                    }
+                )
             if issues:
                 files[rel_file] = issues
 
-        return ToolResult(raw=raw_result, metrics={"doc_coverage": score}, details=files)
+        return ToolResult(
+            raw=raw_result, metrics={"doc_coverage": score}, details=files
+        )
 
-    def format_llm_message(self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1) -> str:
+    def format_llm_message(
+        self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1
+    ) -> str:
         result = extract_first_issue(tr.details)
         if result is None:
             score = tr.metrics.get("doc_coverage", 0)
@@ -176,4 +203,6 @@ class InterrogateParser(AbstractParser):
         resolved = _resolve(context_path, rel_file)
         file_str = str(resolved) if resolved else rel_file
 
-        return format_issue_header(file_str, line, code, message) + format_source_context(file_str, line, count=context_lines)
+        return format_issue_header(
+            file_str, line, code, message
+        ) + format_source_context(file_str, line, count=context_lines)

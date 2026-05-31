@@ -88,14 +88,17 @@ def test_mixed_empty_and_nonempty_tools():
     assert c.score == pytest.approx(0.6)
 
 
-@pytest.mark.parametrize("metrics_list", [
-    [{"a": 0.0}],
-    [{"a": 1.0}],
-    [{"a": 0.5, "b": 0.3}],
-    [{"a": 0.0}, {"b": 1.0}],
-    [{"a": 0.5}, {"b": 0.5}, {"c": 0.5}],
-    [{"a": 0.0, "b": 0.0}, {"c": 1.0, "d": 1.0}],
-])
+@pytest.mark.parametrize(
+    "metrics_list",
+    [
+        [{"a": 0.0}],
+        [{"a": 1.0}],
+        [{"a": 0.5, "b": 0.3}],
+        [{"a": 0.0}, {"b": 1.0}],
+        [{"a": 0.5}, {"b": 0.5}, {"c": 0.5}],
+        [{"a": 0.0, "b": 0.0}, {"c": 1.0, "d": 1.0}],
+    ],
+)
 def test_score_always_in_bounds(metrics_list):
     trs = [_tr(m) for m in metrics_list]
     c = CombinedToolResults(path=".", tool_results=trs)
@@ -118,13 +121,15 @@ def test_adding_zero_tool_never_increases_score():
     assert score_with <= score_base
 
 
-@pytest.mark.parametrize("metrics_list,expected", [
-    ([{"m": 0.4}], 0.4),
-    ([{"m": 0.6}, {"m": 0.8}], 0.7),
-    ([], 0.0),
-])
+@pytest.mark.parametrize(
+    "metrics_list,expected",
+    [
+        ([{"m": 0.4}], 0.4),
+        ([{"m": 0.6}, {"m": 0.8}], 0.7),
+        ([], 0.0),
+    ],
+)
 def test_score_exact_known_values(metrics_list, expected):
     trs = [_tr(m) for m in metrics_list]
     c = CombinedToolResults(path=".", tool_results=trs)
     assert c.score == pytest.approx(expected)
-

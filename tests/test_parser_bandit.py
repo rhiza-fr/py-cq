@@ -13,14 +13,16 @@ from py_cq.parsers.banditparser import BanditParser, _SEVERITY_WEIGHT
 _SEVERITIES = sorted(_SEVERITY_WEIGHT.keys())  # HIGH, LOW, MEDIUM
 _CONFIDENCES = ["HIGH", "MEDIUM", "LOW"]
 
-_issue_strategy = st.fixed_dictionaries({
-    "filename": st.just("src/app.py"),
-    "line_number": st.integers(min_value=1, max_value=9999),
-    "test_id": st.sampled_from(["B101", "B105", "B301", "B311", "B506"]),
-    "issue_severity": st.sampled_from(_SEVERITIES),
-    "issue_confidence": st.sampled_from(_CONFIDENCES),
-    "issue_text": st.text(max_size=80),
-})
+_issue_strategy = st.fixed_dictionaries(
+    {
+        "filename": st.just("src/app.py"),
+        "line_number": st.integers(min_value=1, max_value=9999),
+        "test_id": st.sampled_from(["B101", "B105", "B301", "B311", "B506"]),
+        "issue_severity": st.sampled_from(_SEVERITIES),
+        "issue_confidence": st.sampled_from(_CONFIDENCES),
+        "issue_text": st.text(max_size=80),
+    }
+)
 
 
 def _bandit_json(results):
@@ -37,14 +39,18 @@ def test_bandit_parse_clean():
 
 def test_bandit_parse_low_issue():
     """Test bandit parser with a low severity issue."""
-    payload = _bandit_json([{
-        "filename": "src/foo.py",
-        "line_number": 10,
-        "test_id": "B105",
-        "issue_severity": "LOW",
-        "issue_confidence": "MEDIUM",
-        "issue_text": "Possible hardcoded password: ''",
-    }])
+    payload = _bandit_json(
+        [
+            {
+                "filename": "src/foo.py",
+                "line_number": 10,
+                "test_id": "B105",
+                "issue_severity": "LOW",
+                "issue_confidence": "MEDIUM",
+                "issue_text": "Possible hardcoded password: ''",
+            }
+        ]
+    )
     tr = BanditParser().parse(raw(payload, return_code=1))
     assert tr.metrics["security"] < 1.0
     assert "src/foo.py" in tr.details
@@ -54,10 +60,30 @@ def test_bandit_parse_low_issue():
 
 def test_bandit_high_severity_scores_lower_than_low():
     """Test that high severity issues are weighted less than low severity issues in security metric."""
-    low_payload = _bandit_json([{"filename": "a.py", "line_number": 1,
-        "test_id": "B105", "issue_severity": "LOW", "issue_confidence": "HIGH", "issue_text": ""}])
-    high_payload = _bandit_json([{"filename": "a.py", "line_number": 1,
-        "test_id": "B301", "issue_severity": "HIGH", "issue_confidence": "HIGH", "issue_text": ""}])
+    low_payload = _bandit_json(
+        [
+            {
+                "filename": "a.py",
+                "line_number": 1,
+                "test_id": "B105",
+                "issue_severity": "LOW",
+                "issue_confidence": "HIGH",
+                "issue_text": "",
+            }
+        ]
+    )
+    high_payload = _bandit_json(
+        [
+            {
+                "filename": "a.py",
+                "line_number": 1,
+                "test_id": "B301",
+                "issue_severity": "HIGH",
+                "issue_confidence": "HIGH",
+                "issue_text": "",
+            }
+        ]
+    )
     low_tr = BanditParser().parse(raw(low_payload, return_code=1))
     high_tr = BanditParser().parse(raw(high_payload, return_code=1))
     assert high_tr.metrics["security"] < low_tr.metrics["security"]
@@ -84,27 +110,35 @@ def test_bandit_crash_returns_zero():
 
 def test_bandit_skips_venv_paths():
     """Test that BanditParser skips files located in venv paths."""
-    payload = _bandit_json([{
-        "filename": "/project/.venv/lib/foo.py",
-        "line_number": 1,
-        "test_id": "B301",
-        "issue_severity": "HIGH",
-        "issue_confidence": "HIGH",
-        "issue_text": "Dangerous",
-    }])
+    payload = _bandit_json(
+        [
+            {
+                "filename": "/project/.venv/lib/foo.py",
+                "line_number": 1,
+                "test_id": "B301",
+                "issue_severity": "HIGH",
+                "issue_confidence": "HIGH",
+                "issue_text": "Dangerous",
+            }
+        ]
+    )
     tr = BanditParser().parse(raw(payload, return_code=1))
     assert tr.details == {}
 
 
 def test_bandit_skips_site_packages_paths():
-    payload = _bandit_json([{
-        "filename": "/usr/lib/python3/site-packages/foo.py",
-        "line_number": 1,
-        "test_id": "B301",
-        "issue_severity": "HIGH",
-        "issue_confidence": "HIGH",
-        "issue_text": "Dangerous",
-    }])
+    payload = _bandit_json(
+        [
+            {
+                "filename": "/usr/lib/python3/site-packages/foo.py",
+                "line_number": 1,
+                "test_id": "B301",
+                "issue_severity": "HIGH",
+                "issue_confidence": "HIGH",
+                "issue_text": "Dangerous",
+            }
+        ]
+    )
     tr = BanditParser().parse(raw(payload, return_code=1))
     assert tr.details == {}
 
@@ -116,16 +150,50 @@ def test_bandit_format_llm_no_details():
 
 def test_bandit_mixed_severity_scores_lower_than_either_alone():
     """One LOW + one HIGH together score lower than each alone (more weighted issues = lower score)."""
-    low_only = _bandit_json([{"filename": "a.py", "line_number": 1,
-        "test_id": "B105", "issue_severity": "LOW", "issue_confidence": "HIGH", "issue_text": ""}])
-    high_only = _bandit_json([{"filename": "a.py", "line_number": 1,
-        "test_id": "B301", "issue_severity": "HIGH", "issue_confidence": "HIGH", "issue_text": ""}])
-    mixed = _bandit_json([
-        {"filename": "a.py", "line_number": 1,
-         "test_id": "B105", "issue_severity": "LOW", "issue_confidence": "HIGH", "issue_text": ""},
-        {"filename": "a.py", "line_number": 2,
-         "test_id": "B301", "issue_severity": "HIGH", "issue_confidence": "HIGH", "issue_text": ""},
-    ])
+    low_only = _bandit_json(
+        [
+            {
+                "filename": "a.py",
+                "line_number": 1,
+                "test_id": "B105",
+                "issue_severity": "LOW",
+                "issue_confidence": "HIGH",
+                "issue_text": "",
+            }
+        ]
+    )
+    high_only = _bandit_json(
+        [
+            {
+                "filename": "a.py",
+                "line_number": 1,
+                "test_id": "B301",
+                "issue_severity": "HIGH",
+                "issue_confidence": "HIGH",
+                "issue_text": "",
+            }
+        ]
+    )
+    mixed = _bandit_json(
+        [
+            {
+                "filename": "a.py",
+                "line_number": 1,
+                "test_id": "B105",
+                "issue_severity": "LOW",
+                "issue_confidence": "HIGH",
+                "issue_text": "",
+            },
+            {
+                "filename": "a.py",
+                "line_number": 2,
+                "test_id": "B301",
+                "issue_severity": "HIGH",
+                "issue_confidence": "HIGH",
+                "issue_text": "",
+            },
+        ]
+    )
     low_score = BanditParser().parse(raw(low_only, return_code=1)).metrics["security"]
     high_score = BanditParser().parse(raw(high_only, return_code=1)).metrics["security"]
     mixed_score = BanditParser().parse(raw(mixed, return_code=1)).metrics["security"]
@@ -138,7 +206,17 @@ def test_bandit_mixed_severity_scores_lower_than_either_alone():
 def test_bandit_format_llm_with_issue():
     tr = ToolResult(
         metrics={"security": 0.5},
-        details={"src/foo.py": [{"line": 42, "code": "B301", "severity": "HIGH", "confidence": "HIGH", "message": "Use of pickle"}]},
+        details={
+            "src/foo.py": [
+                {
+                    "line": 42,
+                    "code": "B301",
+                    "severity": "HIGH",
+                    "confidence": "HIGH",
+                    "message": "Use of pickle",
+                }
+            ]
+        },
         raw=RawResult(),
     )
     msg = BanditParser().format_llm_message(tr)
@@ -148,6 +226,7 @@ def test_bandit_format_llm_with_issue():
 
 
 # --- property-based tests ---
+
 
 @given(st.lists(_issue_strategy, min_size=1, max_size=50))
 def test_bandit_score_always_in_unit_interval(issues):
@@ -163,27 +242,49 @@ def test_bandit_adding_issue_never_improves_score(issues):
     """Appending any additional issue never raises the security score."""
     payload_before = json.dumps({"results": issues})
     extra = {
-        "filename": "src/app.py", "line_number": 1, "test_id": "B101",
-        "issue_severity": "HIGH", "issue_confidence": "HIGH", "issue_text": "x",
+        "filename": "src/app.py",
+        "line_number": 1,
+        "test_id": "B101",
+        "issue_severity": "HIGH",
+        "issue_confidence": "HIGH",
+        "issue_text": "x",
     }
     payload_after = json.dumps({"results": issues + [extra]})
-    score_before = BanditParser().parse(raw(payload_before, return_code=1)).metrics["security"]
-    score_after = BanditParser().parse(raw(payload_after, return_code=1)).metrics["security"]
+    score_before = (
+        BanditParser().parse(raw(payload_before, return_code=1)).metrics["security"]
+    )
+    score_after = (
+        BanditParser().parse(raw(payload_after, return_code=1)).metrics["security"]
+    )
     assert score_after <= score_before
 
 
-@pytest.mark.parametrize("worse,better", [
-    ("HIGH", "MEDIUM"),
-    ("HIGH", "LOW"),
-    ("MEDIUM", "LOW"),
-])
+@pytest.mark.parametrize(
+    "worse,better",
+    [
+        ("HIGH", "MEDIUM"),
+        ("HIGH", "LOW"),
+        ("MEDIUM", "LOW"),
+    ],
+)
 def test_bandit_severity_ordering_single_issue(worse, better):
     """A single issue with higher severity scores strictly lower than lower severity."""
+
     def score_for(severity):
-        payload = json.dumps({"results": [{
-            "filename": "src/app.py", "line_number": 1, "test_id": "B101",
-            "issue_severity": severity, "issue_confidence": "HIGH", "issue_text": "",
-        }]})
+        payload = json.dumps(
+            {
+                "results": [
+                    {
+                        "filename": "src/app.py",
+                        "line_number": 1,
+                        "test_id": "B101",
+                        "issue_severity": severity,
+                        "issue_confidence": "HIGH",
+                        "issue_text": "",
+                    }
+                ]
+            }
+        )
         return BanditParser().parse(raw(payload, return_code=1)).metrics["security"]
 
     assert score_for(worse) < score_for(better)

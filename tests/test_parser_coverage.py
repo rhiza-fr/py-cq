@@ -34,6 +34,7 @@ TOTAL                 30      2    93%
 
 # --- parse() ---
 
+
 def test_coverage_parse_metrics():
     """Test parsing of coverage metrics."""
     tr = CoverageParser().parse(raw(COVERAGE_OUTPUT))
@@ -129,6 +130,7 @@ def test_coverage_non_numeric_miss_count_scores_zero_does_not_crash():
 
 # --- format_llm_message() ---
 
+
 def test_coverage_format_llm_fallback():
     """Test fallback behavior of format_llm_message when no missing lines are present."""
     # No missing_lines -> fallback shows file + count
@@ -191,6 +193,7 @@ def test_coverage_format_llm_at_warning_threshold():
 
 # --- helpers ---
 
+
 def test_parse_line_ranges():
     """Test the parsing of line ranges."""
     assert _parse_line_ranges("1-3, 5") == {1, 2, 3, 5}
@@ -201,14 +204,19 @@ def test_parse_line_ranges():
 
 def test_get_signature():
     """Test the _get_signature function."""
-    node = cast(ast.FunctionDef, ast.parse("def foo(x: int, y: str = 'hi') -> bool:\n    pass\n").body[0])
+    node = cast(
+        ast.FunctionDef,
+        ast.parse("def foo(x: int, y: str = 'hi') -> bool:\n    pass\n").body[0],
+    )
     sig = _get_signature(node)
     assert sig.startswith("def foo(")
     assert "-> bool" in sig
 
 
 def test_get_signature_async():
-    node = cast(ast.AsyncFunctionDef, ast.parse("async def bar() -> None:\n    pass\n").body[0])
+    node = cast(
+        ast.AsyncFunctionDef, ast.parse("async def bar() -> None:\n    pass\n").body[0]
+    )
     sig = _get_signature(node)
     assert sig.startswith("async def bar()")
 

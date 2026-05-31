@@ -15,8 +15,17 @@ from py_cq.cli import app
 runner = CliRunner()
 
 _DISABLE_ALL = [
-    "compile", "ruff", "ty", "bandit", "pytest", "coverage",
-    "radon-cc", "radon-mi", "radon-hal", "vulture", "interrogate",
+    "compile",
+    "ruff",
+    "ty",
+    "bandit",
+    "pytest",
+    "coverage",
+    "radon-cc",
+    "radon-mi",
+    "radon-hal",
+    "vulture",
+    "interrogate",
 ]
 
 
@@ -80,7 +89,7 @@ def test_llm_output_is_markdown(tmp_path):
     assert result.exit_code == 0
     out = result.output.strip()
     assert "Tool exited" in out  # ExitCodeParser message for non-zero exit
-    assert "Please fix" in out   # LLM formatter footer
+    assert "Please fix" in out  # LLM formatter footer
 
 
 def test_raw_output_has_required_keys(tmp_path):
@@ -133,7 +142,9 @@ def test_score_output_is_consistent_with_json(tmp_path):
 def test_only_flag_limits_tools(tmp_path):
     """Test that the --only flag correctly limits tools to the specified ones."""
     path = _project(tmp_path, "echo hello")
-    result = runner.invoke(app, ["check", path, "--only", "mycheck", "-o", "json", "--workers", "1"])
+    result = runner.invoke(
+        app, ["check", path, "--only", "mycheck", "-o", "json", "--workers", "1"]
+    )
     assert result.exit_code == 0
     data = json.loads(result.output.strip())
     assert all(entry["tool_name"] == "mycheck" for entry in data)
@@ -142,7 +153,9 @@ def test_only_flag_limits_tools(tmp_path):
 def test_skip_flag_removes_tool(tmp_path):
     """Test that the --skip flag removes the specified tool from the output."""
     path = _project(tmp_path, "echo hello")
-    result = runner.invoke(app, ["check", path, "--skip", "mycheck", "-o", "json", "--workers", "1"])
+    result = runner.invoke(
+        app, ["check", path, "--skip", "mycheck", "-o", "json", "--workers", "1"]
+    )
     assert result.exit_code == 0
     data = json.loads(result.output.strip())
     assert all(entry["tool_name"] != "mycheck" for entry in data)
@@ -154,7 +167,9 @@ def test_clear_cache_then_runs(tmp_path):
     path = _project(tmp_path, "echo hello")
     path = _project(tmp_path, "echo hello")
     r1 = runner.invoke(app, ["check", path, "-o", "score", "--workers", "1"])
-    r2 = runner.invoke(app, ["check", path, "--clear-cache", "-o", "score", "--workers", "1"])
+    r2 = runner.invoke(
+        app, ["check", path, "--clear-cache", "-o", "score", "--workers", "1"]
+    )
     assert r1.exit_code == 0
     assert r2.exit_code == 0
     assert float(r1.output.strip()) == pytest.approx(float(r2.output.strip()))
@@ -167,13 +182,15 @@ def test_table_output_renders(tmp_path):
     assert result.exit_code == 0
     assert "mycheck" in result.output
     assert "1.000" in result.output  # score column
-    assert "OK" in result.output      # status column
+    assert "OK" in result.output  # status column
 
 
 def test_exclude_flag_runs_cleanly(tmp_path):
     """Test that the --exclude flag runs cleanly."""
     path = _project(tmp_path, "echo hello")
-    result = runner.invoke(app, ["check", path, "--exclude", "demo", "-o", "score", "--workers", "1"])
+    result = runner.invoke(
+        app, ["check", path, "--exclude", "demo", "-o", "score", "--workers", "1"]
+    )
     assert result.exit_code == 0
     score = float(result.output.strip())
     assert 0.0 <= score <= 1.0
@@ -267,7 +284,14 @@ def test_raw_output_includes_all_fields(tmp_path):
     assert result.exit_code == 0
     data = json.loads(result.output.strip())
     entry = data[0]
-    for field in ("tool_name", "command", "stdout", "stderr", "return_code", "timestamp"):
+    for field in (
+        "tool_name",
+        "command",
+        "stdout",
+        "stderr",
+        "return_code",
+        "timestamp",
+    ):
         assert field in entry, f"missing field: {field}"
 
 
@@ -311,7 +335,9 @@ _RAW_SCHEMA = {
 }
 
 
-@pytest.mark.parametrize("output,schema", [(["-o", "json"], _JSON_SCHEMA), (["-o", "raw"], _RAW_SCHEMA)])
+@pytest.mark.parametrize(
+    "output,schema", [(["-o", "json"], _JSON_SCHEMA), (["-o", "raw"], _RAW_SCHEMA)]
+)
 def test_output_schema_contract(tmp_path, output, schema):
     path = _project(tmp_path, "echo hello")
     result = runner.invoke(app, ["check", path, *output, "--workers", "1"])
@@ -319,8 +345,12 @@ def test_output_schema_contract(tmp_path, output, schema):
     entry = data[0]
     for key, typ in schema.items():
         assert key in entry, f"missing key: {key}"
-        assert isinstance(entry[key], typ), f"{key}: expected {typ}, got {type(entry[key])}"
-    assert set(entry.keys()) == set(schema.keys()), f"unexpected keys: {set(entry.keys()) - set(schema.keys())}"
+        assert isinstance(entry[key], typ), (
+            f"{key}: expected {typ}, got {type(entry[key])}"
+        )
+    assert set(entry.keys()) == set(schema.keys()), (
+        f"unexpected keys: {set(entry.keys()) - set(schema.keys())}"
+    )
 
 
 def test_llm_output_only_runs_first_failing_tool(tmp_path):
