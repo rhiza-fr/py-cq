@@ -205,7 +205,7 @@ def _two_tool_project(tmp_path, cmd1, cmd2):
 
 
 def test_multi_tool_mixed_pass_fail_score(tmp_path):
-    """Two tools: one exits 0 (score 1.0), one exits 1 (score 0.0) → combined score 0.5."""
+    """Two tools: one exits 0 (score 1.0), one exits 1 (score 0.0) -> combined score 0.5."""
     script = tmp_path / "fail.py"
     script.write_text("import sys; sys.exit(1)")
     fail_cmd = f"{{python}} {script.as_posix()}"
@@ -346,7 +346,7 @@ def test_llm_output_only_runs_first_failing_tool(tmp_path):
         'parser = "ExitCodeParser"',
         "order = 2",
         "warning_threshold = 0.9",
-        "error_threshold = 0.9",  # score 0.0 < 0.9 → error → early_exit stops here
+        "error_threshold = 0.9",  # score 0.0 < 0.9 -> error -> early_exit stops here
     ]
     (tmp_path / "pyproject.toml").write_text("\n".join(lines))
     result = runner.invoke(app, ["check", str(tmp_path), "-o", "llm", "--workers", "1"])

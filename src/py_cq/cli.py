@@ -82,7 +82,7 @@ def _version_callback(value: bool) -> None:
             pass
     typer.echo(f"{pkg} v{pkg_version}")
     for dep_name, dep_ver in sorted(dep_versions):
-        typer.echo(f"├── {dep_name} v{dep_ver}")
+        typer.echo(f"+-- {dep_name} v{dep_ver}")
     raise typer.Exit()
 
 

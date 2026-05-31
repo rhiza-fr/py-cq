@@ -116,7 +116,7 @@ def test_compile_format_llm_message_short_error_fallback():
     assert "Unknown" in msg or "src/bad.py" in msg
 
 
-# Error header without ", line N" — branch 82->87 (line_in_header False)
+# Error header without ", line N" - branch 82->87 (line_in_header False)
 COMPILE_NO_LINE_NUMBER = """\
 Compiling '.\\src\\bad.py'...
 ***   File ".\\src\\bad.py"
@@ -134,7 +134,7 @@ def test_compile_no_line_number_in_header():
     assert "line" not in info
 
 
-# Error block with exactly 1 line — branch 87->89 (len > 1 False)
+# Error block with exactly 1 line - branch 87->89 (len > 1 False)
 COMPILE_ONE_LINE_ERROR = """\
 Compiling '.\\src\\bad.py'...
 ***   File ".\\src\\bad.py", line 5
@@ -150,7 +150,7 @@ def test_compile_one_line_error_block():
     assert info["type"] == "Unknown"
 
 
-# 4-line error block where line[3] has no "Error:" — branch 90->101
+# 4-line error block where line[3] has no "Error:" - branch 90->101
 COMPILE_FOUR_LINES_NO_ERROR_KEYWORD = """\
 Compiling '.\\src\\bad.py'...
 ***   File ".\\src\\bad.py", line 5
@@ -169,13 +169,13 @@ def test_compile_four_lines_no_error_keyword():
 
 
 def test_compile_format_llm_message_no_src():
-    """format_llm_message with no 'src' key in info — branch 130->135 (src_line falsy)."""
+    """format_llm_message with no 'src' key in info - branch 130->135 (src_line falsy)."""
     tr = CompileParser().parse(raw(COMPILE_ONE_LINE_ERROR, return_code=1))
     msg = CompileParser().format_llm_message(tr)
     assert msg  # non-empty, no crash
 
 
-# *** File line with no quotes — len(parts) < 2 → continue (line 69)
+# *** File line with no quotes - len(parts) < 2 -> continue (line 69)
 COMPILE_FILE_LINE_NO_QUOTES = """\
 Compiling '.\\src\\bad.py'...
 ***   File no-quotes-here
@@ -187,11 +187,11 @@ Compiling '.\\src\\bad.py'...
 def test_compile_file_line_without_quotes_is_skipped():
     """A '*** File' header without quotes is skipped without crashing."""
     tr = CompileParser().parse(raw(COMPILE_FILE_LINE_NO_QUOTES, return_code=1))
-    # No valid error block extracted — details should be empty or have no failed_files
+    # No valid error block extracted - details should be empty or have no failed_files
     assert "failed_files" not in tr.details or tr.details["failed_files"] == {}
 
 
-# *** File line with non-integer line number — ValueError branch (lines 90-91)
+# *** File line with non-integer line number - ValueError branch (lines 90-91)
 COMPILE_BAD_LINE_NUMBER = """\
 Compiling '.\\src\\bad.py'...
 ***   File ".\\src\\bad.py", line NaN

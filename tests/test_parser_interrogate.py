@@ -13,7 +13,7 @@ INTERROGATE_OUTPUT = """\
 |--------------|--------|-------|--------|---------|
 | TOTAL        |      8 |     2 |      6 |   75.0% |
 RESULT: your code scored 75.0% on the interrogate score.
-Status: FAILED ☒
+Status: FAILED [X]
 """
 
 INTERROGATE_CLEAN = """\
@@ -23,7 +23,7 @@ INTERROGATE_CLEAN = """\
 |--------------|--------|-------|--------|---------|
 | TOTAL        |      5 |     0 |      5 |  100.0% |
 RESULT: your code scored 100.0% on the interrogate score.
-Status: PASSED ☑
+Status: PASSED [v]
 """
 
 
@@ -76,7 +76,7 @@ def test_interrogate_format_llm_with_missing():
 
 
 def test_interrogate_parse_zero_total_file():
-    """File rows with total=0 are skipped — branch 36->26 (elif total > 0 False)."""
+    """File rows with total=0 are skipped - branch 36->26 (elif total > 0 False)."""
     output = """\
 | Name         |  Total |  Miss |  Cover |  Cover% |
 |--------------|--------|-------|--------|---------|
@@ -85,7 +85,7 @@ def test_interrogate_parse_zero_total_file():
 |--------------|--------|-------|--------|---------|
 | TOTAL        |      5 |     1 |      4 |   80.0% |
 RESULT: your code scored 80.0% on the interrogate score.
-Status: FAILED ☒
+Status: FAILED [X]
 """
     tr = InterrogateParser().parse(raw(output, return_code=1))
     assert "src/empty.py" not in tr.details

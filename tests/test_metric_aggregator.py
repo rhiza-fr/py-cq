@@ -25,8 +25,8 @@ def test_score_single_metric():
 
 def test_score_is_mean_of_per_result_means_not_flat_mean():
     """Test that score is mean of per-result means, not a flat mean of all metrics."""
-    # One result: 3 metrics all at 1.0 → mean 1.0
-    # One result: 1 metric at 0.0 → mean 0.0
+    # One result: 3 metrics all at 1.0 -> mean 1.0
+    # One result: 1 metric at 0.0 -> mean 0.0
     # Score should be (1.0 + 0.0) / 2 = 0.5, not (1+1+1+0)/4 = 0.75
     tr1 = _tr({"a": 1.0, "b": 1.0, "c": 1.0})
     tr2 = _tr({"x": 0.0})
@@ -39,7 +39,7 @@ def test_score_tool_result_with_no_metrics_contributes_zero():
     tr_good = _tr({"m": 1.0})
     tr_empty = _tr({})
     c = CombinedToolResults(path=".", tool_results=[tr_good, tr_empty])
-    # tr_empty is excluded from scored list → only tr_good counts
+    # tr_empty is excluded from scored list -> only tr_good counts
     assert c.score == 1.0
 
 

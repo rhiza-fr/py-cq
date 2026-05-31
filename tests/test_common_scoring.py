@@ -152,7 +152,7 @@ def test_inv_normalize_parametrized(value, max_value, expected):
 
 
 def test_inv_normalize_zero_max():
-    """inv_normalize(v, 0) returns 1.0 — zero-sized reference means no deviation."""
+    """inv_normalize(v, 0) returns 1.0 - zero-sized reference means no deviation."""
     from py_cq.parsers.common import inv_normalize
     assert inv_normalize(0.0, 0.0) == 1.0
     assert inv_normalize(5.0, 0.0) == 1.0

@@ -8,10 +8,16 @@ process return code so downstream components can uniformly consume results
 from multiple test tools.  It is part of the test-collection framework and
 enables consistent handling of pytest output across the system."""
 
+import functools
 import re as _re
 from pathlib import Path as _Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
+
+
+@functools.lru_cache(maxsize=64)
+def _section_pattern(test_name: str) -> _re.Pattern:
+    return _re.compile(rf"_{{4,}}\s+{_re.escape(test_name)}\s+_{{4,}}")
 
 
 def _target_dir(command: str) -> str:
@@ -27,7 +33,7 @@ def _last_call_line_for_test(stdout: str, test_name: str) -> str:
     current-executing-line marker.
     """
     lines = stdout.splitlines()
-    pattern = _re.compile(rf"_{{4,}}\s+{_re.escape(test_name)}\s+_{{4,}}")
+    pattern = _section_pattern(test_name)
     in_section = False
     last_src = ""
     for line in lines:
@@ -75,7 +81,7 @@ def _extract_collection_error(stdout: str) -> dict | None:
 def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
     """Extract the failure section for test_name from pytest stdout."""
     lines = stdout.splitlines()
-    pattern = _re.compile(rf"_{{4,}}\s+{_re.escape(test_name)}\s+_{{4,}}")
+    pattern = _section_pattern(test_name)
     start = None
     for i, line in enumerate(lines):
         if pattern.search(line):
@@ -83,7 +89,7 @@ def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
             break
     if start is None:
         return ""
-    # Collect the full block — skip sub-section dividers ("_ _ _") but stop at
+    # Collect the full block - skip sub-section dividers ("_ _ _") but stop at
     # the next test header ("____") or summary line ("====").
     section = []
     for line in lines[start:]:
@@ -96,7 +102,7 @@ def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
     if e_lines:
         arrow_lines = [ln.lstrip("> \t") for ln in section if ln.startswith(">") and ln.lstrip("> \t")]
         cleaned = [_re.sub(r"^E\s*", "", ln) for ln in e_lines]
-        # Drop "At index N diff:" lines — always redundant with the first E-line.
+        # Drop "At index N diff:" lines - always redundant with the first E-line.
         cleaned = [ln for ln in cleaned if not _re.match(r"At index \d+ diff:", ln)]
         parts = ([f"> {arrow_lines[-1]}"] if arrow_lines else []) + cleaned
         text = "\n".join(parts[:max_lines]).strip()
@@ -192,7 +198,7 @@ class PytestParser(AbstractParser):
             for test_name, status in tests.items():
                 if status != "FAILED":
                     continue
-                header = f"`{file}::{test_name}` — test **FAILED**"
+                header = f"`{file}::{test_name}` - test **FAILED**"
                 bare_name = test_name.split("[")[0]
                 tdir = _target_dir(tr.raw.command)
                 resolved = (_Path(tdir) / file).as_posix() if tdir and not _Path(file).is_absolute() else file
@@ -238,7 +244,7 @@ class PytestParser(AbstractParser):
                 func_name = extract_callee_name(src_line)
                 if func_name:
                     callee = format_callee_context(func_name, file)
-            return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}{callee}"
+            return f"`{file}:{line}` - **{typ}**: {help_msg}{code_block}{callee}"
         output = combined.strip()
         if output:
             tail = "\n".join(output.splitlines()[-30:])

@@ -84,7 +84,7 @@ class MaintainabilityParser(AbstractParser):
                 return f"**{metric_name}** score: {value:.3f}"
             return "No maintainability details available"
         return (
-            f"`{worst_file}` — maintainability rank **{worst_rank}**\n\n"
+            f"`{worst_file}` - maintainability rank **{worst_rank}**\n\n"
             "The maintainability index is low. Common causes: long functions, high complexity, "
             "deeply nested logic, or lack of comments. Refactor by extracting helpers and "
             "simplifying control flow."

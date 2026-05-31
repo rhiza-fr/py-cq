@@ -212,7 +212,7 @@ def test_find_enclosing_function_out_of_range(tmp_path):
 
 
 def test_find_in_project_not_found_multiple_files(tmp_path):
-    """Loop visits other project files but find_function_source returns '' — branch 105->101."""
+    """Loop visits other project files but find_function_source returns '' - branch 105->101."""
     from py_cq.parsers.common import find_in_project
     (tmp_path / "pyproject.toml").write_text("[project]\n")
     hint = tmp_path / "module.py"

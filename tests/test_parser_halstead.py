@@ -162,7 +162,7 @@ def test_format_llm_message_tie_in_function_smallness():
 
 
 def test_parse_duplicate_file_key():
-    """Duplicate file key (after backslash normalization) reuses existing entry — branch 73->79."""
+    """Duplicate file key (after backslash normalization) reuses existing entry - branch 73->79."""
     data = {
         "src/foo.py": {"total": {"bugs": 0.05, "volume": 100.0}, "functions": {}},
         "src\\foo.py": {"total": {"bugs": 0.10, "volume": 200.0}, "functions": {}},
@@ -203,7 +203,7 @@ def test_parse_json_array_returns_perfect_score():
 
 
 def test_format_llm_message_second_file_not_worse():
-    """Second file has higher score than first — branch 143->131 (s >= worst_score, no update)."""
+    """Second file has higher score than first - branch 143->131 (s >= worst_score, no update)."""
     tr = _tr_with_metrics(
         metrics={"file_bug_free": 0.3, "file_smallness": 0.9,
                  "functions_bug_free": 0.9, "functions_smallness": 0.9},

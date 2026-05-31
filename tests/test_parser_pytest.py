@@ -266,7 +266,7 @@ def test_skipped_tests_do_not_reduce_pass_rate():
         "tests/test_foo.py::test_two SKIPPED   [100%]\n"
     )
     tr = PytestParser().parse(raw(stdout, return_code=0))
-    # 1 passed, 1 skipped → 2 total, 1 passed → 0.5, not 1.0
+    # 1 passed, 1 skipped -> 2 total, 1 passed -> 0.5, not 1.0
     # The key assertion: skipped != failed, so score should not be 0.0
     assert tr.metrics["tests"] > 0.0
 
@@ -294,7 +294,7 @@ def test_format_llm_message_skips_passed_tests():
 
 
 def test_last_call_line_whitespace_only_line():
-    """_last_call_line_for_test ignores lines that strip to empty — branch 38->26."""
+    """_last_call_line_for_test ignores lines that strip to empty - branch 38->26."""
     from py_cq.parsers.pytestparser import _last_call_line_for_test
     stdout = """\
 ________ test_foo ________
@@ -311,7 +311,7 @@ tests/test_foo.py:2: TypeError
 
 
 def test_format_llm_message_all_passed_then_failed():
-    """Inner for-loop exhausts on first file (all PASSED) before finding FAILED — branch 166->163."""
+    """Inner for-loop exhausts on first file (all PASSED) before finding FAILED - branch 166->163."""
     stdout = (
         "tests/test_a.py::test_one PASSED    [ 50%]\n"
         "tests/test_b.py::test_fail FAILED    [100%]\n"
@@ -323,7 +323,7 @@ def test_format_llm_message_all_passed_then_failed():
 
 
 def test_format_llm_message_collection_error_no_src_line():
-    """Collection error with no deeply-indented E source line — branch 210->214 (src_line empty)."""
+    """Collection error with no deeply-indented E source line - branch 210->214 (src_line empty)."""
     from py_cq.localtypes import RawResult
     stdout = (
         "ERROR collecting tests/test_bad.py\n"

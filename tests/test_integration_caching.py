@@ -18,6 +18,7 @@ HERE = Path(__file__).resolve().parent.parent
 
 
 def _find_cq() -> str:
+    """Dodgy where am i"""
     if found := shutil.which("cq"):
         return found
     scripts = "Scripts" if os.name == "nt" else "bin"
@@ -45,10 +46,10 @@ def test_cache_speeds_up_repeated_invocation():
     """Second cq check on unchanged code is served from cache: < 25% time, < 0.5 s."""
     tools = "compile,ruff,radon-cc,radon-mi,radon-hal"
 
-    # First run — cold cache.
+    # First run - cold cache.
     code1, t_first = _cq_invoke(["--clear-cache", "-o", "score", "--only", tools, "--workers", "1"])
 
-    # Second run — should hit cache.
+    # Second run - should hit cache.
     code2, t_second = _cq_invoke(["-o", "score", "--only", tools, "--workers", "1"])
 
     # Both must produce the same exit code.
@@ -60,5 +61,5 @@ def test_cache_speeds_up_repeated_invocation():
         f"ratio={ratio:.1%}  (expected <25%, <0.5s)"
     )
     print(f"\n  {msg}", file=sys.stderr)
-    assert t_second < 0.5, f"second run too slow: {t_second:.3f}s — {msg}"
+    assert t_second < 0.5, f"second run too slow: {t_second:.3f}s - {msg}"
     assert t_second < t_first * 0.25, f"second run not fast enough: {msg}"

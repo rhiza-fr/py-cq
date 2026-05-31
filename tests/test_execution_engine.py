@@ -262,7 +262,7 @@ def test_run_tool_target_env_uv_not_found(tmp_path):
          patch("py_cq.execution_engine.shutil.which", return_value=None), \
          patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub:
         run_tool(cfg, str(tmp_path))
-    # uv not found → python stays as sys.executable
+    # uv not found -> python stays as sys.executable
     called_cmd = mock_sub.call_args[0][0]
     assert sys.executable in called_cmd
 
@@ -493,7 +493,7 @@ def test_run_tool_cache_invalidated_on_content_change(tmp_path):
     with patch("py_cq.execution_engine._cache", test_cache), \
          patch("py_cq.execution_engine.subprocess.run", wraps=real_subprocess.run) as mock_sub:
         run_tool(cfg, str(py_file))
-        # Write different-length content so size changes → new hash → cache miss
+        # Write different-length content so size changes -> new hash -> cache miss
         py_file.write_text("x = 2\ny = 3\n")
         run_tool(cfg, str(py_file))
     # Two subprocess calls prove both were cache misses

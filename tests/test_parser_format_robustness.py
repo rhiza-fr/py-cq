@@ -60,7 +60,7 @@ _issue_dict = st.fixed_dictionaries(
     },
 )
 
-# File-mapped issue list — includes empty list (robustness test) and wrong types
+# File-mapped issue list - includes empty list (robustness test) and wrong types
 _issues_value = st.one_of(
     st.just([]),
     st.lists(_issue_dict, min_size=1, max_size=3),

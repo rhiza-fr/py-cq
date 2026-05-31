@@ -1,5 +1,6 @@
 """Parser that counts stdout lines matching a regex pattern."""
 
+import functools
 import re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
@@ -14,14 +15,17 @@ class RegexCountParser(AbstractParser):
         scale_factor (int, default 15): passed to score_logistic_variant.
     """
 
+    @functools.cached_property
+    def _pattern(self) -> re.Pattern:
+        return re.compile(self.parser_config["pattern"])
+
     def parse(self, raw_result: RawResult) -> ToolResult:
         """
         Parses the raw result using a regex pattern and computes a score.
         """
-        pattern = re.compile(self.parser_config["pattern"])
         scale = self.parser_config.get("scale_factor", 15)
         lines = (raw_result.stdout or "").splitlines()
-        matches = [ln for ln in lines if pattern.search(ln)]
+        matches = [ln for ln in lines if self._pattern.search(ln)]
         count = len(matches)
         score = score_logistic_variant(count, scale_factor=scale)
         return ToolResult(

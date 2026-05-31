@@ -106,7 +106,7 @@ class ComplexityParser(AbstractParser):
                 return f"**{metric_name}** score: {value:.3f}"
             return "No complexity details available"
         source = find_function_source(worst_file, worst_func, max_lines=context_lines)
-        header = f"`{worst_file}::{worst_func}` — cyclomatic complexity rank **{worst_rank}**"
+        header = f"`{worst_file}::{worst_func}` - cyclomatic complexity rank **{worst_rank}**"
         parts = [header]
         if source:
             parts.append(source)

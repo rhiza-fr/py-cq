@@ -1,7 +1,7 @@
 """Integration tests: user-defined tools run through the full cq check pipeline.
 
-These tests do NOT mock run_tools — they execute real subprocess commands and
-verify that results flow correctly through parser → scorer → CLI output.
+These tests do NOT mock run_tools - they execute real subprocess commands and
+verify that results flow correctly through parser -> scorer -> CLI output.
 All 11 built-in tools are disabled so each test only runs its user-defined tool.
 """
 
@@ -42,7 +42,7 @@ def _project(tmp_path, tool_name, command, parser, warning=0.9999, error=0.9999,
 # --- ExitCodeParser ---
 
 def test_exitcode_pass(tmp_path):
-    """ExitCodeParser: exit 0 → score 1.0, process exits 0."""
+    """ExitCodeParser: exit 0 -> score 1.0, process exits 0."""
     path = _project(tmp_path, "mycheck", "echo hello", "ExitCodeParser")
     result = runner.invoke(app, ["check", path, "-o", "score"])
     assert result.exit_code == 0
@@ -50,7 +50,7 @@ def test_exitcode_pass(tmp_path):
 
 
 def test_exitcode_fail(tmp_path):
-    """ExitCodeParser: exit 1 → score 0.0, process exits 1."""
+    """ExitCodeParser: exit 1 -> score 0.0, process exits 1."""
     script = tmp_path / "fail.py"
     script.write_text("import sys; sys.exit(1)")
     cmd = f"{{python}} {script.as_posix()}"
@@ -74,7 +74,7 @@ def test_exitcode_llm_output(tmp_path):
 # --- LineCountParser ---
 
 def test_linecount_no_output(tmp_path):
-    """LineCountParser: no stdout lines → score 1.0."""
+    """LineCountParser: no stdout lines -> score 1.0."""
     script = tmp_path / "silent.py"
     script.write_text("pass")
     cmd = f"{{python}} {script.as_posix()}"
@@ -85,7 +85,7 @@ def test_linecount_no_output(tmp_path):
 
 
 def test_linecount_with_violations(tmp_path):
-    """LineCountParser: N stdout lines → score between 0 and 1."""
+    """LineCountParser: N stdout lines -> score between 0 and 1."""
     script = tmp_path / "violations.py"
     script.write_text("print('e1')\nprint('e2')\n")
     cmd = f"{{python}} {script.as_posix()}"
@@ -117,7 +117,7 @@ def test_linecount_custom_scale_factor(tmp_path):
 # --- RegexCountParser ---
 
 def test_regexcount_no_match(tmp_path):
-    """RegexCountParser: no lines match pattern → score 1.0."""
+    """RegexCountParser: no lines match pattern -> score 1.0."""
     script = tmp_path / "info.py"
     script.write_text("print('INFO: all good')")
     cmd = f"{{python}} {script.as_posix()}"
@@ -129,7 +129,7 @@ def test_regexcount_no_match(tmp_path):
 
 
 def test_regexcount_with_match(tmp_path):
-    """RegexCountParser: matching lines → score between 0 and 1."""
+    """RegexCountParser: matching lines -> score between 0 and 1."""
     script = tmp_path / "errors.py"
     script.write_text("print('ERROR: bad')\nprint('INFO: ok')\n")
     cmd = f"{{python}} {script.as_posix()}"

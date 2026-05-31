@@ -70,24 +70,24 @@ def test_severity_warning_returns_1():
 def test_severity_at_error_threshold_returns_warning():
     """Test that severity at the error threshold returns warning."""
     cfg = make_config("tool", 1)  # error_threshold=0.5 (strict <)
-    assert _severity(0.5, cfg) == 1  # exactly at boundary → not error
+    assert _severity(0.5, cfg) == 1  # exactly at boundary -> not error
 
 
 def test_severity_at_warning_threshold_returns_ok():
     """Test that severity at the warning threshold returns ok."""
     cfg = make_config("tool", 1)  # warning_threshold=0.7 (strict <)
-    assert _severity(0.7, cfg) == 2  # exactly at boundary → ok
+    assert _severity(0.7, cfg) == 2  # exactly at boundary -> ok
 
 
 @pytest.mark.parametrize("score,warn,err,expected", [
     (0.0, 0.8, 0.6, 0),   # deep error
     (0.5, 0.8, 0.6, 0),   # below error
-    (0.6, 0.8, 0.6, 1),   # exactly at error_threshold → warning
-    (0.7, 0.8, 0.6, 1),   # between thresholds → warning
-    (0.8, 0.8, 0.6, 2),   # exactly at warning_threshold → ok
-    (1.0, 0.8, 0.6, 2),   # perfect → ok
-    (0.3, 0.3, 0.3, 2),   # equal thresholds, score at both → ok
-    (0.29, 0.3, 0.3, 0),  # below both equal thresholds → error
+    (0.6, 0.8, 0.6, 1),   # exactly at error_threshold -> warning
+    (0.7, 0.8, 0.6, 1),   # between thresholds -> warning
+    (0.8, 0.8, 0.6, 2),   # exactly at warning_threshold -> ok
+    (1.0, 0.8, 0.6, 2),   # perfect -> ok
+    (0.3, 0.3, 0.3, 2),   # equal thresholds, score at both -> ok
+    (0.29, 0.3, 0.3, 0),  # below both equal thresholds -> error
 ])
 def test_severity_parametrized_custom_thresholds(score, warn, err, expected):
     """Test severity with custom thresholds."""
@@ -138,7 +138,7 @@ def test_order1_beats_order3_same_severity():
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
     combined = make_combined([
         make_tr("ruff", 0.4),    # error state
-        make_tr("compile", 0.3), # error state, lower order → wins
+        make_tr("compile", 0.3), # error state, lower order -> wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # compile selected
@@ -150,7 +150,7 @@ def test_order2_beats_order5_same_severity():
     registry = make_registry(make_config("pytest", 2), make_config("interrogate", 5))
     combined = make_combined([
         make_tr("interrogate", 0.4), # error state
-        make_tr("pytest", 0.3),      # error state, lower order → wins
+        make_tr("pytest", 0.3),      # error state, lower order -> wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # pytest selected
@@ -162,7 +162,7 @@ def test_severity_beats_order():
     registry = make_registry(make_config("compile", 1), make_config("interrogate", 5))
     combined = make_combined([
         make_tr("compile", 0.8),     # warning/ok state
-        make_tr("interrogate", 0.3), # error state → wins despite higher order number
+        make_tr("interrogate", 0.3), # error state -> wins despite higher order number
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.300" in result  # interrogate selected
@@ -174,7 +174,7 @@ def test_same_order_worst_score_wins():
     registry = make_registry(make_config("ruff", 3), make_config("ty", 3))
     combined = make_combined([
         make_tr("ruff", 0.8),
-        make_tr("ty", 0.2),  # worse score → wins
+        make_tr("ty", 0.2),  # worse score -> wins
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
     assert "0.200" in result  # ty selected
@@ -185,7 +185,7 @@ def test_passing_tool_ignored():
     """Test that a tool with a passing threshold is ignored in the output."""
     registry = make_registry(make_config("compile", 1), make_config("ruff", 3))
     combined = make_combined([
-        make_tr("compile", 1.0), # passes → ignored
+        make_tr("compile", 1.0), # passes -> ignored
         make_tr("ruff", 0.5),
     ])
     result = format_for_llm(registry, combined, cq_invocation=CQ)
@@ -398,7 +398,7 @@ def test_format_for_llm_never_raises(scores):
 
 def test_format_for_llm_unknown_tool_name_in_result():
     """format_for_llm with a result whose tool_name is absent from the registry does not raise."""
-    # Empty registry — result's tool name has no matching config
+    # Empty registry - result's tool name has no matching config
     tr = make_tr("unknown_tool", 0.3)
     combined = make_combined([tr])
     result = format_for_llm({}, combined, cq_invocation=CQ)
@@ -430,8 +430,8 @@ def test_format_for_llm_selection_is_shuffle_invariant(perm):
         make_config("interrogate", 5),
     ]
     trs = [
-        make_tr("compile", 0.90),   # ok — not in failing list
-        make_tr("ruff", 0.42),      # error, order 3 — lowest order among errors → selected
+        make_tr("compile", 0.90),   # ok - not in failing list
+        make_tr("ruff", 0.42),      # error, order 3 - lowest order among errors -> selected
         make_tr("ty", 0.31),        # error, order 4
         make_tr("interrogate", 0.45),  # error, order 5
     ]
@@ -445,7 +445,7 @@ def test_format_for_llm_selection_is_shuffle_invariant(perm):
 
 
 def test_context_lines_affects_output_length(tmp_path):
-    """context_lines controls how many source lines appear; more lines → longer output."""
+    """context_lines controls how many source lines appear; more lines -> longer output."""
     test_file = tmp_path / "test_long.py"
     # Write a function with 20 body lines so context_lines=1 vs context_lines=10 differ visibly
     body_lines = "\n".join(f"    x{i} = {i}" for i in range(20))
@@ -474,7 +474,7 @@ def test_format_for_llm_default_invocation():
         raw=RawResult(tool_name="ruff", command="python -m ruff check src/"),
     )
     combined = CombinedToolResults(path=".", tool_results=[tr])
-    result = format_for_llm(registry, combined, hint=True)  # no cq_invocation → uses sys.argv
+    result = format_for_llm(registry, combined, hint=True)  # no cq_invocation -> uses sys.argv
     assert "cq" in result
     assert "src/foo.py" in result  # file from ruff details
     assert "E501" in result         # specific violation code

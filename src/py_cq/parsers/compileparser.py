@@ -26,7 +26,7 @@ class CompileParser(AbstractParser):
         events and error messages. For each file that emits an error, it extracts
         the line number, source snippet, error type, and help text, normalizes the
         file path, and stores this information in a dictionary keyed by file path.
-        It then computes a failure ratio (failed files ÷ total compilations) and
+        It then computes a failure ratio (failed files / total compilations) and
         derives a compile score via ``score_logistic_variant``.  The original
         ``stdout`` is cleaned of ``Listing`` lines and back-slash path separators
         are replaced with forward slashes.  A ``ToolResult`` containing the raw
@@ -139,4 +139,4 @@ class CompileParser(AbstractParser):
             func_name = extract_callee_name(src_line)
             if func_name:
                 callee = format_callee_context(func_name, file)
-        return f"`{file}:{line}` — **{typ}**: {help_msg}{code_block}{callee}"
+        return f"{file}:{line} - {typ}: {help_msg}{code_block}{callee}"

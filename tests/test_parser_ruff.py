@@ -72,8 +72,8 @@ def test_ruff_hint_F841_referenced_elsewhere(tmp_path):
     src = tmp_path / "example.py"
     src.write_text(
         "def foo():\n"
-        "    n_pending = get_count()\n"  # line 2 — the violation
-        "    return n_pending + 1\n"     # line 3 — other reference
+        "    n_pending = get_count()\n"  # line 2 - the violation
+        "    return n_pending + 1\n"     # line 3 - other reference
     )
     tr = ToolResult(
         metrics={"lint": 0.5},
@@ -91,7 +91,7 @@ def test_ruff_hint_F841_not_referenced(tmp_path):
     src = tmp_path / "example.py"
     src.write_text(
         "def foo():\n"
-        "    unused_var = compute()\n"  # line 2 — only occurrence
+        "    unused_var = compute()\n"  # line 2 - only occurrence
         "    return 42\n"
     )
     tr = ToolResult(
@@ -151,9 +151,9 @@ def test_ruff_hint_F401_soft_uses(tmp_path):
 def test_ruff_hint_F821_with_conditional_import(tmp_path):
     src = tmp_path / "server.py"
     src.write_text(
-        'def create_server() -> "FastMCP":\n'       # line 1 — violation
-        "    from mcp.server.fastmcp import FastMCP\n"  # line 2 — ref
-        '    return FastMCP("app")\n'               # line 3 — ref
+        'def create_server() -> "FastMCP":\n'       # line 1 - violation
+        "    from mcp.server.fastmcp import FastMCP\n"  # line 2 - ref
+        '    return FastMCP("app")\n'               # line 3 - ref
     )
     tr = ToolResult(
         metrics={"lint": 0.5},

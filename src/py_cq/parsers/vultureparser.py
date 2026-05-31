@@ -47,4 +47,4 @@ class VultureParser(AbstractParser):
         kind = issue.get("type", "unused")
         name = issue.get("name", "")
         confidence = issue.get("confidence", "?")
-        return f"`{file}:{line}` — **{kind}** `{name}` ({confidence}% confidence){format_source_context(file, line, count=context_lines)}"
+        return f"{file}:{line} - **{kind}** `{name}` ({confidence}% confidence){format_source_context(file, line, count=context_lines)}"

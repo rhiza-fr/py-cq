@@ -126,8 +126,8 @@ def _relative_path(path: str) -> str:
 
 
 def format_issue_header(file: str, line: int, code: str, message: str) -> str:
-    """Return a clean single-line issue header: path:line — CODE: message."""
-    return f"{_relative_path(file)}:{line} — {code}: {message}"
+    """Return a clean single-line issue header: path:line - CODE: message."""
+    return f"{_relative_path(file)}:{line} - {code}: {message}"
 
 
 def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -> str:
@@ -135,7 +135,7 @@ def format_callee_context(func_name: str, hint_file: str, max_lines: int = 10) -
 
     Output format::
 
-        Callee `func_name` — `relative/path/to/file.py`
+        Callee `func_name` - `relative/path/to/file.py`
         ```python
         N: def func_name(...):
         ...

@@ -7,7 +7,7 @@ per-file docstring coverage on stdout::
     | TOTAL       |  5 |  2 |  3 |  60.0% |
 
 The parser extracts per-file coverage and the TOTAL row, storing the TOTAL
-as the ``doc_coverage`` metric (0.0–1.0).
+as the ``doc_coverage`` metric (0.0-1.0).
 """
 
 import ast

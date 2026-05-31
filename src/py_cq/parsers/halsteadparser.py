@@ -25,7 +25,7 @@ class HalsteadParser(AbstractParser):
     def parse(self, raw_result: RawResult) -> ToolResult:
         """Parses Halstead tool JSON output and returns a ToolResult.
 
-        The method reads ``raw_result.stdout``—a JSON string containing
+        The method reads ``raw_result.stdout``-a JSON string containing
         per-file and per-function Halstead metrics. For each file it
         populates a ``ToolResult`` detail entry with bug-free and
         smallness scores. If a file contains an ``error`` key, the
@@ -154,7 +154,7 @@ class HalsteadParser(AbstractParser):
             return f"**{metric_name}** score: {score:.3f}"
 
         path = _relative_path(worst_file)
-        location = f"{path} — function `{worst_function}`" if worst_function else path
+        location = f"{path} - function `{worst_function}`" if worst_function else path
         if is_bug_metric:
             parts = []
             if worst_bugs is not None:

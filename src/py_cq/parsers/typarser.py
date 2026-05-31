@@ -40,7 +40,7 @@ def _format_invalid_argument_type(file: str, line: int, message: str) -> str:
     if not m or "Unknown" not in m.group(2):
         return base
     enclosing = find_enclosing_function(file, line)
-    note = "\n\n`Unknown` means ty cannot infer this argument's type — the variable has no annotation."
+    note = "\n\n`Unknown` means ty cannot infer this argument's type - the variable has no annotation."
     if enclosing:
         note += f" Trace the argument back to its source and annotate its type:{enclosing}"
     else:
@@ -70,7 +70,7 @@ def _format_call_non_callable(file: str, line: int, message: str) -> str:
     m = _TYPE_NAME_RE.search(message)
     type_name = f"`{m.group(1)}`" if m else "this type"
     return base + (
-        f"\n\nty cannot see a `__call__` declaration on {type_name} — common when a library's "
+        f"\n\nty cannot see a `__call__` declaration on {type_name} - common when a library's "
         f"type stubs are incomplete. Fix: annotate the variable as `Callable[..., <ReturnType>]`, "
         f"or suppress with `# type: ignore[call-non-callable]` if the call is correct at runtime."
     )
@@ -166,7 +166,7 @@ class TyParser(AbstractParser):
         Args:
             tr: The parsed tool result containing details and raw output.
             context_lines: Number of source context lines to show.
-            limit: Maximum number of issues to display (unused — always 1).
+            limit: Maximum number of issues to display (unused - always 1).
 
         Returns:
             Markdown-formatted issue description.

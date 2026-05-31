@@ -92,7 +92,7 @@ def test_maintainability_format_llm_message_uses_base_fallback():
 
 
 def test_maintainability_unknown_keys_skipped():
-    """File entry with neither 'error' nor 'mi' is ignored — branch 54->47."""
+    """File entry with neither 'error' nor 'mi' is ignored - branch 54->47."""
     data = json.dumps({
         "src/foo.py": {"mi": 70.0, "rank": "B"},
         "src/weird.py": {"some_other_key": 42},

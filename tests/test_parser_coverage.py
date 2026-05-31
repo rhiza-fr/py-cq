@@ -131,7 +131,7 @@ def test_coverage_non_numeric_miss_count_scores_zero_does_not_crash():
 
 def test_coverage_format_llm_fallback():
     """Test fallback behavior of format_llm_message when no missing lines are present."""
-    # No missing_lines → fallback shows file + count
+    # No missing_lines -> fallback shows file + count
     tr = CoverageParser().parse(raw(COVERAGE_OUTPUT))
     msg = CoverageParser().format_llm_message(tr)
     assert "src/foo.py" in msg
@@ -141,7 +141,7 @@ def test_coverage_format_llm_fallback():
 
 def test_coverage_format_llm_fallback_with_missing_lines():
     """Test coverage formatting when missing lines are present but file doesn't exist."""
-    # Has missing lines string but file doesn't exist → fallback shows line numbers
+    # Has missing lines string but file doesn't exist -> fallback shows line numbers
     tr = CoverageParser().parse(raw(COVERAGE_OUTPUT_WITH_MISSING))
     msg = CoverageParser().format_llm_message(tr)
     assert "src/foo.py" in msg

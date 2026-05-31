@@ -24,12 +24,12 @@ from py_cq.parsers.vultureparser import VultureParser
 CQ = "cq run test.py --llm"
 
 RUFF_DEFECT_SNAPSHOT = (
-    "src/bar.py:42 \u2014 E501: line too long\n\n"
+    "src/bar.py:42 - E501: line too long\n\n"
     "Please fix only this issue."
 )
 
 COMPILE_DEFECT_SNAPSHOT = (
-    "`src/foo.py:10` \u2014 **SyntaxError**: invalid syntax\n"
+    "src/foo.py:10 - SyntaxError: invalid syntax\n"
     "```python\n"
     "x = {a = b}\n"
     "```\n\n"
@@ -37,23 +37,23 @@ COMPILE_DEFECT_SNAPSHOT = (
 )
 
 BANDIT_DEFECT_SNAPSHOT = (
-    "`src/vuln.py:5` \u2014 **B101** [HIGH]: Use of assert detected\n\n"
+    "src/vuln.py:5 - B101: [HIGH] Use of assert detected\n\n"
     "Please fix only this issue."
 )
 
 COVERAGE_DEFECT_SNAPSHOT = (
-    "src/low.py \u2014 60% coverage (40 uncovered lines)\n\n"
+    "src/low.py - 60% coverage (40 uncovered lines)\n\n"
     "Add tests to: tests/test_low.py\n\n"
     "Please fix only this issue."
 )
 
 VULTURE_DEFECT_SNAPSHOT = (
-    "`src/dead.py:10` \u2014 **unused function** `old_helper` (80% confidence)\n\n"
+    "src/dead.py:10 - **unused function** `old_helper` (80% confidence)\n\n"
     "Please fix only this issue."
 )
 
 TY_DEFECT_SNAPSHOT = (
-    "src/baz.py:7 \u2014 possibly-unbound: x may be unbound\n\n"
+    "src/baz.py:7 - possibly-unbound: x may be unbound\n\n"
     "Please fix only this issue."
 )
 
@@ -144,7 +144,7 @@ HALSTEAD_BUG_DEFECT_SNAPSHOT = (
 )
 
 INTERROGATE_DEFECT_SNAPSHOT = (
-    "src/undoc.py:5 — D103: missing docstring in function `some_func`\n\n"
+    "src/undoc.py:5 - D103: missing docstring in function `some_func`\n\n"
     "Please fix only this issue."
 )
 

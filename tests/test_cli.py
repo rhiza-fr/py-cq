@@ -209,7 +209,7 @@ def test_check_skip_excludes_tools(project_dir):
 
 
 def test_check_only_and_skip_combined(project_dir):
-    """--only then --skip: only runs tools in both sets (only ∩ ¬skip)."""
+    """--only then --skip: only runs tools in both sets (only intersect(only, not skip))."""
     tr = _fake_tr()
     combined = _fake_combined(str(project_dir))
     with patch("py_cq.api.run_tools", return_value=[tr]) as mock_run, \

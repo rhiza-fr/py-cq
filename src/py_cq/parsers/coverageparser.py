@@ -152,14 +152,14 @@ class CoverageParser(AbstractParser):
 
             parts: list[str] = []
             if code and line:
-                parts.append(f"{file}:{line} — {code} is missing tests")
+                parts.append(f"{file}:{line} - {code} is missing tests")
                 fn_src = find_function_source(resolved_file, code)
                 if fn_src:
                     parts.append(fn_src)
             else:
                 pct = f"{file_coverage:.0%} " if isinstance(file_coverage, float) and file_coverage else ""
                 miss_info = f"{missing} uncovered lines" if missing else "uncovered"
-                parts.append(f"{file} — {pct}coverage ({miss_info})")
+                parts.append(f"{file} - {pct}coverage ({miss_info})")
                 if missing_lines:
                     parts.append(f"  missing lines: {missing_lines}")
 

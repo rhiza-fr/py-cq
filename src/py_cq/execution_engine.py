@@ -160,7 +160,7 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
     # shell=True is required because commands use shell features (&&, |) and
     # variable substitution ({python} expands to a compound uv command).
     # All user-supplied values (context_path, excludes) are properly quoted
-    # via shlex.quote() to prevent injection — see _build_exclude_str and
+    # via shlex.quote() to prevent injection - see _build_exclude_str and
     # the uv command assembly above.
     t_sub0 = time.perf_counter()
     result = subprocess.run(command, capture_output=True, text=True, shell=True, encoding="utf-8", errors="replace", env=run_env)  # nosec

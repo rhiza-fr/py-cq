@@ -61,7 +61,7 @@ def test_complexity_parse_missing_complexity_uses_max():
     """Test that missing complexity defaults to max complexity."""
     output = json.dumps({"src/foo.py": [{"name": "f", "rank": "A"}]})
     tr = ComplexityParser().parse(raw(output))
-    # No complexity key → defaults to max_complexity (30) → score_logistic_variant(30, 30) = 0.5
+    # No complexity key -> defaults to max_complexity (30) -> score_logistic_variant(30, 30) = 0.5
     assert tr.metrics["simplicity"] <= 0.5
 
 
@@ -101,7 +101,7 @@ def test_complexity_parse_valid_json_non_dict():
 
 
 def test_complexity_parse_duplicate_file_key():
-    """Duplicate file key (after backslash normalization) merges into existing entry — branch 73->75."""
+    """Duplicate file key (after backslash normalization) merges into existing entry - branch 73->75."""
     # "src\\foo.py" and "src/foo.py" both normalize to "src/foo.py"
     output = json.dumps({
         "src/foo.py": [{"name": "f", "complexity": 3, "rank": "A"}],

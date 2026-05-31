@@ -33,11 +33,12 @@ def _format_F841(file: str, line: int, message: str) -> str:
     except OSError:
         return base
     func_range = enclosing_function_range(file, line)
+    var_re = re.compile(rf"\b{re.escape(var)}\b")
     refs = [
         i + 1
         for i, ln in enumerate(lines)
         if i + 1 != line
-        and re.search(rf"\b{re.escape(var)}\b", ln)
+        and var_re.search(ln)
         and (func_range is None or func_range[0] <= i + 1 <= func_range[1])
     ]
     if refs and len(var) > 1:
@@ -58,10 +59,11 @@ def _file_refs(file: str, name: str, exclude_line: int) -> list[tuple[int, str]]
         lines = Path(file).read_text(encoding="utf-8", errors="replace").splitlines()
     except OSError:
         return []
+    name_re = re.compile(rf"\b{re.escape(name)}\b")
     return [
         (i + 1, ln.strip())
         for i, ln in enumerate(lines)
-        if i + 1 != exclude_line and re.search(rf"\b{re.escape(name)}\b", ln)
+        if i + 1 != exclude_line and name_re.search(ln)
     ]
 
 
@@ -78,7 +80,7 @@ def _format_F401(file: str, line: int, message: str) -> str:
     refs = _file_refs(file, name, exclude_line=line)
     if refs:
         ref_lines = "\n".join(f"  line {line_no}: {txt}" for line_no, txt in refs[:6])
-        return base + f"\n\n`{name}` appears elsewhere in this file — verify these are not active uses before deleting:\n{ref_lines}"
+        return base + f"\n\n`{name}` appears elsewhere in this file - verify these are not active uses before deleting:\n{ref_lines}"
     suffix = " Auto-fixable: `ruff check --fix`." if autofixable else ""
     return base + f"\n\nNo other uses found. Delete this import.{suffix}"
 
