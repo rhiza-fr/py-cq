@@ -55,17 +55,18 @@ def _dep_in_venv(dep: str, project_root: Path) -> bool:
     return False
 
 
-def _compute_scan_targets(context_path: str, scan_exclude_names: list[str]) -> str:
+def _compute_scan_targets(context_path: str, scan_exclude_names: list[str], user_excludes: list[str] | None = None) -> str:
     """Return space-separated quoted absolute paths for bandit-style scanning.
 
     When context_path is a directory, enumerates its top-level children and
-    omits any whose name is in scan_exclude_names.  When it's a file, returns
-    just that file.  Falls back to the root itself if all children are excluded.
+    omits any whose name is in scan_exclude_names or user_excludes.  When it's
+    a file, returns just that file.  Falls back to the root itself if all
+    children are excluded.
     """
     root = Path(context_path).resolve()
     if not root.is_dir():
         return f'"{root}"'
-    excluded = set(scan_exclude_names)
+    excluded = set(scan_exclude_names) | {Path(e).name for e in (user_excludes or [])}
     targets = [str(p) for p in sorted(root.iterdir()) if p.name not in excluded]
     paths = targets if targets else [str(root)]
     return " ".join(f'"{p}"' for p in paths)
@@ -143,7 +144,7 @@ def run_tool(tool_config: ToolConfig, context_path: str, excludes: list[str] | N
         project_dir = Path(abs_context_path).as_posix() if Path(abs_context_path).is_dir() else Path(abs_context_path).parent.as_posix()
     input_path_posix = Path(context_path).as_posix().rstrip("/")
     exclude = _build_exclude_str(tool_config.exclude_format, excludes or [], input_path_posix=input_path_posix, abs_context_path_posix=abs_context_path_posix)
-    scan_targets = _compute_scan_targets(context_path, tool_config.scan_exclude_names)
+    scan_targets = _compute_scan_targets(context_path, tool_config.scan_exclude_names, excludes)
 
     command = tool_config.command.format(context_path=path, abs_context_path=abs_context_path, abs_context_path_posix=abs_context_path_posix, input_path_posix=input_path_posix, native_sep=native_sep, scan_targets=scan_targets, python=python, exclude=exclude)
     t_hash0 = time.perf_counter()
