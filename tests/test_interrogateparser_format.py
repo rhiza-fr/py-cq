@@ -24,6 +24,7 @@ def test_d103_function_insertion_line(tmp_path):
 
 
 def test_d103_return_annotation_hint(tmp_path):
+    """Test that D103 warning includes return annotation hint."""
     f = tmp_path / "funcs.py"
     f.write_text("def count() -> int:\n    return 42\n")
     msg = _format_missing_docstring(str(f), 1, "D103", "missing docstring in function `count`")
@@ -32,6 +33,7 @@ def test_d103_return_annotation_hint(tmp_path):
 
 
 def test_d103_no_return_annotation(tmp_path):
+    """Test D103 error message formatting."""
     f = tmp_path / "funcs.py"
     f.write_text("def setup(config):\n    pass\n")
     msg = _format_missing_docstring(str(f), 1, "D103", "missing docstring in function `setup`")

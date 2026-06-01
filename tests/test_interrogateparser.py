@@ -68,6 +68,7 @@ def test_score_full_coverage():
 
 
 def test_score_zero_total_gives_one():
+    """Test that a score of zero total gives a doc coverage of one."""
     r = InterrogateParser().parse(_raw(""))
     assert r.metrics["doc_coverage"] == 1.0
 
@@ -76,6 +77,7 @@ def test_score_zero_total_gives_one():
 
 
 def test_venv_files_excluded_from_score():
+    """Test that files in .venv are excluded from the score."""
     output = (
         _TABLE_HEADER
         + "| .venv/lib/foo.py |  10 |     5 |      5 |     50% |\n"
@@ -91,6 +93,7 @@ def test_venv_files_excluded_from_score():
 
 
 def test_prefix_applied_when_coverage_root_is_subdir(tmp_path):
+    """Verify that the prefix is applied correctly when the coverage root is a subdirectory."""
     src = tmp_path / "src"
     src.mkdir()
     (src / "mod.py").write_text("def f():\n    pass\n")
@@ -108,6 +111,11 @@ def test_prefix_applied_when_coverage_root_is_subdir(tmp_path):
 
 
 def test_prefix_not_applied_when_coverage_root_unrelated(tmp_path):
+    """Verify that the prefix is not applied when the coverage root is unrelated.
+
+    Args:
+        tmp_path: Pytest fixture for temporary directory.
+    """
     output = (
         _TABLE_HEADER
         + "Coverage for /unrelated/path\n"
