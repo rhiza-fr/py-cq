@@ -4,6 +4,7 @@ from py_cq.parsers.interrogateparser import _format_missing_docstring
 
 
 def test_d100_module_docstring(tmp_path):
+    """Test D100 by checking if the formatted message is correct for a module without a docstring."""
     f = tmp_path / "mod.py"
     f.write_text("x = 1\n")
     msg = _format_missing_docstring(str(f), 1, "D100", "missing module docstring")
@@ -11,6 +12,11 @@ def test_d100_module_docstring(tmp_path):
 
 
 def test_d103_function_insertion_line(tmp_path):
+    """Verify that D103 suggests inserting a docstring on the first line of the function body.
+
+    Args:
+        tmp_path: A pytest fixture providing a temporary directory.
+    """
     f = tmp_path / "funcs.py"
     f.write_text("def greet(name: str) -> str:\n    return 'hi'\n")
     msg = _format_missing_docstring(str(f), 1, "D103", "missing docstring in function `greet`")

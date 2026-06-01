@@ -16,10 +16,12 @@ _TABLE_FOOTER = """\
 
 
 def _raw(stdout, command="cmd"):
+    """Return a RawResult from the stdout and command."""
     return RawResult(tool_name="interrogate", command=command, stdout=stdout)
 
 
 def _output(*file_rows):
+    """Format file rows into a table."""
     return _TABLE_HEADER + "".join(file_rows) + _TABLE_FOOTER
 
 
@@ -27,6 +29,7 @@ def _output(*file_rows):
 
 
 def test_context_path_extracted_from_command(tmp_path):
+    """Test that the context path is correctly extracted from the command."""
     (tmp_path / "src.py").write_text("x = 1\n")
     output = _output("| src.py       |      3 |     1 |      2 |     67% |\n")
     r = InterrogateParser().parse(_raw(output, command=f'interrogate "{tmp_path}"'))
@@ -34,6 +37,7 @@ def test_context_path_extracted_from_command(tmp_path):
 
 
 def test_context_path_defaults_to_dot_when_no_command_match():
+    """Test that context path defaults to dot when no command matches."""
     output = _output("| src/foo.py   |      5 |     2 |      3 |     60% |\n")
     r = InterrogateParser().parse(_raw(output, command="interrogate"))
     assert r.metrics["doc_coverage"] == pytest_approx(3 / 5)
@@ -45,12 +49,14 @@ def test_context_path_defaults_to_dot_when_no_command_match():
 
 
 def test_score_partial_coverage():
+    """Test partial covergare parsing"""
     output = _output("| src/foo.py   |      4 |     1 |      3 |     75% |\n")
     r = InterrogateParser().parse(_raw(output))
     assert r.metrics["doc_coverage"] == pytest_approx(0.75)
 
 
 def test_score_full_coverage():
+    """Test that score calculation provides full coverage."""
     output = (
         _TABLE_HEADER
         + "| src/foo.py   |      5 |     0 |      5 |    100% |\n"
