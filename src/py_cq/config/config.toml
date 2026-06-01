@@ -1,12 +1,12 @@
 [python.compile]
-command = "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv"
+command = "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv|\\.claude"
 parser = "CompileParser"
 order = 1
 warning_threshold = 0.9999
 error_threshold = 0.9999
 
 [python.ruff]
-command = "{python} -m ruff check --output-format concise --no-cache \"{context_path}\"{exclude}"
+command = "{python} -m ruff check --output-format concise --no-cache \"{context_path}\" --exclude .claude{exclude}"
 exclude_format = " --exclude {path}"
 parser = "RuffParser"
 order = 2
@@ -14,7 +14,7 @@ warning_threshold = 0.9999
 error_threshold = 0.9
 
 [python.ty]
-command = "{python} -m ty check --output-format concise --color never \"{context_path}\"{exclude}"
+command = "{python} -m ty check --output-format concise --color never \"{context_path}\" --exclude .claude{exclude}"
 exclude_format = " --exclude {path}"
 parser = "TyParser"
 order = 3
@@ -33,7 +33,7 @@ warning_threshold = 0.9999
 error_threshold = 0.8
 
 [python.pytest]
-command = "{python} -m pytest -vv \"{context_path}\"{exclude}"
+command = "{python} -m pytest -vv \"{context_path}\" --ignore .claude{exclude}"
 exclude_format = " --ignore {path}"
 parser = "PytestParser"
 order = 5
@@ -44,7 +44,7 @@ extra_deps = ["pytest"]
 skip_for_file = true
 
 [python.coverage]
-command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\"{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
+command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
 exclude_format = " --ignore {path}"
 parser = "CoverageParser"
 order = 6
@@ -55,28 +55,28 @@ extra_deps = ["coverage", "pytest"]
 skip_for_file = true
 
 [python.radon-cc]
-command = "{python} -m radon cc --json \"{context_path}\""
+command = "{python} -m radon cc --json --exclude '.claude/**' \"{context_path}\""
 parser = "ComplexityParser"
 order = 7
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-mi]
-command = "{python} -m radon mi -s --json \"{context_path}\""
+command = "{python} -m radon mi -s --json --exclude '.claude/**' \"{context_path}\""
 parser = "MaintainabilityParser"
 order = 8
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-hal]
-command = "{python} -m radon hal -f --json \"{context_path}\""
+command = "{python} -m radon hal -f --json --exclude '.claude/**' \"{context_path}\""
 parser = "HalsteadParser"
 order = 9
 warning_threshold = 0.5
 error_threshold = 0.3
 
 [python.vulture]
-command = "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git{exclude}"
+command = "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
 exclude_format = ",{path}"
 parser = "VultureParser"
 order = 10
@@ -84,7 +84,7 @@ warning_threshold = 0.9999
 error_threshold = 0.8
 
 [python.interrogate]
-command = "{python} -m interrogate \"{context_path}\"{exclude} -v --fail-under 0"
+command = "{python} -m interrogate \"{context_path}\" -e .claude{exclude} -v --fail-under 0"
 exclude_format = " -e {path}"
 parser = "InterrogateParser"
 order = 11
