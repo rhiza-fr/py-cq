@@ -81,6 +81,31 @@ cq check . && deploy        # block deploy on errors
 cq check . -o score         # print score, exit 1 on errors
 ```
 
+## Fingerprint-based verification
+
+`-o llm-json` returns a JSON object with a stable `id` fingerprint you can pass back to `cq is-fixed` to check whether a specific issue has been resolved — without re-running all tools:
+
+```bash
+# Get the top defect as JSON
+cq check . -o llm-json
+```
+
+```json
+{
+  "id": "ruff::my-project::src/foo.py::42::E501",
+  "file": "src/foo.py",
+  "project": "/home/user/my-project",
+  "message": "..."
+}
+```
+
+```bash
+# After fixing, verify only that issue (fast — reruns one tool on one file)
+cq is-fixed "ruff::my-project::src/foo.py::42::E501"
+```
+
+This is most useful in automation: fix an issue, confirm it's gone, then fetch the next one. Note that this only verifies the original issue is no longer present — a full project-wide scan is still needed to guarantee no regressions, assuming you have sufficient tests.
+
 ## Python Library
 
 `py_cq` can be used as a library — no subprocess required. Instantiate `CQ` with a project root; config is loaded once from `pyproject.toml`.
