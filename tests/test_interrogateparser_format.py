@@ -41,6 +41,7 @@ def test_d103_no_return_annotation(tmp_path):
 
 
 def test_d103_params_listed(tmp_path):
+    """Test D103 error message formatting."""
     f = tmp_path / "funcs.py"
     f.write_text("def process(data, timeout):\n    pass\n")
     msg = _format_missing_docstring(str(f), 1, "D103", "missing docstring in function `process`")
@@ -49,6 +50,7 @@ def test_d103_params_listed(tmp_path):
 
 
 def test_d103_self_param_excluded(tmp_path):
+    """Test D103 error message formatting."""
     f = tmp_path / "cls.py"
     f.write_text("class Foo:\n    def run(self, x):\n        pass\n")
     msg = _format_missing_docstring(str(f), 2, "D103", "missing docstring in function `run`")
@@ -57,6 +59,7 @@ def test_d103_self_param_excluded(tmp_path):
 
 
 def test_d101_class_insertion_line(tmp_path):
+    """Test D101 error message formatting."""
     f = tmp_path / "cls.py"
     f.write_text("class MyClass:\n    x = 1\n")
     msg = _format_missing_docstring(str(f), 1, "D101", "missing docstring in class `MyClass`")
@@ -65,11 +68,13 @@ def test_d101_class_insertion_line(tmp_path):
 
 
 def test_file_not_found_fallback():
+    """Test hint"""
     msg = _format_missing_docstring("/nonexistent/file.py", 5, "D103", "missing docstring in function `foo`")
     assert "Insert a docstring as the first statement in the body" in msg
 
 
 def test_line_not_matched_fallback(tmp_path):
+    """Test hint"""
     f = tmp_path / "funcs.py"
     f.write_text("def real_func():\n    pass\n")
     # Line 99 doesn't exist in the file

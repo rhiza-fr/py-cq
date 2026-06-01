@@ -132,6 +132,7 @@ def test_prefix_not_applied_when_coverage_root_unrelated(tmp_path):
 
 
 def test_skip_empty_init_default(tmp_path):
+    """Test empty"""
     (tmp_path / "__init__.py").write_text("")
     output = (
         _TABLE_HEADER
@@ -144,6 +145,7 @@ def test_skip_empty_init_default(tmp_path):
 
 
 def test_skip_empty_init_disabled(tmp_path):
+    """Test skip empty"""
     (tmp_path / "__init__.py").write_text("")
     output = (
         _TABLE_HEADER
@@ -161,6 +163,7 @@ def test_skip_empty_init_disabled(tmp_path):
 
 
 def test_details_populated_from_real_file(tmp_path):
+    """Test details"""
     f = tmp_path / "mod.py"
     f.write_text("def helper(x):\n    return x\n")
     output = (
@@ -176,12 +179,14 @@ def test_details_populated_from_real_file(tmp_path):
 
 
 def test_details_empty_when_file_not_on_disk():
+    """Test details"""
     output = _output("| src/ghost.py |      3 |     2 |      1 |     33% |\n")
     r = InterrogateParser().parse(_raw(output))
     assert "src/ghost.py" not in r.details
 
 
 def test_d100_module_code_assigned(tmp_path):
+    """Test D100"""
     f = tmp_path / "mod.py"
     f.write_text("x = 1\n")
     output = (
@@ -197,6 +202,7 @@ def test_d100_module_code_assigned(tmp_path):
 
 
 def test_d101_class_code_assigned(tmp_path):
+    """Test D101"""
     f = tmp_path / "mod.py"
     f.write_text('"""module."""\nclass Foo:\n    pass\n')
     output = (
@@ -214,6 +220,7 @@ def test_d101_class_code_assigned(tmp_path):
 
 
 def test_ignore_semiprivate_filters_underscore_functions(tmp_path):
+    """Test ignore semi private"""
     f = tmp_path / "mod.py"
     f.write_text('"""module."""\ndef _helper():\n    pass\n')
     (tmp_path / "pyproject.toml").write_text(
@@ -231,6 +238,7 @@ def test_ignore_semiprivate_filters_underscore_functions(tmp_path):
 
 
 def test_ignore_magic_filters_dunder_methods(tmp_path):
+    """Test ignore magic"""
     f = tmp_path / "mod.py"
     f.write_text('"""module."""\nclass Foo:\n    """Foo."""\n    def __str__(self):\n        return ""\n')
     (tmp_path / "pyproject.toml").write_text(
@@ -251,6 +259,7 @@ def test_ignore_magic_filters_dunder_methods(tmp_path):
 
 
 def test_details_sorted_worst_coverage_first(tmp_path):
+    """Test sorted"""
     (tmp_path / "good.py").write_text("def f():\n    pass\n")
     (tmp_path / "bad.py").write_text("def g():\n    pass\n")
     output = (
