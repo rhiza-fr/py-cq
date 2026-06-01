@@ -192,6 +192,7 @@ HALSTEAD_BUG_DEFECT_SNAPSHOT = (
 
 INTERROGATE_DEFECT_SNAPSHOT = (
     "src/undoc.py:5 - D103: missing docstring in function `some_func`\n\n"
+    "Insert a docstring as the first statement in the body.\n\n"
     "Please fix only this issue."
 )
 

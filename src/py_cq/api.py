@@ -197,7 +197,7 @@ class CQ:
             )
         if fp.tool not in tool_registry:
             raise ValueError(f"Unknown tool: {fp.tool!r}")
-
+        
         if fp.code and fp.path:
             # Specific issue: target only the affected file for a fast re-check
             file_path = Path(fp.path)
@@ -221,7 +221,8 @@ class CQ:
 
         only_registry = {fp.tool: tool_registry[fp.tool]}
         tool_results = run_tools(
-            only_registry.values(), target, max_workers=1, early_exit=False, excludes=[]
+            only_registry.values(), target, max_workers=1, early_exit=False, excludes=[],
+            project_root=str(self.path),
         )
 
         if not tool_results:

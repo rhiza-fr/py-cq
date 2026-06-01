@@ -21,6 +21,56 @@ from py_cq.parsers.common import (
     format_source_context,
 )
 
+_SKIP_PARAMS = {"self", "cls"}
+
+
+def _format_missing_docstring(file_str: str, line: int, code: str, message: str) -> str:
+    base = format_issue_header(file_str, line, code, message) + format_source_context(
+        file_str, line
+    )
+
+    if code == "D100":
+        return base + "\n\nInsert a module-level docstring as the very first statement in the file."
+
+    try:
+        source = Path(file_str).read_text(encoding="utf-8")
+        tree = ast.parse(source)
+    except (OSError, SyntaxError):
+        return base + "\n\nInsert a docstring as the first statement in the body."
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.lineno == line:
+            insert_line = node.body[0].lineno
+            return (
+                base
+                + f"\n\nInsert a docstring on line {insert_line} (first line of the class body)."
+                + "\n\nA good class docstring describes the class purpose in one sentence."
+            )
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.lineno == line
+        ):
+            insert_line = node.body[0].lineno
+            params = [a.arg for a in node.args.args if a.arg not in _SKIP_PARAMS]
+            returns = ast.unparse(node.returns) if node.returns else None
+
+            hint = f"\n\nInsert a docstring on line {insert_line} (first line of the function body)."
+            hint += "\n\nA good one-line docstring describes what the function does (not how)."
+
+            indent = "    "
+            if returns:
+                hint += f' Return annotation is `{returns}` - start the docstring with a verb like "Return ...".'
+                hint += f'\n\nExample:\n```python\n{indent}"""Return the <value> for <reason>."""\n```'
+            else:
+                hint += f'\n\nExample:\n```python\n{indent}"""Do <action> and return <result>."""\n```'
+
+            if params:
+                hint += f"\n\nDocument non-obvious parameters: {', '.join(f'`{p}`' for p in params)}."
+
+            return base + hint
+
+    return base + "\n\nInsert a docstring as the first statement in the body."
+
 _ROW_RE = re.compile(
     r"^\|\s+(.+?)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+\d+\s+\|\s+(\d+(?:\.\d+)?)%\s*\|"
 )
@@ -80,13 +130,18 @@ def _is_file_empty(path: Path | None) -> bool:
 
 
 def _resolve(context_path: str, rel_file: str) -> Path | None:
-    """Return the first existing Path for rel_file, trying cwd then context_path."""
-    direct = Path(rel_file)
-    if direct.exists():
-        return direct
+    """Return the first existing Path for rel_file, trying context_path then cwd."""
     via_context = Path(context_path) / rel_file
     if via_context.exists():
         return via_context
+    # When context_path is a file, interrogate reports only the basename.
+    # Try the parent directory so "dig.py" resolves against "D:/.../dig.py".
+    via_parent = Path(context_path).parent / rel_file
+    if via_parent.exists():
+        return via_parent
+    direct = Path(rel_file)
+    if direct.exists():
+        return direct
     return None
 
 
@@ -203,6 +258,4 @@ class InterrogateParser(AbstractParser):
         resolved = _resolve(context_path, rel_file)
         file_str = str(resolved) if resolved else rel_file
 
-        return format_issue_header(
-            file_str, line, code, message
-        ) + format_source_context(file_str, line, count=context_lines)
+        return _format_missing_docstring(file_str, line, code, message)

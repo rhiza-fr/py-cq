@@ -107,6 +107,7 @@ def run_tool(
     excludes: list[str] | None = None,
     *,
     precomputed_hash: str | None = None,
+    project_tag: str | None = None,
 ) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
@@ -238,7 +239,7 @@ def run_tool(
         timestamp=timestamp,
         project_path=project_dir,
     )
-    _cache.set(cache_key, raw_result.to_dict(), expire=5 * 24 * 60 * 60)
+    _cache.set(cache_key, raw_result.to_dict(), expire=5 * 24 * 60 * 60, tag=project_tag)
     return raw_result
 
 
@@ -248,6 +249,7 @@ def run_tools(
     max_workers: int = 0,
     early_exit: bool = False,
     excludes: list[str] | None = None,
+    project_root: str | None = None,
 ) -> list[ToolResult]:
     """Run multiple tools and return their parsed results.
 
@@ -292,12 +294,20 @@ def run_tools(
         return []
     t_start = time.perf_counter()
     t_hash0 = time.perf_counter()
-    shared_hash = get_context_hash(path)
-    log.debug(f"context_hash: {(time.perf_counter() - t_hash0) * 1000:.1f}ms")
+    root = project_root or str(Path(path).resolve())
+    shared_hash = get_context_hash(root)
+    log.debug(f"context_hash: {(time.perf_counter() - t_hash0) * 1000:.1f}ms {shared_hash}")
+
+    sentinel_key = f"_project_hash:{root}"
+    prev_hash = _cache.get(sentinel_key)
+    if prev_hash is not None and prev_hash != shared_hash:
+        evicted = _cache.evict(root)
+        log.debug(f"project changed: evicted {evicted} stale cache entries for {root}")
+    _cache.set(sentinel_key, shared_hash, expire=5 * 24 * 60 * 60, tag=root)
 
     def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
         t0 = time.perf_counter()
-        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=shared_hash)
+        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=shared_hash, project_tag=root)
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr
@@ -310,7 +320,7 @@ def run_tools(
             try:
                 prioritized.append(_run_and_parse(tool_config))
             except Exception as exc:
-                log.error(f"{tool_config.name} generated an exception: {exc}")
+                log.error(f"{tool_config.name} generated an exception: {exc} {exc.__traceback__}")
                 n_skipped = n_total - i - 1
                 if n_skipped:
                     remaining = ", ".join(tc.name for tc in sorted_configs[i + 1 :])
