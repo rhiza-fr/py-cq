@@ -12,6 +12,7 @@ as the ``doc_coverage`` metric (0.0-1.0).
 
 import ast
 import re
+import tomllib
 from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
@@ -78,7 +79,37 @@ _CONTEXT_PATH_RE = re.compile(r'interrogate\s+"([^"]+)"')
 _COVERAGE_FOR_RE = re.compile(r"Coverage for\s+(.+?)[\s=]*$")
 
 
-def _missing_docstrings(file_path: Path) -> list[tuple[int, str, str]]:
+def _load_interrogate_cfg(context_path: str) -> dict:
+    """Read [tool.interrogate] from the nearest pyproject.toml."""
+    p = Path(context_path).resolve()
+    for candidate in [p, *p.parents]:
+        pyproject = (candidate if candidate.is_dir() else candidate.parent) / "pyproject.toml"
+        if pyproject.exists():
+            try:
+                data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+                return data.get("tool", {}).get("interrogate", {})
+            except Exception:
+                return {}
+    return {}
+
+
+def _skip_node(name: str, cfg: dict) -> bool:
+    """Return True if interrogate would skip this name given cfg."""
+    is_magic = name.startswith("__") and name.endswith("__")
+    is_private = name.startswith("__") and not name.endswith("__")
+    is_semiprivate = name.startswith("_") and not name.startswith("__")
+    if name == "__init__" and cfg.get("ignore-init-method"):
+        return True
+    if is_magic and cfg.get("ignore-magic"):
+        return True
+    if is_private and cfg.get("ignore-private"):
+        return True
+    if is_semiprivate and cfg.get("ignore-semiprivate"):
+        return True
+    return False
+
+
+def _missing_docstrings(file_path: Path, cfg: dict | None = None) -> list[tuple[int, str, str]]:
     """Return (line, kind, source_line) for each node missing a docstring.
 
     kind is 'module', 'def', or 'class'. source_line is the verbatim text of
@@ -104,16 +135,17 @@ def _missing_docstrings(file_path: Path) -> list[tuple[int, str, str]]:
                 return stripped
         return ""
 
+    effective_cfg = cfg or {}
     results = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Module):
             if not ast.get_docstring(node):
                 results.append((0, "module", first_code_line()))
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if not ast.get_docstring(node):
+            if not ast.get_docstring(node) and not _skip_node(node.name, effective_cfg):
                 results.append((node.lineno, "def", src_line(node.lineno)))
         elif isinstance(node, ast.ClassDef):
-            if not ast.get_docstring(node):
+            if not ast.get_docstring(node) and not _skip_node(node.name, effective_cfg):
                 results.append((node.lineno, "class", src_line(node.lineno)))
     results.sort(key=lambda x: x[0])
     return results
@@ -151,6 +183,7 @@ class InterrogateParser(AbstractParser):
     def parse(self, raw_result: RawResult) -> ToolResult:
         cm = _CONTEXT_PATH_RE.search(raw_result.command)
         context_path = cm.group(1) if cm else "."
+        interrogate_cfg = _load_interrogate_cfg(context_path)
 
         # Interrogate reports paths relative to the package root it discovers,
         # not relative to context_path. Parse the "Coverage for <dir>" header
@@ -211,7 +244,7 @@ class InterrogateParser(AbstractParser):
             if summary["missing"] == 0:
                 continue
             resolved = _resolve(context_path, rel_file)
-            nodes = _missing_docstrings(resolved) if resolved else []
+            nodes = _missing_docstrings(resolved, interrogate_cfg) if resolved else []
             issues = []
             for lineno, kind, source_line in nodes:
                 if kind == "module":
