@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `coverage`: `.coverage` data file is now written to a temp path instead of the working directory, keeping the project tree clean. Each `run_tool` invocation gets an isolated path, so concurrent `cq` processes no longer collide on the same data file.
+
 ## [0.2.1] - 2026-06-01
 
 ### Added
