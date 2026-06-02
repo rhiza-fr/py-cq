@@ -18,6 +18,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from collections.abc import Collection
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -215,16 +216,24 @@ def run_tool(
     # All user-supplied values (context_path, excludes) are properly quoted
     # via shlex.quote() to prevent injection - see _build_exclude_str and
     # the uv command assembly above.
+    if run_env is None:
+        run_env = dict(os.environ)
+    _fd, coverage_tmp = tempfile.mkstemp(prefix=".coverage.cq.")
+    os.close(_fd)
+    run_env["COVERAGE_FILE"] = coverage_tmp
     t_sub0 = time.perf_counter()
-    result = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        shell=True,
-        encoding="utf-8",
-        errors="replace",
-        env=run_env,
-    )  # nosec
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            shell=True,
+            encoding="utf-8",
+            errors="replace",
+            env=run_env,
+        )  # nosec
+    finally:
+        Path(coverage_tmp).unlink(missing_ok=True)
     t_sub = time.perf_counter() - t_sub0
     log.debug(
         f"{tool_config.name}: [MISS] cache={t_cache * 1000:.1f}ms tool={t_sub * 1000:.0f}ms: {command}"
