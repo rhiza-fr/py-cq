@@ -7,7 +7,7 @@ TYPE_SPEED=80
 # Green prompt, no extra newline after commands
 DEMO_PROMPT="${GREEN}❯ ${COLOR_RESET}"
 
-stty cols 110 rows 30 2>/dev/null || true
+stty cols 110 rows 35 2>/dev/null || true
 clear
 
 sleep 0.5
