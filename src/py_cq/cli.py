@@ -67,6 +67,13 @@ class OutputMode(str, Enum):
     RAW = "raw"
 
 
+class OrderMode(str, Enum):
+    """Selection order for the top issue in -o llm/llm-json."""
+
+    SEVERITY = "severity"
+    PHASE = "phase"
+
+
 def _version_callback(value: bool) -> None:
     if not value:
         return
@@ -159,6 +166,11 @@ def check(
         "-s",
         help="Silence issues from -o llm output (e.g. -s src/foo.py or -s src/foo.py:42:E501)",
     ),
+    order: OrderMode = typer.Option(
+        OrderMode.SEVERITY,
+        "--order",
+        help="Issue selection order for -o llm/llm-json: severity (most severe first) or phase (first non-clean phase, in dependency order)",
+    ),
 ):
     """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""  # --help
     path_obj = Path(path)
@@ -200,7 +212,7 @@ def check(
 
     is_llm = output in (OutputMode.LLM, OutputMode.LLM_JSON)
     t0 = time.perf_counter()
-    tool_results = cq.raw(early_exit=is_llm)
+    tool_results = cq.raw(early_exit=is_llm, order=order.value)
     total_s = time.perf_counter() - t0
     combined = aggregate_metrics(path, tool_results)
 

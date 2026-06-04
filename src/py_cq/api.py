@@ -148,13 +148,14 @@ class CQ:
         if clear_cache:
             _cache.clear()
 
-    def raw(self, *, early_exit: bool = False) -> list[ToolResult]:
+    def raw(self, *, early_exit: bool = False, order: str = "severity") -> list[ToolResult]:
         """Run all tools and return parsed results before aggregation."""
         return run_tools(
             self._registry.values(),
             str(self.path),
             self._workers,
             early_exit=early_exit,
+            order=order,
             excludes=self._excludes,
         )
 
@@ -168,12 +169,16 @@ class CQ:
         limit: int = 1,
         silence: list[str] | None = None,
         hint: bool = False,
+        order: str = "severity",
     ) -> dict:
         """Return the top defect as a dict with keys: id, file, project, message.
 
-        Stops running tools after the first error (early_exit) for speed.
+        Stops running tools after the first issue (early_exit) for speed.
+        ``order="phase"`` selects the first issue of the earliest non-clean
+        phase (dependency order); ``"severity"`` (default) selects the most
+        severe issue first.
         """
-        results = self.raw(early_exit=True)
+        results = self.raw(early_exit=True, order=order)
         combined = aggregate_metrics(str(self.path), results)
         return format_for_llm_json(
             self._registry,

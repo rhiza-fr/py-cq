@@ -257,6 +257,7 @@ def run_tools(
     path: str,
     max_workers: int = 0,
     early_exit: bool = False,
+    order: str = "severity",
     excludes: list[str] | None = None,
     project_root: str | None = None,
 ) -> list[ToolResult]:
@@ -336,12 +337,20 @@ def run_tools(
                     log.warning(f"Early exit: skipped {n_skipped} tool(s): {remaining}")
                 break
             _, tr = prioritized[-1]
-            if tr.metrics and min(tr.metrics.values()) < tool_config.error_threshold:
+            # order="phase" stops at the first phase with *any* finding (not
+            # clean), so phase order is absolute and independent of error/warning
+            # threshold tuning; "severity" stops at the first error.
+            threshold = (
+                tool_config.warning_threshold
+                if order == "phase"
+                else tool_config.error_threshold
+            )
+            if tr.metrics and min(tr.metrics.values()) < threshold:
                 n_skipped = n_total - i - 1
                 if n_skipped:
                     remaining = ", ".join(tc.name for tc in sorted_configs[i + 1 :])
                     log.debug(
-                        f"Error threshold hit at {tool_config.name}: skipped {n_skipped} tool(s): {remaining}"
+                        f"{'Not clean' if order == 'phase' else 'Error threshold hit'} at {tool_config.name}: skipped {n_skipped} tool(s): {remaining}"
                     )
                 break
         log.info(f"cq run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
@@ -355,9 +364,9 @@ def run_tools(
         for future in as_completed(future_to_tool):
             tool_config = future_to_tool[future]
             try:
-                order, tr = future.result()
-                prioritized.append((order, tr))
-                timings.append((order, tool_config.name, tr.duration_s))
+                tc_order, tr = future.result()
+                prioritized.append((tc_order, tr))
+                timings.append((tc_order, tool_config.name, tr.duration_s))
             except Exception as exc:
                 log.error(f"{tool_config.name} generated an exception: {exc}")
     per_tool = ", ".join(f"{name}={dur:.2f}s" for _, name, dur in sorted(timings))
