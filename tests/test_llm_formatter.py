@@ -383,13 +383,13 @@ def test_halstead_format_llm_message_function_bugs():
                 "volume": 100,
                 "functions": {
                     "big_fn": {
-                        "no_bugs": 0.3,
+                        "bug_free": 0.3,
                         "smallness": 0.8,
                         "bugs": 0.45,
                         "volume": 200,
                     },
                     "small_fn": {
-                        "no_bugs": 0.95,
+                        "bug_free": 0.95,
                         "smallness": 0.95,
                         "bugs": 0.01,
                         "volume": 20,

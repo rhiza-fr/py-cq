@@ -80,13 +80,13 @@ def test_format_llm_message_functions_smallness():
                 "volume": 100,
                 "functions": {
                     "big_fn": {
-                        "no_bugs": 0.9,
+                        "bug_free": 0.9,
                         "smallness": 0.2,
                         "bugs": 0.01,
                         "volume": 550,
                     },
                     "small_fn": {
-                        "no_bugs": 0.9,
+                        "bug_free": 0.9,
                         "smallness": 0.95,
                         "bugs": 0.001,
                         "volume": 20,
@@ -172,13 +172,13 @@ def test_format_llm_message_tie_in_function_smallness():
                 "volume": 100,
                 "functions": {
                     "fn_a": {
-                        "no_bugs": 0.9,
+                        "bug_free": 0.9,
                         "smallness": 0.3,
                         "bugs": 0.01,
                         "volume": 400,
                     },
                     "fn_b": {
-                        "no_bugs": 0.9,
+                        "bug_free": 0.9,
                         "smallness": 0.3,
                         "bugs": 0.01,
                         "volume": 400,

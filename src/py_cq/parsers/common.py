@@ -1,16 +1,18 @@
-"""Utility functions for normalising numeric values and scoring error magnitudes.
+"""Shared helpers used across parsers and the LLM formatter.
 
-This module provides two small helpers that are often used when working with
-performance metrics or error scores:
+This module groups small utilities for several concerns:
 
-* :func:`inv_normalize` - Inversely normalises a value relative to a maximum
-  reference, yielding a float in the interval [0,\u202f1].
-* :func:`score_logistic_variant` - Maps an error magnitude to a bounded score
-  using a logistic-style curve, with optional parameters controlling the scale
-  and steepness of the transition.
-
-Both functions return a float and can be used directly in downstream analytics,
-visualisation or decision-making pipelines."""
+* Scoring - :func:`inv_normalize` and :func:`score_logistic_variant` map error
+  magnitudes to bounded ``[0, 1]`` scores.
+* Source context - :func:`read_source_lines`, :func:`format_source_context`,
+  :func:`find_function_source`, :func:`find_enclosing_function`, and
+  :func:`enclosing_function_range` extract fenced code snippets for LLM prompts.
+* Project navigation - :func:`find_in_project`, :func:`format_callee_context`,
+  :func:`extract_callee_name`, :func:`resolve_path`, and :func:`_relative_path`
+  locate and reference definitions across a project tree.
+* Output formatting - :func:`format_issue_header` builds issue headers.
+* Parsing - :func:`parse_json_dict` and :func:`extract_first_issue` read tool
+  output into Python structures."""
 
 import json
 import re

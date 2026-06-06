@@ -84,6 +84,10 @@ class HalsteadParser(AbstractParser):
                 }
             if "error" in values:
                 tr.details[file_name]["error"] = values["error"]
+                min_file_nb = 0.0
+                min_file_sm = 0.0
+                min_function_nb = 0.0
+                min_function_sm = 0.0
                 continue
             if "total" in values:
                 nb, sm = self.extract_bugs_and_volume(
@@ -103,7 +107,7 @@ class HalsteadParser(AbstractParser):
                     min_function_nb = min(nb, min_function_nb)
                     min_function_sm = min(sm, min_function_sm)
                     tr.details[file_name]["functions"][function] = {
-                        "no_bugs": nb,
+                        "bug_free": nb,
                         "smallness": sm,
                         "bugs": function_values.get("bugs", 0),
                         "volume": function_values.get("volume", 0),
@@ -138,7 +142,7 @@ class HalsteadParser(AbstractParser):
         for file_name, file_data in tr.details.items():
             if is_function_metric:
                 for func_name, func_data in file_data.get("functions", {}).items():
-                    s = func_data.get("no_bugs" if is_bug_metric else "smallness", 1.0)
+                    s = func_data.get("bug_free" if is_bug_metric else "smallness", 1.0)
                     if s < worst_score:
                         worst_score = s
                         worst_file = file_name

@@ -190,7 +190,7 @@ def test_interrogate_format_never_raises(details, metrics):
 _halstead_fn = st.fixed_dictionaries(
     {},
     optional={
-        "no_bugs": _safe_float,
+        "bug_free": _safe_float,
         "smallness": _safe_float,
         "bugs": _safe_float,
         "volume": st.floats(min_value=0.0, max_value=2000.0, allow_nan=False),

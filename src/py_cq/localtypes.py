@@ -43,7 +43,7 @@ class ToolConfig:
 
     name: str  # e.g., "pytest", "coverage", "pydocstyle"
     command: str  # The command to execute (can include placeholders)
-    parser_class: Callable  # Name of the parser class to use
+    parser_class: Callable  # The parser class itself (resolved from its name in config)
     context_path: str = ""  # Path to project or file
     order: int = 5  # 1=first (compilation), 11=last (style)
     warning_threshold: float = 0.7  # Yellow warning if below this
@@ -125,9 +125,11 @@ class ToolResult:
         }
 
 
-@dataclass
 class CombinedToolResults:
     """Aggregates results from multiple tools, stores the associated path, and calculates an overall score by averaging the mean metric values of each ``ToolResult``. If a ``ToolResult`` has no metrics, it contributes zero, and the score defaults to ``0.0`` when the list is empty."""
+
+    score: float
+    path: str
 
     def __init__(self, path: str, tool_results: list[ToolResult]):
         """Initializes a CombinedToolResults instance.
@@ -150,9 +152,6 @@ class CombinedToolResults:
             else 0.0
         )
 
-    score: float = 0.0
-    path: str = ""
-
     def to_dict(self) -> dict:
         """Returns a dictionary containing the path, overall score, and each ToolResult serialized."""
         return {
@@ -165,7 +164,7 @@ class CombinedToolResults:
 class AbstractParser(ABC):
     """Base class for parsers that transform raw tool output into structured `ToolResult` objects.
 
-    Subclasses must implement `parse` to convert a `RawResult` into a `ToolResult`. An optional `provide_help` can be overridden to supply contextual guidance for a parsed result."""
+    Subclasses must implement `parse` to convert a `RawResult` into a `ToolResult`. The `format_llm_message` method can be overridden to supply a richer single-defect description for a parsed result."""
 
     def __init__(self, parser_config: dict | None = None):
         self.parser_config = parser_config or {}
