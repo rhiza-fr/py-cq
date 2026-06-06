@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.3] - 2026-06-06
+
+### Added
+
+- `--order severity|phase` flag for `-o llm`/`-o llm-json`. The default `severity` selects the top issue by `(severity, tool-order)`; `phase` instead returns the first issue of the earliest non-clean phase in dependency order, triggering on the first phase below its `warning_threshold` independent of threshold tuning.
+
+### Changed
+
+- `coverage` now returns `0%` and skips re-execution when `pytest` fails. A new `skip_if` tool config field lets `coverage` wait on `pytest`'s result in parallel mode and parse a synthetic empty result instead of re-invoking `pytest`; all other tools stay fully parallel.
+
+### Fixed
+
+- Silence re-run: when early-exit stops at a phase whose only issues are silenced, all tools are re-run so later-phase issues can surface.
+- `context_hash` now includes `pyproject.toml`, `uv.lock`, and `.python-version` in the file signature, so dependency changes invalidate the cache.
+- `HalsteadParser`: files reported with an `error` key now zero all metric scores instead of leaving a perfect score, so unparseable files are penalised.
+- `complexityparser`: guard against non-list function values before iterating.
+- `ruffparser`: skip appending enclosing-function context when it is already present in the base message.
+
 ## [0.2.2]
 
 ### Fixed
