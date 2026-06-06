@@ -178,17 +178,33 @@ class CQ:
         phase (dependency order); ``"severity"`` (default) selects the most
         severe issue first.
         """
+        _silence = silence or []
         results = self.raw(early_exit=True, order=order)
         combined = aggregate_metrics(str(self.path), results)
-        return format_for_llm_json(
+        issue = format_for_llm_json(
             self._registry,
             combined,
             context_lines=self._context_lines,
             hint=hint,
             limit=limit,
-            silence=silence or [],
+            silence=_silence,
             project_root=self._project_root,
         )
+        if issue.get("id") is None and _silence:
+            # Early-exit stopped at a phase whose only issues are silenced.
+            # Re-run all tools to surface issues in later phases.
+            results = self.raw(early_exit=False, order=order)
+            combined = aggregate_metrics(str(self.path), results)
+            issue = format_for_llm_json(
+                self._registry,
+                combined,
+                context_lines=self._context_lines,
+                hint=hint,
+                limit=limit,
+                silence=_silence,
+                project_root=self._project_root,
+            )
+        return issue
 
     def is_fixed(self, fingerprint: str) -> bool:
         """Return True if the fingerprinted issue is no longer present.

@@ -41,12 +41,15 @@ def get_sigs(path: str):
         >>> get_sigs('/tmp/project')
         ['/tmp/project/main.py:1024:1680000000.0', ...]
     """
+    _ENV_FILES = {".python-version", "pyproject.toml", "uv.lock"}
     items = []
     with os.scandir(path) as entries:
         for entry in entries:
             # Use follow_symlinks=False to prevent cache poisoning from
             # symlinks pointing outside the project tree (M-2)
-            if entry.is_file(follow_symlinks=False) and entry.name.endswith(".py"):
+            if entry.is_file(follow_symlinks=False) and (
+                entry.name.endswith(".py") or entry.name in _ENV_FILES
+            ):
                 stat_info = entry.stat(follow_symlinks=False)
                 items.append(f"{entry.path}:{stat_info.st_size}:{stat_info.st_mtime}")
             if entry.is_dir(follow_symlinks=False) and entry.name not in [

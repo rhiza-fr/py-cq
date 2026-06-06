@@ -74,6 +74,8 @@ class ComplexityParser(AbstractParser):
         num_items = 0
         max_complexity = 30
         for file, functions in data.items():
+            if not isinstance(functions, list):
+                continue
             file_name = file.replace("\\", "/")
             if file_name not in tr.details:
                 tr.details[file_name] = {}

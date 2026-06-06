@@ -123,7 +123,7 @@ def _format_F821(file: str, line: int, message: str) -> str:
         base += f"\n\nOther references to `{name}` in this file:\n{ref_lines}"
     else:
         base += f"\n\n`{name}` is not imported or defined anywhere else in this file."
-    if enclosing:
+    if enclosing and enclosing not in base:
         base += f"\n\nEnclosing function:{enclosing}"
     return base
 

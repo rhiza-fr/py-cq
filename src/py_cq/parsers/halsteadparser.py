@@ -83,11 +83,8 @@ class HalsteadParser(AbstractParser):
                     "functions": {},
                 }
             if "error" in values:
-                min_file_nb = 0.0
-                min_file_sm = 0.0
-                min_function_nb = 0.0
-                min_function_sm = 0.0
                 tr.details[file_name]["error"] = values["error"]
+                continue
             if "total" in values:
                 nb, sm = self.extract_bugs_and_volume(
                     values.get("total", {}), MAX_FILE_BUGS, MAX_FILE_VOLUME
