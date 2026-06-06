@@ -355,12 +355,47 @@ def run_tools(
                 break
         log.info(f"cq run_tools elapsed: {time.perf_counter() - t_start:.2f}s")
         return [tr for _, tr in sorted(prioritized)]
+    configs_by_name = {tc.name: tc for tc in tool_configs}
+
+    def _run_if_dep_passed(dep_future, tool_config: ToolConfig, dep_config: ToolConfig) -> tuple[int, ToolResult]:
+        # Wait for the dependency within the same thread pool - no phase split,
+        # so all other tools keep running in parallel while we block here.
+        try:
+            _, dep_tr = dep_future.result()
+        except Exception:
+            return _run_and_parse(tool_config)
+        if dep_tr.metrics and min(dep_tr.metrics.values()) < dep_config.error_threshold:
+            # Dependency failed its error threshold: skip this tool and return a
+            # synthetic empty result. Coverage declares skip_if = "pytest" so that
+            # it never re-invokes pytest (which the coverage command does internally)
+            # when we already know pytest is broken.
+            log.debug(f"{tool_config.name}: skipping because {tool_config.skip_if} failed")
+            t0 = time.perf_counter()
+            tr = tool_config.parser_class(tool_config.parser_config).parse(
+                RawResult(tool_name=tool_config.name)
+            )
+            tr.duration_s = time.perf_counter() - t0
+            return tool_config.order, tr
+        return _run_and_parse(tool_config)
+
+    timings: list[tuple[int, str, float]] = []
+    # Sort by order so that when we build name_to_future below, a dependency's
+    # future is always registered before the tool that declares skip_if on it.
+    sorted_configs = sorted(tool_configs, key=lambda tc: tc.order)
+    name_to_future: dict[str, Any] = {}
     with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
-        future_to_tool = {
-            executor.submit(_run_and_parse, tool_config): tool_config
-            for tool_config in tool_configs
-        }
-        timings: list[tuple[int, str, float]] = []
+        future_to_tool = {}
+        for tc in sorted_configs:
+            dep_name = tc.skip_if
+            dep_future = name_to_future.get(dep_name) if dep_name else None
+            dep_config = configs_by_name.get(dep_name) if dep_name else None
+            if dep_future and dep_config:
+                # Submit a wrapper that waits on the dependency future first.
+                f = executor.submit(_run_if_dep_passed, dep_future, tc, dep_config)
+            else:
+                f = executor.submit(_run_and_parse, tc)
+            future_to_tool[f] = tc
+            name_to_future[tc.name] = f
         for future in as_completed(future_to_tool):
             tool_config = future_to_tool[future]
             try:

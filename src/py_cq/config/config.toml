@@ -53,33 +53,13 @@ error_threshold = 0.5
 run_in_target_env = true
 extra_deps = ["coverage", "pytest"]
 skip_for_file = true
-
-[python.radon-cc]
-command = "{python} -m radon cc --json --exclude '.claude/**' \"{context_path}\""
-parser = "ComplexityParser"
-order = 7
-warning_threshold = 0.6
-error_threshold = 0.4
-
-[python.radon-mi]
-command = "{python} -m radon mi -s --json --exclude '.claude/**' \"{context_path}\""
-parser = "MaintainabilityParser"
-order = 8
-warning_threshold = 0.6
-error_threshold = 0.4
-
-[python.radon-hal]
-command = "{python} -m radon hal -f --json --exclude '.claude/**' \"{context_path}\""
-parser = "HalsteadParser"
-order = 9
-warning_threshold = 0.5
-error_threshold = 0.3
+skip_if = "pytest"
 
 [python.vulture]
 command = "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
 exclude_format = ",{path}"
 parser = "VultureParser"
-order = 10
+order = 7
 warning_threshold = 0.9999
 error_threshold = 0.8
 
@@ -87,9 +67,33 @@ error_threshold = 0.8
 command = "{python} -m interrogate \"{context_path}\" -e .claude{exclude} -v --fail-under 0"
 exclude_format = " -e {path}"
 parser = "InterrogateParser"
-order = 11
+order = 8
 warning_threshold = 0.8
-error_threshold = 0.3
+error_threshold = 0.5
 
 [python.interrogate.parser_config]
 skip_empty_init = true
+
+[python.radon-cc]
+command = "{python} -m radon cc --json --exclude '.claude/**' \"{context_path}\""
+parser = "ComplexityParser"
+order = 9
+gate_strict = false
+warning_threshold = 0.6
+error_threshold = 0.4
+
+[python.radon-mi]
+command = "{python} -m radon mi -s --json --exclude '.claude/**' \"{context_path}\""
+parser = "MaintainabilityParser"
+order = 10
+gate_strict = false
+warning_threshold = 0.6
+error_threshold = 0.4
+
+[python.radon-hal]
+command = "{python} -m radon hal -f --json --exclude '.claude/**' \"{context_path}\""
+parser = "HalsteadParser"
+order = 11
+gate_strict = false
+warning_threshold = 0.35
+error_threshold = 0.3

@@ -146,6 +146,8 @@ class CoverageParser(AbstractParser):
             ]
 
         tr.details = details
+        if "coverage" not in tr.metrics:
+            tr.metrics["coverage"] = 0.0
         return tr
 
     def format_llm_message(
@@ -199,4 +201,6 @@ class CoverageParser(AbstractParser):
                 parts.append(f"\nAdd tests to: {location}")
 
             return "\n".join(parts)
+        if tr.metrics.get("coverage", 1.0) == 0.0:
+            return "**Coverage: 0%** - pytest failed or collected no tests, so no coverage data is available."
         return ""

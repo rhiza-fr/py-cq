@@ -54,9 +54,9 @@ def test_coverage_parse_fallback_entry():
 
 
 def test_coverage_parse_empty():
-    """Test coverage parsing with empty input."""
+    """Test coverage parsing with empty input (e.g. pytest failed)."""
     tr = CoverageParser().parse(raw(""))
-    assert tr.metrics == {}
+    assert tr.metrics == {"coverage": 0.0}
     assert tr.details == {}
 
 
