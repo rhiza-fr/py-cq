@@ -1,11 +1,11 @@
 """Parses raw coverage tool output into structured ToolResult instances with per-function granularity."""
 
-import ast
 import logging
 from pathlib import Path
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 from py_cq.parsers.common import find_function_source, resolve_path
+from py_cq.source_file import get_source
 
 log = logging.getLogger("cq")
 
@@ -29,30 +29,19 @@ def _parse_line_ranges(s: str) -> set[int]:
     return result
 
 
-def _get_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
-    """Return the signature of the function definition as a string."""
-    prefix = "async def" if isinstance(node, ast.AsyncFunctionDef) else "def"
-    args = ast.unparse(node.args)
-    returns = f" -> {ast.unparse(node.returns)}" if node.returns else ""
-    return f"{prefix} {node.name}({args}){returns}"
-
-
 def _extract_functions(file: str, missing_lines_str: str) -> list[tuple[str, int, str]]:
     """Return (name, lineno, signature) for functions whose bodies overlap with the missing line ranges."""
     try:
-        source = Path(file).read_text(encoding="utf-8", errors="replace")
-        tree = ast.parse(source)
-    except (OSError, SyntaxError, ValueError):
+        funcs = get_source(file).functions
+    except OSError:
         return []
     missing = _parse_line_ranges(missing_lines_str)
     seen: set[str] = set()
     result: list[tuple[str, int, str]] = []
-    for node in sorted(ast.walk(tree), key=lambda n: getattr(n, "lineno", 0)):
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            end = getattr(node, "end_lineno", node.lineno)
-            if missing & set(range(node.lineno, end + 1)) and node.name not in seen:
-                seen.add(node.name)
-                result.append((node.name, node.lineno, _get_signature(node)))
+    for fn in funcs:
+        if missing & set(range(fn.lineno, fn.end_lineno + 1)) and fn.name not in seen:
+            seen.add(fn.name)
+            result.append((fn.name, fn.lineno, fn.signature))
     return result
 
 

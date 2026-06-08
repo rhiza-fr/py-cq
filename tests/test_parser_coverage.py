@@ -11,9 +11,9 @@ from py_cq.parsers.coverageparser import (
     CoverageParser,
     _extract_functions,
     _find_test_file,
-    _get_signature,
     _parse_line_ranges,
 )
+from py_cq.source_file import _signature as _get_signature
 
 COVERAGE_OUTPUT = """\
 Name               Stmts   Miss  Cover

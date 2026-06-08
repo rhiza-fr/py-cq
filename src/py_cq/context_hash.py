@@ -22,56 +22,25 @@ These functions provide deterministic fingerprints that can be used for
 file integrity verification, caching, and change-detection logic.
 """
 
-import ast
 import hashlib
 import os
 from pathlib import Path
 
+from py_cq.source_file import get_source
+
 _ENV_FILES = {".python-version", "pyproject.toml", "uv.lock"}
 _SKIP_DIRS = {".venv", "venv", "__pycache__", ".git"}
 
-# Memo: (path, size, mtime) -> normalized signature. Avoids re-parsing files
-# whose stat is unchanged. Correctness never depends on this cache: a stale
-# mtime only forces a re-parse that reproduces the same signature.
-_norm_sig_cache: dict[tuple[str, int, float], str] = {}
 
-
-def _strip_docstrings(tree: ast.AST) -> None:
-    """Remove module/class/function docstrings in place so they don't affect the hash."""
-    for node in ast.walk(tree):
-        if isinstance(
-            node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
-        ):
-            body = node.body
-            if (
-                body
-                and isinstance(body[0], ast.Expr)
-                and isinstance(body[0].value, ast.Constant)
-                and isinstance(body[0].value.value, str)
-            ):
-                node.body = body[1:]
-
-
-def _normalized_sig(path: str, size: int, mtime: float) -> str:
+def _normalized_sig(path: str) -> str:
     """Return a docstring/comment/format-invariant signature for a ``.py`` file.
 
-    Falls back to a byte digest when the file can't be parsed (e.g. a mid-edit
-    syntax error), so callers always get a usable signature.
+    Backed by the shared :class:`~py_cq.source_file.SourceFile` cache, so the
+    AST parsed here is reused by the coverage and interrogate parsers. Falls
+    back to a byte digest when the file can't be parsed (e.g. a mid-edit syntax
+    error), so callers always get a usable signature.
     """
-    key = (path, size, mtime)
-    cached = _norm_sig_cache.get(key)
-    if cached is not None:
-        return cached
-    raw = Path(path).read_bytes()
-    try:
-        tree = ast.parse(raw.decode("utf-8", "replace"))
-        _strip_docstrings(tree)
-        digest = hashlib.md5(ast.dump(tree).encode()).hexdigest()  # nosec
-    except (SyntaxError, ValueError):
-        digest = hashlib.md5(raw).hexdigest()  # nosec
-    sig = f"{path}:{digest}"
-    _norm_sig_cache[key] = sig
-    return sig
+    return f"{path}:{get_source(path).norm_digest}"
 
 
 def _byte_sig(path: str) -> str:
@@ -115,12 +84,7 @@ def get_sigs(path: str, *, normalize: bool = False):
             ):
                 if normalize:
                     if entry.name.endswith(".py"):
-                        stat_info = entry.stat(follow_symlinks=False)
-                        items.append(
-                            _normalized_sig(
-                                entry.path, stat_info.st_size, stat_info.st_mtime
-                            )
-                        )
+                        items.append(_normalized_sig(entry.path))
                     else:
                         items.append(_byte_sig(entry.path))
                 else:
@@ -161,8 +125,7 @@ def get_context_hash(path: str, *, normalize: bool = False) -> str:
     h = hashlib.md5()  # nosec
     if os.path.isfile(path):
         if normalize and path.endswith(".py"):
-            s = os.stat(path)
-            h.update(_normalized_sig(path, s.st_size, s.st_mtime).encode())
+            h.update(_normalized_sig(path).encode())
         else:
             s = os.stat(path)
             h.update(f"{path}:{s.st_size}:{s.st_mtime}".encode())

@@ -21,6 +21,7 @@ from py_cq.parsers.common import (
     format_issue_header,
     format_source_context,
 )
+from py_cq.source_file import get_source
 
 _SKIP_PARAMS = {"self", "cls"}
 
@@ -34,9 +35,10 @@ def _format_missing_docstring(file_str: str, line: int, code: str, message: str)
         return base + "\n\nInsert a module-level docstring as the very first statement in the file."
 
     try:
-        source = Path(file_str).read_text(encoding="utf-8")
-        tree = ast.parse(source)
-    except (OSError, SyntaxError):
+        tree = get_source(file_str).tree
+    except OSError:
+        tree = None
+    if tree is None:
         return base + "\n\nInsert a docstring as the first statement in the body."
 
     for node in ast.walk(tree):
@@ -117,11 +119,13 @@ def _missing_docstrings(file_path: Path, cfg: dict | None = None) -> list[tuple[
     the module.
     """
     try:
-        source = file_path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(file_path))
-    except (OSError, SyntaxError):
+        sf = get_source(str(file_path))
+        tree = sf.tree
+    except OSError:
         return []
-    src_lines = source.splitlines()
+    if tree is None:
+        return []
+    src_lines = sf.text.splitlines()
 
     def src_line(lineno: int) -> str:
         """Return the stripped content of the source line at the given line number."""
@@ -137,16 +141,13 @@ def _missing_docstrings(file_path: Path, cfg: dict | None = None) -> list[tuple[
 
     effective_cfg = cfg or {}
     results = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Module):
-            if not ast.get_docstring(node):
-                results.append((0, "module", first_code_line()))
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            if not ast.get_docstring(node) and not _skip_node(node.name, effective_cfg):
-                results.append((node.lineno, "def", src_line(node.lineno)))
-        elif isinstance(node, ast.ClassDef):
-            if not ast.get_docstring(node) and not _skip_node(node.name, effective_cfg):
-                results.append((node.lineno, "class", src_line(node.lineno)))
+    if not sf.module_has_docstring:
+        results.append((0, "module", first_code_line()))
+    for d in sf.definitions:
+        if d.has_docstring or _skip_node(d.name, effective_cfg):
+            continue
+        kind = "def" if d.kind == "function" else "class"
+        results.append((d.lineno, kind, src_line(d.lineno)))
     results.sort(key=lambda x: x[0])
     return results
 
