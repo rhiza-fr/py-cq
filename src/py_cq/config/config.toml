@@ -4,6 +4,7 @@ parser = "CompileParser"
 order = 1
 warning_threshold = 0.9999
 error_threshold = 0.9999
+cache_invariant = "ast"
 
 [python.ruff]
 command = "{python} -m ruff check --output-format concise --no-cache \"{context_path}\" --exclude .claude{exclude}"
@@ -64,6 +65,7 @@ parser = "VultureParser"
 order = 7
 warning_threshold = 0.9999
 error_threshold = 0.8
+cache_invariant = "ast"
 
 [python.interrogate]
 command = "{python} -m interrogate \"{context_path}\" -e .claude{exclude} -v --fail-under 0"
