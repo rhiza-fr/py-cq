@@ -62,6 +62,9 @@ class ToolConfig:
     skip_for_file: bool = False  # If True, skip when context_path is a single file
     gate_strict: bool = True  # If False, small regressions above warning_threshold are accepted
     skip_if: str = ""  # Tool name; if that tool's score is below its error_threshold, skip this tool
+    cache_invariant: str = (
+        ""  # "ast": key the cache on the docstring-stripped AST, ignoring docstrings/comments/format
+    )
 
 
 @dataclass

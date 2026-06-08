@@ -86,3 +86,42 @@ def test_get_sigs_sig_format(tmp_path):
     parts = sigs[0].split(":")
     assert parts[-2].isdigit()  # size
     assert "." in parts[-1]  # mtime float
+
+
+def test_normalize_ignores_docstrings_comments_and_format(tmp_path):
+    """AST-normalized hash is invariant to docstrings, comments, and formatting."""
+    f = tmp_path / "m.py"
+    f.write_text("def f(x):\n    return x + 1\n")
+    h1 = get_context_hash(str(tmp_path), normalize=True)
+    f.write_text('def f(x):\n    """Add one."""  # inline comment\n    return x + 1\n')
+    h2 = get_context_hash(str(tmp_path), normalize=True)
+    assert h1 == h2
+
+
+def test_normalize_ignores_mtime(tmp_path):
+    """A mtime-only touch (e.g. git checkout) leaves the normalized hash unchanged."""
+    f = tmp_path / "m.py"
+    f.write_text("def f(x):\n    return x + 1\n")
+    h1 = get_context_hash(str(tmp_path), normalize=True)
+    st = f.stat()
+    os.utime(f, (st.st_mtime + 100, st.st_mtime + 100))
+    assert get_context_hash(str(tmp_path), normalize=True) == h1
+
+
+def test_normalize_detects_logic_change(tmp_path):
+    """A real change to executable code does change the normalized hash."""
+    f = tmp_path / "m.py"
+    f.write_text("def f(x):\n    return x + 1\n")
+    h1 = get_context_hash(str(tmp_path), normalize=True)
+    f.write_text("def f(x):\n    return x + 2\n")
+    assert get_context_hash(str(tmp_path), normalize=True) != h1
+
+
+def test_normalize_falls_back_on_syntax_error(tmp_path):
+    """Unparseable files still produce a (byte-based) signature instead of raising."""
+    f = tmp_path / "broken.py"
+    f.write_text("def f(:\n")  # syntax error
+    h1 = get_context_hash(str(tmp_path), normalize=True)
+    assert isinstance(h1, str) and len(h1) == 32
+    f.write_text("def f(::\n")  # different bytes, still broken
+    assert get_context_hash(str(tmp_path), normalize=True) != h1

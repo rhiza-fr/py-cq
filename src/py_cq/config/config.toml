@@ -42,6 +42,7 @@ error_threshold = 1.0
 run_in_target_env = true
 extra_deps = ["pytest"]
 skip_for_file = true
+cache_invariant = "ast"
 
 [python.coverage]
 command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
@@ -54,6 +55,7 @@ run_in_target_env = true
 extra_deps = ["coverage", "pytest"]
 skip_for_file = true
 skip_if = "pytest"
+cache_invariant = "ast"
 
 [python.vulture]
 command = "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"

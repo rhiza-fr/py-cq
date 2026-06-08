@@ -195,11 +195,12 @@ def run_tool(
         python=python,
         exclude=exclude,
     )
-    context_hash = (
-        precomputed_hash
-        if precomputed_hash is not None
-        else get_context_hash(context_path)
-    )
+    if precomputed_hash is not None:
+        context_hash = precomputed_hash
+    elif tool_config.cache_invariant == "ast":
+        context_hash = get_context_hash(context_path, normalize=True)
+    else:
+        context_hash = get_context_hash(context_path)
     cache_key = f"{command}:{context_hash}"
 
     t_cache0 = time.perf_counter()
@@ -308,16 +309,23 @@ def run_tools(
     shared_hash = get_context_hash(root)
     log.debug(f"context_hash: {(time.perf_counter() - t_hash0) * 1000:.1f}ms {shared_hash}")
 
-    sentinel_key = f"_project_hash:{root}"
-    prev_hash = _cache.get(sentinel_key)
-    if prev_hash is not None and prev_hash != shared_hash:
-        evicted = _cache.evict(root)
-        log.debug(f"project changed: evicted {evicted} stale cache entries for {root}")
-    _cache.set(sentinel_key, shared_hash, expire=5 * 24 * 60 * 60, tag=root)
+    # Cache keys are content-based, so a changed project naturally produces new
+    # keys; stale entries age out via TTL + size_limit (no blanket eviction).
+    # Tools flagged cache_invariant="ast" key on the docstring-stripped AST so
+    # docstring/comment/format-only edits stay cache hits.
+    norm_hash: str | None = None
+
+    def _hash_for(tool_config: ToolConfig) -> str:
+        nonlocal norm_hash
+        if tool_config.cache_invariant == "ast":
+            if norm_hash is None:
+                norm_hash = get_context_hash(root, normalize=True)
+            return norm_hash
+        return shared_hash
 
     def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
         t0 = time.perf_counter()
-        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=shared_hash, project_tag=root)
+        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=_hash_for(tool_config), project_tag=root)
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr
