@@ -441,6 +441,118 @@ def test_run_tools_parallel_returns_all_results_sorted():
     assert orders == ["t1", "t2", "t3", "t4"]
 
 
+# --- skip_if: parallel cancel-in-flight ---
+
+
+def _coverage_like_config(parser_class):
+    """A coverage-like tool that declares skip_if='pytest'."""
+    return ToolConfig(
+        name="coverage",
+        command="echo hi",
+        parser_class=parser_class,
+        order=6,
+        warning_threshold=0.7,
+        error_threshold=0.5,
+        skip_if="pytest",
+    )
+
+
+def test_run_tools_cancels_dependent_when_dependency_fails():
+    """A failing pytest fires the coverage cancel event (mid-run termination)."""
+    import threading
+
+    pytest_cfg = _fake_config_with_score("pytest", order=5, score=0.0)  # below 0.5
+    cov_cfg = _coverage_like_config(_fake_config_with_score("coverage", 6, 1.0).parser_class)
+
+    cov_cancelled = threading.Event()
+    cov_ran_fully = threading.Event()
+
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None, cancel_event=None):
+        if config.name == "pytest":
+            return RawResult(tool_name="pytest", stdout="")
+        # coverage runs in parallel and waits to see if it gets cancelled
+        if cancel_event is not None and cancel_event.wait(timeout=2.0):
+            cov_cancelled.set()
+            return RawResult(tool_name="coverage")  # empty, as the real engine returns
+        cov_ran_fully.set()
+        return RawResult(tool_name="coverage", stdout="ran")
+
+    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
+        run_tools([pytest_cfg, cov_cfg], ".")
+
+    assert cov_cancelled.is_set()
+    assert not cov_ran_fully.is_set()
+
+
+def test_run_tools_does_not_cancel_dependent_when_dependency_passes():
+    """A passing pytest leaves coverage to run to completion in parallel."""
+    import threading
+
+    pytest_cfg = _fake_config_with_score("pytest", order=5, score=1.0)  # passes
+    cov_cfg = _coverage_like_config(_fake_config_with_score("coverage", 6, 1.0).parser_class)
+
+    cov_ran_fully = threading.Event()
+
+    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None, cancel_event=None):
+        if config.name == "pytest":
+            return RawResult(tool_name="pytest", stdout="")
+        if cancel_event is not None and cancel_event.wait(timeout=0.5):
+            return RawResult(tool_name="coverage")
+        cov_ran_fully.set()
+        return RawResult(tool_name="coverage", stdout="ran")
+
+    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
+        run_tools([pytest_cfg, cov_cfg], ".")
+
+    assert cov_ran_fully.is_set()
+
+
+# --- _run_command cancellation ---
+
+
+def test_run_command_runs_normally_without_cancel_event():
+    import os
+
+    from py_cq.execution_engine import _run_command
+
+    cmd = f'{sys.executable} -c "print(\'hi\')"'
+    stdout, stderr, rc, cancelled = _run_command(cmd, dict(os.environ), None)
+    assert cancelled is False
+    assert rc == 0
+    assert "hi" in stdout
+
+
+def test_run_command_precancelled_event_skips_launch():
+    import os
+    import threading
+
+    from py_cq.execution_engine import _run_command
+
+    ev = threading.Event()
+    ev.set()
+    stdout, stderr, rc, cancelled = _run_command("echo hi", dict(os.environ), ev)
+    assert cancelled is True
+    assert stdout == ""
+
+
+def test_run_command_terminates_running_process_on_cancel():
+    """A long-running command is killed promptly when the cancel event fires."""
+    import os
+    import threading
+    import time
+
+    from py_cq.execution_engine import _run_command
+
+    ev = threading.Event()
+    cmd = f'{sys.executable} -c "import time; time.sleep(30)"'
+    threading.Timer(0.2, ev.set).start()
+    t0 = time.perf_counter()
+    stdout, stderr, rc, cancelled = _run_command(cmd, dict(os.environ), ev)
+    elapsed = time.perf_counter() - t0
+    assert cancelled is True
+    assert elapsed < 10  # would be ~30s if not terminated
+
+
 # --- _dep_in_venv Windows/Unix path ---
 
 

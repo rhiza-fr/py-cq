@@ -16,9 +16,11 @@ import logging
 import os
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from collections.abc import Collection
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -102,6 +104,77 @@ def _build_exclude_str(
     return "".join(parts)
 
 
+def _terminate_process_tree(proc: "subprocess.Popen") -> None:
+    """Best-effort kill of a shell subprocess and all its children, cross-platform.
+
+    ``shell=True`` spawns a shell that spawns ``uv``/``python``, so killing the
+    immediate child is not enough - the whole tree must go.
+    """
+    if proc.poll() is not None:
+        return
+    if sys.platform == "win32":
+        subprocess.run(
+            ["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True
+        )  # nosec
+    else:
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            proc.kill()
+
+
+def _run_command(
+    command: str, run_env: dict, cancel_event: threading.Event | None
+) -> tuple[str, str, int, bool]:
+    """Run *command* in a shell and return ``(stdout, stderr, returncode, cancelled)``.
+
+    When *cancel_event* fires mid-run the process tree is terminated and
+    ``cancelled`` is True (captured output is discarded). With no event this is
+    a plain blocking ``subprocess.run`` (no poll overhead for the common path).
+    """
+    if cancel_event is None:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            shell=True,
+            encoding="utf-8",
+            errors="replace",
+            env=run_env,
+        )  # nosec
+        return result.stdout, result.stderr, result.returncode, False
+    if cancel_event.is_set():
+        return "", "", -1, True
+    popen_kwargs: dict[str, Any] = {}
+    if sys.platform != "win32":
+        # New session/process group so os.killpg reaches the shell's children.
+        popen_kwargs["start_new_session"] = True
+    proc = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        shell=True,
+        encoding="utf-8",
+        errors="replace",
+        env=run_env,
+        **popen_kwargs,
+    )  # nosec
+    # Poll so a cancel signal can terminate a still-running command.
+    while True:
+        try:
+            stdout, stderr = proc.communicate(timeout=0.1)
+            return stdout, stderr, proc.returncode, False
+        except subprocess.TimeoutExpired:
+            if cancel_event.is_set():
+                _terminate_process_tree(proc)
+                try:
+                    proc.communicate(timeout=5)
+                except subprocess.TimeoutExpired:  # pragma: no cover
+                    proc.kill()
+                return "", "", proc.returncode or -1, True
+
+
 def run_tool(
     tool_config: ToolConfig,
     context_path: str,
@@ -109,6 +182,7 @@ def run_tool(
     *,
     precomputed_hash: str | None = None,
     project_tag: str | None = None,
+    cancel_event: threading.Event | None = None,
 ) -> RawResult:
     """Runs a tool defined by its configuration and returns the execution result.
 
@@ -224,18 +298,20 @@ def run_tool(
     run_env["COVERAGE_FILE"] = coverage_tmp
     t_sub0 = time.perf_counter()
     try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            shell=True,
-            encoding="utf-8",
-            errors="replace",
-            env=run_env,
-        )  # nosec
+        stdout, stderr, return_code, cancelled = _run_command(
+            command, run_env, cancel_event
+        )
     finally:
         Path(coverage_tmp).unlink(missing_ok=True)
     t_sub = time.perf_counter() - t_sub0
+    if cancelled:
+        # A dependency (e.g. pytest) already failed, so this run is moot. Return
+        # an empty result - uncached, since it was terminated, not completed -
+        # and let the parser produce its skip/zero output.
+        log.debug(
+            f"{tool_config.name}: [CANCELLED] {tool_config.skip_if} failed; terminated after {t_sub * 1000:.0f}ms"
+        )
+        return RawResult(tool_name=tool_config.name)
     log.debug(
         f"{tool_config.name}: [MISS] cache={t_cache * 1000:.1f}ms tool={t_sub * 1000:.0f}ms: {command}"
     )
@@ -243,9 +319,9 @@ def run_tool(
     raw_result = RawResult(
         tool_name=tool_config.name,
         command=command,
-        stdout=result.stdout,
-        stderr=result.stderr,
-        return_code=result.returncode,
+        stdout=stdout,
+        stderr=stderr,
+        return_code=return_code,
         timestamp=timestamp,
         project_path=project_dir,
     )
@@ -324,9 +400,14 @@ def run_tools(
     def _hash_for(tool_config: ToolConfig) -> str:
         return norm_hash if tool_config.cache_invariant == "ast" else shared_hash
 
-    def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
+    def _run_and_parse(
+        tool_config: ToolConfig, cancel_event: threading.Event | None = None
+    ) -> tuple[int, ToolResult]:
         t0 = time.perf_counter()
-        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=_hash_for(tool_config), project_tag=root)
+        # Only pass cancel_event when present so patched run_tool stubs in tests
+        # (which don't declare the kwarg) keep working for non-cancellable tools.
+        extra = {"cancel_event": cancel_event} if cancel_event is not None else {}
+        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=_hash_for(tool_config), project_tag=root, **extra)
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr
@@ -366,45 +447,45 @@ def run_tools(
         return [tr for _, tr in sorted(prioritized)]
     configs_by_name = {tc.name: tc for tc in tool_configs}
 
-    def _run_if_dep_passed(dep_future, tool_config: ToolConfig, dep_config: ToolConfig) -> tuple[int, ToolResult]:
-        # Wait for the dependency within the same thread pool - no phase split,
-        # so all other tools keep running in parallel while we block here.
-        try:
-            _, dep_tr = dep_future.result()
-        except Exception:
-            return _run_and_parse(tool_config)
-        if dep_tr.metrics and min(dep_tr.metrics.values()) < dep_config.error_threshold:
-            # Dependency failed its error threshold: skip this tool and return a
-            # synthetic empty result. Coverage declares skip_if = "pytest" so that
-            # it never re-invokes pytest (which the coverage command does internally)
-            # when we already know pytest is broken.
-            log.debug(f"{tool_config.name}: skipping because {tool_config.skip_if} failed")
-            t0 = time.perf_counter()
-            tr = tool_config.parser_class(tool_config.parser_config).parse(
-                RawResult(tool_name=tool_config.name)
-            )
-            tr.duration_s = time.perf_counter() - t0
-            return tool_config.order, tr
-        return _run_and_parse(tool_config)
-
     timings: list[tuple[int, str, float]] = []
-    # Sort by order so that when we build name_to_future below, a dependency's
-    # future is always registered before the tool that declares skip_if on it.
     sorted_configs = sorted(tool_configs, key=lambda tc: tc.order)
+    # A tool with skip_if gets a cancel event: it runs in parallel with its
+    # dependency, and is terminated mid-run only if that dependency *fails* its
+    # error threshold. Coverage declares skip_if = "pytest" so a broken pytest
+    # kills the coverage run (which re-invokes pytest internally) instead of
+    # letting it finish a pointless second suite execution.
+    cancel_events = {
+        tc.name: threading.Event()
+        for tc in sorted_configs
+        if tc.skip_if and tc.skip_if in configs_by_name
+    }
     name_to_future: dict[str, Any] = {}
     with ThreadPoolExecutor(max_workers=max_workers or len(tool_configs)) as executor:
         future_to_tool = {}
         for tc in sorted_configs:
-            dep_name = tc.skip_if
-            dep_future = name_to_future.get(dep_name) if dep_name else None
-            dep_config = configs_by_name.get(dep_name) if dep_name else None
-            if dep_future and dep_config:
-                # Submit a wrapper that waits on the dependency future first.
-                f = executor.submit(_run_if_dep_passed, dep_future, tc, dep_config)
-            else:
-                f = executor.submit(_run_and_parse, tc)
+            f = executor.submit(_run_and_parse, tc, cancel_events.get(tc.name))
             future_to_tool[f] = tc
             name_to_future[tc.name] = f
+
+        def _cancel_on_dep_failure(
+            dep_future, ev: threading.Event, dep_config: ToolConfig, name: str
+        ) -> None:
+            try:
+                _, dep_tr = dep_future.result()
+            except Exception:
+                return
+            if dep_tr.metrics and min(dep_tr.metrics.values()) < dep_config.error_threshold:
+                log.debug(f"{name}: cancelling because {dep_config.name} failed")
+                ev.set()
+
+        for tc in sorted_configs:
+            if tc.name in cancel_events:
+                dep_config = configs_by_name[tc.skip_if]
+                name_to_future[tc.skip_if].add_done_callback(
+                    lambda fut, ev=cancel_events[tc.name], dc=dep_config, nm=tc.name: _cancel_on_dep_failure(
+                        fut, ev, dc, nm
+                    )
+                )
         for future in as_completed(future_to_tool):
             tool_config = future_to_tool[future]
             try:
