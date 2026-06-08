@@ -312,16 +312,17 @@ def run_tools(
     # Cache keys are content-based, so a changed project naturally produces new
     # keys; stale entries age out via TTL + size_limit (no blanket eviction).
     # Tools flagged cache_invariant="ast" key on the docstring-stripped AST so
-    # docstring/comment/format-only edits stay cache hits.
-    norm_hash: str | None = None
+    # docstring/comment/format-only edits stay cache hits. Compute it once here
+    # (not lazily in the worker threads, where pytest and coverage would race
+    # and each re-parse the whole tree) and only when some tool needs it.
+    norm_hash = shared_hash
+    if any(tc.cache_invariant == "ast" for tc in tool_configs):
+        t_norm0 = time.perf_counter()
+        norm_hash = get_context_hash(root, normalize=True)
+        log.debug(f"context_hash(ast): {(time.perf_counter() - t_norm0) * 1000:.1f}ms {norm_hash}")
 
     def _hash_for(tool_config: ToolConfig) -> str:
-        nonlocal norm_hash
-        if tool_config.cache_invariant == "ast":
-            if norm_hash is None:
-                norm_hash = get_context_hash(root, normalize=True)
-            return norm_hash
-        return shared_hash
+        return norm_hash if tool_config.cache_invariant == "ast" else shared_hash
 
     def _run_and_parse(tool_config: ToolConfig) -> tuple[int, ToolResult]:
         t0 = time.perf_counter()
