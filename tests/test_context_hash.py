@@ -114,6 +114,11 @@ def test_normalize_detects_logic_change(tmp_path):
     f.write_text("def f(x):\n    return x + 1\n")
     h1 = get_context_hash(str(tmp_path), normalize=True)
     f.write_text("def f(x):\n    return x + 2\n")
+    # Advance mtime so the per-file memo re-reads: a same-size edit can land in
+    # the same mtime tick, which (path, size, mtime) can't distinguish - the same
+    # limitation the byte-based hash already has. Real edits always move mtime.
+    st = f.stat()
+    os.utime(f, (st.st_mtime + 100, st.st_mtime + 100))
     assert get_context_hash(str(tmp_path), normalize=True) != h1
 
 
