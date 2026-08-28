@@ -36,6 +36,8 @@ uv tool install .
 
 These tools are run in **parallel** except:
 When running '-o llm', we run sequentially and exit early at the first error.
+`coverage` is a special case: it starts alongside `pytest` and is cancelled if
+`pytest` fails, scoring `0%` without a second test run.
 
 | Order | Tool | Measures |
 |----------|------|----------|
@@ -45,11 +47,11 @@ When running '-o llm', we run sequentially and exit early at the first error.
 | 4 | bandit | Security vulnerabilities |
 | 5 | pytest | Test pass rate |
 | 6 | coverage | Test coverage |
-| 7 | radon cc | Cyclomatic complexity |
-| 8 | radon mi | Maintainability index |
-| 9 | radon hal | Halstead volume / bug estimate |
-| 10 | vulture | Dead code |
-| 11 | interrogate | Docstring coverage |
+| 7 | vulture | Dead code |
+| 8 | interrogate | Docstring coverage |
+| 9 | radon cc | Cyclomatic complexity |
+| 10 | radon mi | Maintainability index |
+| 11 | radon hal | Halstead volume / bug estimate |
 
 Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults: <100 Mb, <5 days, No pickle risk.
 
@@ -308,106 +310,117 @@ warning = 0.9
 error = 0.7
 ```
 
-Tool IDs match the keys in `config/config.yaml`: `compile`, `ruff`, `ty`, `bandit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`.
+Tool IDs match the keys in `src/py_cq/config/config.toml`: `compile`, `ruff`, `ty`, `bandit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`.
 
 
 ### Default config
 
-```yaml
-python:
+Defined in `src/py_cq/config/config.toml` (sections are namespaced by language):
 
-  compile:
-    command: "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv"
-    parser: "CompileParser"
-    order: 1
-    warning_threshold: 0.9999
-    error_threshold: 0.9999
+```toml
+[python.compile]
+command = "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv|\\.claude"
+parser = "CompileParser"
+order = 1
+warning_threshold = 0.9999
+error_threshold = 0.9999
+cache_invariant = "ast"
 
-  ruff:
-    command: "{python} -m ruff check --output-format concise --no-cache \"{context_path}\"{exclude}"
-    exclude_format: " --exclude {path}"
-    parser: "RuffParser"
-    order: 2
-    warning_threshold: 0.9999
-    error_threshold: 0.9
+[python.ruff]
+command = "{python} -m ruff check --output-format concise --no-cache \"{context_path}\" --exclude .claude{exclude}"
+exclude_format = " --exclude {path}"
+parser = "RuffParser"
+order = 2
+warning_threshold = 0.9999
+error_threshold = 0.9
 
-  ty:
-    command: "{python} -m ty check --output-format concise --color never \"{context_path}\"{exclude}"
-    exclude_format: " --exclude {path}"
-    parser: "TyParser"
-    order: 3
-    warning_threshold: 0.9999
-    error_threshold: 0.8
-    run_in_target_env: true
-    extra_deps:
-      - ty
+[python.ty]
+command = "{python} -m ty check --output-format concise --color never \"{context_path}\" --exclude .claude{exclude}"
+exclude_format = " --exclude {path}"
+parser = "TyParser"
+order = 3
+warning_threshold = 0.9999
+error_threshold = 0.8
+run_in_target_env = true
+extra_deps = ["ty"]
 
-  bandit:
-    command: "{python} -m bandit -r \"{context_path}\" -f json -q -s B101 --severity-level medium --exclude \"{input_path_posix}/.venv,{input_path_posix}/tests{exclude}\""
-    exclude_format: ",{input_path_posix}/{path}"
-    parser: "BanditParser"
-    order: 4
-    warning_threshold: 0.9999
-    error_threshold: 0.8
+[python.bandit]
+command = "{python} -m bandit -r {scan_targets} -f json -q -s B101 --severity-level medium{exclude}"
+scan_exclude_names = [".venv", ".claude", "tests"]
+exclude_format = " --exclude {abs_native_path}"
+parser = "BanditParser"
+order = 4
+warning_threshold = 0.9999
+error_threshold = 0.8
 
-  pytest:
-    command: "{python} -m pytest -v \"{context_path}\"{exclude}"
-    exclude_format: " --ignore {path}"
-    parser: "PytestParser"
-    order: 5
-    warning_threshold: 1.0
-    error_threshold: 1.0
-    run_in_target_env: true
-    extra_deps:
-      - pytest
+[python.pytest]
+command = "{python} -m pytest -vv \"{context_path}\" --ignore .claude{exclude}"
+exclude_format = " --ignore {path}"
+parser = "PytestParser"
+order = 5
+warning_threshold = 1.0
+error_threshold = 1.0
+run_in_target_env = true
+extra_deps = ["pytest"]
+skip_for_file = true
+cache_invariant = "ast"
 
-  coverage:
-    command: "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" && {python} -m coverage report --omit=*/tests/*,*/test_*.py"
-    parser: "CoverageParser"
-    order: 6
-    warning_threshold: 0.9
-    error_threshold: 0.5
-    run_in_target_env: true
-    extra_deps:
-      - coverage
-      - pytest
+[python.coverage]
+command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
+exclude_format = " --ignore {path}"
+parser = "CoverageParser"
+order = 6
+warning_threshold = 0.9
+error_threshold = 0.5
+run_in_target_env = true
+extra_deps = ["coverage", "pytest"]
+skip_for_file = true
+skip_if = "pytest"
+cache_invariant = "ast"
 
-  radon-cc:
-    command: "{python} -m radon cc --json \"{context_path}\""
-    parser: "ComplexityParser"
-    order: 7
-    warning_threshold: 0.6
-    error_threshold: 0.4
+[python.vulture]
+command = "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
+exclude_format = ",{path}"
+parser = "VultureParser"
+order = 7
+warning_threshold = 0.9999
+error_threshold = 0.8
+cache_invariant = "ast"
 
-  radon-mi:
-    command: "{python} -m radon mi -s --json \"{context_path}\""
-    parser: "MaintainabilityParser"
-    order: 8
-    warning_threshold: 0.6
-    error_threshold: 0.4
+[python.interrogate]
+command = "{python} -m interrogate \"{context_path}\" -e .claude{exclude} -v --fail-under 0"
+exclude_format = " -e {path}"
+parser = "InterrogateParser"
+order = 8
+warning_threshold = 0.8
+error_threshold = 0.5
 
-  radon-hal:
-    command: "{python} -m radon hal -f --json \"{context_path}\""
-    parser: "HalsteadParser"
-    order: 9
-    warning_threshold: 0.5
-    error_threshold: 0.3
+[python.interrogate.parser_config]
+skip_empty_init = true
 
-  vulture:
-    command: "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git{exclude}"
-    exclude_format: ",{path}"
-    parser: "VultureParser"
-    order: 10
-    warning_threshold: 0.9999
-    error_threshold: 0.8
+[python.radon-cc]
+command = "{python} -m radon cc --json --exclude '.claude/**' \"{context_path}\""
+parser = "ComplexityParser"
+order = 9
+gate_strict = false
+warning_threshold = 0.6
+error_threshold = 0.4
 
-  interrogate:
-    command: "{python} -m interrogate \"{context_path}\"{exclude} -v --fail-under 0"
-    exclude_format: " -e {path}"
-    parser: "InterrogateParser"
-    order: 11
-    warning_threshold: 0.8
-    error_threshold: 0.3
+[python.radon-mi]
+command = "{python} -m radon mi -s --json --exclude '.claude/**' \"{context_path}\""
+parser = "MaintainabilityParser"
+order = 10
+gate_strict = false
+warning_threshold = 0.6
+error_threshold = 0.4
+
+[python.radon-hal]
+command = "{python} -m radon hal -f --json --exclude '.claude/**' \"{context_path}\""
+parser = "HalsteadParser"
+order = 11
+gate_strict = false
+warning_threshold = 0.35
+error_threshold = 0.3
 ```
 
 ## Respect
