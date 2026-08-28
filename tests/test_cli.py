@@ -6,7 +6,7 @@ import pytest
 from typer.testing import CliRunner
 
 from py_cq.cli import app
-from py_cq.localtypes import RawResult, ToolResult, CombinedToolResults
+from py_cq.localtypes import CombinedToolResults, RawResult, ToolResult
 
 runner = CliRunner()
 

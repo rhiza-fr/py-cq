@@ -342,7 +342,7 @@ def test_pytest_defect_snapshot(tmp_path):
     result = format_for_llm(
         {"pytest": cfg}, CombinedToolResults(".", [tr]), cq_invocation=CQ
     )
-    assert f"{str(test_file)}::test_bar" in result
+    assert f"{test_file!s}::test_bar" in result
     assert "test **FAILED**" in result
     assert "AssertionError" in result
     assert "Please fix only this issue" in result

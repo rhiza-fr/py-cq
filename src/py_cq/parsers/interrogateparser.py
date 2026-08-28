@@ -90,7 +90,7 @@ def _load_interrogate_cfg(context_path: str) -> dict:
             try:
                 data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
                 return data.get("tool", {}).get("interrogate", {})
-            except Exception:
+            except (tomllib.TOMLDecodeError, OSError, UnicodeDecodeError):
                 return {}
     return {}
 
@@ -106,9 +106,7 @@ def _skip_node(name: str, cfg: dict) -> bool:
         return True
     if is_private and cfg.get("ignore-private"):
         return True
-    if is_semiprivate and cfg.get("ignore-semiprivate"):
-        return True
-    return False
+    return bool(is_semiprivate and cfg.get("ignore-semiprivate"))
 
 
 def _missing_docstrings(file_path: Path, cfg: dict | None = None) -> list[tuple[int, str, str]]:

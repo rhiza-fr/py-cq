@@ -175,7 +175,6 @@ class AbstractParser(ABC):
     @abstractmethod
     def parse(self, raw_result: RawResult) -> ToolResult:
         """Converts raw tool output into a structured ToolResult."""
-        pass
 
     def format_llm_message(
         self, tr: ToolResult, *, context_lines: int = 15, limit: int = 1

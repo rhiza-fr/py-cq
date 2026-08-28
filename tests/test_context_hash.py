@@ -35,7 +35,7 @@ def test_get_context_hash_directory(tmp_path):
 def test_get_context_hash_nonexistent_returns_empty_hash(tmp_path):
     """Test that get_context_hash returns an empty hash for a nonexistent path."""
     h = get_context_hash(str(tmp_path / "nonexistent"))
-    expected = hashlib.md5("empty".encode()).hexdigest()
+    expected = hashlib.md5(b"empty").hexdigest()
     assert h == expected
 
 

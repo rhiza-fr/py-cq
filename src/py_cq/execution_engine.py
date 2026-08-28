@@ -114,7 +114,9 @@ def _terminate_process_tree(proc: "subprocess.Popen") -> None:
         return
     if sys.platform == "win32":
         subprocess.run(
-            ["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True
+            ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+            capture_output=True,
+            check=False,
         )  # nosec
     else:
         try:
@@ -141,6 +143,7 @@ def _run_command(
             encoding="utf-8",
             errors="replace",
             env=run_env,
+            check=False,
         )  # nosec
         return result.stdout, result.stderr, result.returncode, False
     if cancel_event.is_set():
@@ -419,7 +422,7 @@ def run_tools(
         for i, tool_config in enumerate(sorted_configs):
             try:
                 prioritized.append(_run_and_parse(tool_config))
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - a crashing tool must not abort the run
                 log.error(f"{tool_config.name} generated an exception: {exc} {exc.__traceback__}")
                 n_skipped = n_total - i - 1
                 if n_skipped:
@@ -472,7 +475,7 @@ def run_tools(
         ) -> None:
             try:
                 _, dep_tr = dep_future.result()
-            except Exception:
+            except Exception:  # noqa: BLE001 - a crashed dep cancels nothing
                 return
             if dep_tr.metrics and min(dep_tr.metrics.values()) < dep_config.error_threshold:
                 log.debug(f"{name}: cancelling because {dep_config.name} failed")
@@ -492,7 +495,7 @@ def run_tools(
                 tc_order, tr = future.result()
                 prioritized.append((tc_order, tr))
                 timings.append((tc_order, tool_config.name, tr.duration_s))
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - a crashing tool must not abort the run
                 log.error(f"{tool_config.name} generated an exception: {exc}")
     per_tool = ", ".join(f"{name}={dur:.2f}s" for _, name, dur in sorted(timings))
     log.debug(f"run_tools elapsed: {time.perf_counter() - t_start:.2f}s [{per_tool}]")

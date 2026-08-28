@@ -1,6 +1,7 @@
 """Tests for ExitCodeParser."""
 
 from conftest import raw
+
 from py_cq.parsers.exitcodeparser import ExitCodeParser
 
 

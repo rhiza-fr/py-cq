@@ -37,6 +37,7 @@ def _cq_invoke(args: list[str]) -> tuple[int, float]:
         capture_output=True,
         text=True,
         timeout=120,
+        check=False,
     )
     elapsed = time.perf_counter() - t0
     return result.returncode, elapsed

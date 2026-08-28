@@ -3,8 +3,8 @@
 import json
 
 from conftest import raw
-from py_cq.parsers.halsteadparser import HalsteadParser
 
+from py_cq.parsers.halsteadparser import HalsteadParser
 
 # --- parse ---
 

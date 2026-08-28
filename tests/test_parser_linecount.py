@@ -1,6 +1,7 @@
 """Tests for LineCountParser."""
 
 from conftest import raw
+
 from py_cq.parsers.linecountparser import LineCountParser
 
 

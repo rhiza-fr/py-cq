@@ -48,9 +48,7 @@ def format_source_context(
     collected = []
     for i, rline in enumerate(raw_lines):
         if i > error_offset and (
-            rline.startswith("def ")
-            or rline.startswith("async def ")
-            or rline.startswith("class ")
+            rline.startswith(("def ", "async def ", "class "))
         ):
             break
         collected.append(f"{context_start + i}: {rline}")
@@ -382,8 +380,7 @@ def score_logistic_variant(
         1.0
         >>> score_logistic_variant(10, scale_factor=0)
         0.0"""
-    if errors < 0:
-        errors = 0
+    errors = max(errors, 0)
     if scale_factor == 0:
         return 1.0 if errors == 0 else 0.0
     try:

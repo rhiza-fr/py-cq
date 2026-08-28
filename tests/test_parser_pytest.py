@@ -247,8 +247,8 @@ def test_format_llm_message_skips_non_dict_test_entry():
     from py_cq.localtypes import RawResult
 
     raw_result = RawResult(tool_name="pytest", stdout="", stderr="", return_code=1)
-    from py_cq.parsers.pytestparser import PytestParser
     from py_cq.localtypes import ToolResult
+    from py_cq.parsers.pytestparser import PytestParser
 
     tr = ToolResult(
         metrics={"tests": 0.0},

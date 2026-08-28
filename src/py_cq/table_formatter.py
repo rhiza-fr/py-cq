@@ -21,7 +21,7 @@ def format_as_table(
     table.add_column("Status")
     for tr in data.tool_results:
         tool_name = tr.raw.tool_name
-        config = next((t for t in registry.values() if t.name == tool_name))
+        config = next(t for t in registry.values() if t.name == tool_name)
         for i, (name, value) in enumerate(tr.metrics.items()):
             if value < config.error_threshold:
                 status = "[bold red]Error[/]"

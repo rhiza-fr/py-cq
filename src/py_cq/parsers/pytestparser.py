@@ -163,7 +163,7 @@ class PytestParser(AbstractParser):
         if "no tests ran" in raw_result.stdout:
             tr.metrics["tests"] = 0.0
         else:
-            tests_found = dict()
+            tests_found = {}
             num_tests = 0
             passed_tests = 0
             for line in lines:

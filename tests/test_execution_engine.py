@@ -20,7 +20,6 @@ def _fake_config(name="fake", order=1):
 
         def __init__(self, parser_config=None):
             """Initialize FakeParser."""
-            pass
 
         def parse(self, raw):
             """Parse the raw output."""
@@ -113,9 +112,11 @@ def test_run_tools_sorted_by_order():
 def test_run_tools_exception_is_logged():
     """Test that exceptions during tool execution are logged."""
     cfg = _fake_config()
-    with patch("py_cq.execution_engine.run_tool", side_effect=RuntimeError("boom")):
-        with patch("py_cq.execution_engine.log") as mock_log:
-            results = run_tools([cfg], ".")
+    with (
+        patch("py_cq.execution_engine.run_tool", side_effect=RuntimeError("boom")),
+        patch("py_cq.execution_engine.log") as mock_log,
+    ):
+        results = run_tools([cfg], ".")
     assert results == []
     mock_log.error.assert_called_once()
 
@@ -206,9 +207,11 @@ def test_run_tools_early_exit_exception_breaks_loop():
             raise RuntimeError("parser exploded")
         return RawResult(tool_name=config.name, stdout="")
 
-    with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
-        with patch("py_cq.execution_engine.log"):
-            results = run_tools([cfg1, cfg2], ".", early_exit=True)
+    with (
+        patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool),
+        patch("py_cq.execution_engine.log"),
+    ):
+        results = run_tools([cfg1, cfg2], ".", early_exit=True)
 
     assert len(results) == 1
     assert results[0].raw.tool_name == "first"
@@ -253,11 +256,11 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
 
     mock_cache = MagicMock()
     mock_cache.get = MagicMock(return_value=None)
-    with patch("py_cq.execution_engine._cache", mock_cache):
-        with patch(
-            "py_cq.execution_engine.subprocess.run", return_value=mock_result
-        ) as mock_sub:
-            result = run_tool(cfg, str(tmp_path))
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub,
+    ):
+        result = run_tool(cfg, str(tmp_path))
     mock_sub.assert_called_once()
     assert result.tool_name == "echo"
     assert result.stdout == "hello"
@@ -291,9 +294,11 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
     cache_key = f"{command}:{get_context_hash(str(tmp_path))}"
     fake_cache = {cache_key: cached.to_dict()}
 
-    with patch("py_cq.execution_engine._cache", fake_cache):
-        with patch("py_cq.execution_engine.subprocess.run") as mock_sub:
-            result = run_tool(cfg, str(tmp_path))
+    with (
+        patch("py_cq.execution_engine._cache", fake_cache),
+        patch("py_cq.execution_engine.subprocess.run") as mock_sub,
+    ):
+        result = run_tool(cfg, str(tmp_path))
     mock_sub.assert_not_called()
     assert result.stdout == "cached!"
 
@@ -516,7 +521,7 @@ def test_run_command_runs_normally_without_cancel_event():
     from py_cq.execution_engine import _run_command
 
     cmd = f'{sys.executable} -c "print(\'hi\')"'
-    stdout, stderr, rc, cancelled = _run_command(cmd, dict(os.environ), None)
+    stdout, _stderr, rc, cancelled = _run_command(cmd, dict(os.environ), None)
     assert cancelled is False
     assert rc == 0
     assert "hi" in stdout
@@ -530,7 +535,7 @@ def test_run_command_precancelled_event_skips_launch():
 
     ev = threading.Event()
     ev.set()
-    stdout, stderr, rc, cancelled = _run_command("echo hi", dict(os.environ), ev)
+    stdout, _stderr, _rc, cancelled = _run_command("echo hi", dict(os.environ), ev)
     assert cancelled is True
     assert stdout == ""
 
@@ -547,7 +552,7 @@ def test_run_command_terminates_running_process_on_cancel():
     cmd = f'{sys.executable} -c "import time; time.sleep(30)"'
     threading.Timer(0.2, ev.set).start()
     t0 = time.perf_counter()
-    stdout, stderr, rc, cancelled = _run_command(cmd, dict(os.environ), ev)
+    _stdout, _stderr, _rc, cancelled = _run_command(cmd, dict(os.environ), ev)
     elapsed = time.perf_counter() - t0
     assert cancelled is True
     assert elapsed < 10  # would be ~30s if not terminated
@@ -641,6 +646,7 @@ def test_run_tool_exclude_appears_in_command(tmp_path):
 def test_run_tool_captures_stdout(tmp_path):
     """run_tool actually invokes subprocess and captures stdout."""
     from diskcache import Cache, JSONDisk
+
     from py_cq.execution_engine import run_tool
 
     cfg = ToolConfig(
@@ -663,6 +669,7 @@ def test_run_tool_captures_stdout(tmp_path):
 def test_run_tool_captures_nonzero_exit(tmp_path):
     """run_tool records non-zero exit codes."""
     from diskcache import Cache, JSONDisk
+
     from py_cq.execution_engine import run_tool
 
     cfg = ToolConfig(
@@ -682,6 +689,7 @@ def test_run_tool_captures_nonzero_exit(tmp_path):
 def test_run_tool_result_is_cached(tmp_path):
     """Second call with identical inputs returns cached result (same timestamp)."""
     from diskcache import Cache, JSONDisk
+
     from py_cq.execution_engine import run_tool
 
     cfg = ToolConfig(
@@ -702,7 +710,9 @@ def test_run_tool_result_is_cached(tmp_path):
 def test_run_tool_cache_invalidated_on_content_change(tmp_path):
     """Changing file content (size) changes the cache key and forces a new subprocess call."""
     import subprocess as real_subprocess
+
     from diskcache import Cache, JSONDisk
+
     from py_cq.execution_engine import run_tool
 
     py_file = tmp_path / "module.py"

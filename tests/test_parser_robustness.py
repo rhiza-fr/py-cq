@@ -1,10 +1,10 @@
 """Property tests: no parser may raise an exception on arbitrary text input."""
 
 import pytest
+from conftest import raw
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from conftest import raw
 from py_cq.localtypes import ToolResult
 from py_cq.parsers.banditparser import BanditParser
 from py_cq.parsers.compileparser import CompileParser

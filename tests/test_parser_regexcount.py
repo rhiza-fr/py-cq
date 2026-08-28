@@ -2,6 +2,7 @@
 
 import pytest
 from conftest import raw
+
 from py_cq.parsers.regexcountparser import RegexCountParser
 
 

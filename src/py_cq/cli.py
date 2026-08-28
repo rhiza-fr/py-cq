@@ -17,7 +17,7 @@ import logging
 import time
 import tomllib
 from enum import Enum
-from importlib.metadata import requires, version
+from importlib.metadata import PackageNotFoundError, requires, version
 from pathlib import Path
 
 import tomlkit
@@ -88,7 +88,7 @@ def _version_callback(value: bool) -> None:
         dep_name = re.split(r"[>=<!;\s\[]", req)[0]
         try:
             dep_versions.append((dep_name, version(dep_name)))
-        except Exception:
+        except PackageNotFoundError:
             pass
     typer.echo(f"{pkg} v{pkg_version}")
     for dep_name, dep_ver in sorted(dep_versions):
@@ -120,7 +120,7 @@ console = Console()
 @app.command()
 def check(
     path: str = typer.Argument(".", help="Path to Python file or project directory"),
-    output: OutputMode = typer.Option(
+    output: OutputMode = typer.Option(  # noqa: B008
         OutputMode.TABLE,
         "--output",
         "-o",
@@ -160,13 +160,13 @@ def check(
     limit: int = typer.Option(
         1, "--limit", help="Number of issues to show with -o llm (default: 1)"
     ),
-    silence: list[str] = typer.Option(
+    silence: list[str] = typer.Option(  # noqa: B008
         [],
         "--silence",
         "-s",
         help="Silence issues from -o llm output (e.g. -s src/foo.py or -s src/foo.py:42:E501)",
     ),
-    order: OrderMode = typer.Option(
+    order: OrderMode = typer.Option(  # noqa: B008
         OrderMode.SEVERITY,
         "--order",
         help="Issue selection order for -o llm/llm-json: severity (most severe first) or phase (first non-clean phase, in dependency order)",
@@ -186,12 +186,10 @@ def check(
         )
         raise typer.Exit(0)
 
-    if path_obj.is_file():
-        if path_obj.suffix != ".py":
-            raise typer.BadParameter(f"File must be a Python file (.py): {path}")
-    elif path_obj.is_dir():  # pragma: no branch
-        if not (path_obj / "pyproject.toml").exists():
-            raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
+    if path_obj.is_file() and path_obj.suffix != ".py":
+        raise typer.BadParameter(f"File must be a Python file (.py): {path}")
+    elif path_obj.is_dir() and not (path_obj / "pyproject.toml").exists():
+        raise typer.BadParameter(f"Directory must contain pyproject.toml: {path}")
     log.setLevel(log_level)
 
     only_list = [t.strip() for t in only.split(",")] if only else None

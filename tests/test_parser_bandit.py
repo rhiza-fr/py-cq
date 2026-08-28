@@ -8,7 +8,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from py_cq.localtypes import RawResult, ToolResult
-from py_cq.parsers.banditparser import BanditParser, _SEVERITY_WEIGHT
+from py_cq.parsers.banditparser import _SEVERITY_WEIGHT, BanditParser
 
 _SEVERITIES = sorted(_SEVERITY_WEIGHT.keys())  # HIGH, LOW, MEDIUM
 _CONFIDENCES = ["HIGH", "MEDIUM", "LOW"]

@@ -435,6 +435,7 @@ def test_config_set_creates_cq_section_if_missing(tmp_path):
 
 def _render(table) -> str:
     from io import StringIO
+
     from rich.console import Console
 
     buf = StringIO()

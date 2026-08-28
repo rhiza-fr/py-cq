@@ -99,7 +99,7 @@ def test_coverage_parse_sorted_worst_first():
         "TOTAL         20   8   60%\n"
     )
     tr = CoverageParser().parse(raw(output))
-    assert list(tr.details.keys())[0] == "src/bad.py"
+    assert next(iter(tr.details.keys())) == "src/bad.py"
 
 
 def test_coverage_parse_single_token_percent_line():
