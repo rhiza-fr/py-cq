@@ -1,6 +1,6 @@
 [project]
 name = "python-code-quality"
-version = "0.2.3"
+version = "0.3.0"
 description = "Python Code Quality Analysis Tool - feed the results from 11 CQ tools straight into an LLM. Minimal tokens."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -22,7 +22,11 @@ dependencies = [
     "pytest-json-report>=1.5.0",
     "radon>=6.0.1",
     "rich>=14.0.0",
-    "ruff>=0.14.1",
+    # Upper-capped: ruff's default rule set is not stable across minor versions
+    # (0.15 enabled ~60 rules, 0.16 enables 413). cq runs ruff from its own
+    # environment, so an unbounded bump silently changes every user's lint score.
+    # Raise this deliberately, with a changelog note.
+    "ruff>=0.14.1,<0.17",
     "tomlkit>=0.13.0",
     "ty>=0.0.17",
     "typer>=0.16.0",
@@ -34,7 +38,10 @@ Homepage = "https://github.com/rhiza-fr/py-cq"
 Repository = "https://github.com/rhiza-fr/py-cq"
 
 [build-system]
-requires = ["uv_build"]
+# Upper-capped for the same reason as ruff: an unbounded backend requirement
+# lets a future breaking uv_build release break the sdist build with no change
+# here. Raise deliberately alongside the uv version this is built with.
+requires = ["uv_build>=0.12.0,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]

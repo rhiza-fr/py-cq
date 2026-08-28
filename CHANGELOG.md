@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.3.0] - 2026-08-28
+
+### Changed
+
+- **Dependency upgrades change what `cq check` reports.** `ruff` moves `0.15.16 -> 0.16.5` and `ty` moves `0.0.44 -> 0.0.75`; `pytest`, `hypothesis`, `radon` and `vulture` also move up. **Ruff 0.16 enables 413 rules by default, where 0.15 enabled roughly 60** (`E4`, `E7`, `E9`, `F`). Whole linters that were previously off - `B`, `S`, `SIM`, `PLW`, `RUF`, `UP`, `PYI`, `FURB`, `DTZ`, `TRY` and more - now fire. cq runs `ruff` from its own environment, so **upgrading cq is enough to make a project that scored clean on 0.2.3 drop below the `ruff` error threshold of `0.9` with no source change.** Expect a batch of new lint findings on the first run after upgrading, and budget a cleanup pass. Projects that pin their own `[tool.ruff] lint.select` are unaffected, since cq respects the target project's ruff config.
+- `ruff` is now upper-capped at `<0.17`. Its default rule set is not stable across minor versions, and cq resolves ruff from its own environment, so an unbounded requirement lets a ruff release change every user's lint score without a cq release. The cap is to be raised deliberately, with a changelog note each time.
+- The `uv_build` build backend is upper-capped at `<0.13.0` for the same reason, so a breaking backend release cannot break the source distribution build without a deliberate bump here.
+
+### Added
+
+- `cache_invariant = "ast"` tool config field. Tools declaring it key their cache on a docstring-invariant AST hash, so `pytest`, `coverage`, `compile` and `vulture` skip re-execution on comment- and docstring-only edits. `ty` and `bandit` deliberately opt out, since `# type: ignore` and `# nosec` comments change their results.
+- `skip_if` tool config field. `coverage` now starts in parallel with `pytest` and is cancelled if `pytest` fails, scoring `0%` from a synthetic empty result instead of paying for a second test run.
+
+### Performance
+
+- Shared `SourceFile` cache (`source_file.py`): each file is read and parsed once per run rather than once per parser. Warm-run `coverage` parsing drops 87ms -> 37ms and `interrogate` 99ms -> 49ms.
+- The context AST hash is computed once, eagerly, in the main thread instead of racing per-worker.
+- Combined, a green cold run on this repo drops from 10.5s to 7.1s.
+
+### Fixed
+
+- Lint cleanup under the new ruff defaults: narrowed blind `except Exception` handlers in `cli.py` and `interrogateparser.py` to the exceptions actually raised, added explicit `check=False` to `subprocess.run` calls, flattened nested conditionals, and annotated the deliberate top-level exception guards in `execution_engine.py`.
+- README and CLAUDE.md documented a `config/config.yaml` that has not existed since the move to `src/py_cq/config/config.toml`, listed the last five tools in the wrong execution order, and embedded a stale YAML copy of the default config.
+
 ## [0.2.3] - 2026-06-06
 
 ### Added
