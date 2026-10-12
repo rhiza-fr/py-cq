@@ -28,7 +28,7 @@ cq check . --only ruff,ty  # Run only specific tools
 cq check . --skip bandit   # Skip specific tools
 cq check . --workers 1     # Run sequentially
 cq check . --clear-cache   # Clear cached results before running
-cq config path/to/project/ # Show effective tool configuration
+cq config --path path/to/project/ # Show effective tool configuration
 ```
 
 **Exit codes:** exits with `1` if any tool metric falls below its `error_threshold`.

@@ -6,7 +6,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality?)](https://pypi.org/project/python-code-quality/)
 [![License](https://img.shields.io/github/license/rhiza-fr/py-cq)](LICENSE)
 
-Run 12+ code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
+Run 12 code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
 
 This can dramatically reduce the amount of noise for LLMs (and humans) and remove the need for them to know about these tools.
 
@@ -73,7 +73,7 @@ cq check . --exclude demo  # Exclude paths from all tools
 cq check . --workers 1     # Run sequentially if you like things slow
 cq check . --clear-cache   # Clear cached results before running (rarely needed)
 cq check . -o llm --hint   # Append "run cq again to verify" (for human workflows)
-cq config path/to/project/ # Show effective tool configuration
+cq config --path path/to/project/ # Show effective tool configuration
 cq is-fixed <fingerprint>  # Check whether a specific issue has been resolved
 ```
 
@@ -222,14 +222,15 @@ Then invoke it with `/cq-fix` in Claude Code. The `$(...)` embeds the live `cq` 
 │ bandit           │    0.56s │                  security │ 1.000   │ OK       │
 │ pytest           │    0.91s │                     tests │ 1.000   │ OK       │
 │ coverage         │    1.26s │                  coverage │ 0.910   │ OK       │
-│ radon cc         │    0.32s │                simplicity │ 0.982   │ OK       │
-│ radon mi         │    0.38s │           maintainability │ 0.869   │ OK       │
-│ radon hal        │    0.30s │             file_bug_free │ 0.928   │ OK       │
-│ radon hal        │          │            file_smallness │ 0.851   │ OK       │
-│ radon hal        │          │        functions_bug_free │ 0.913   │ OK       │
-│ radon hal        │          │       functions_smallness │ 0.724   │ OK       │
 │ vulture          │    0.32s │                 dead_code │ 1.000   │ OK       │
 │ interrogate      │    0.36s │              doc_coverage │ 1.000   │ OK       │
+│ radon-cc         │    0.32s │                simplicity │ 0.982   │ OK       │
+│ radon-mi         │    0.38s │           maintainability │ 0.869   │ OK       │
+│ radon-hal        │    0.30s │             file_bug_free │ 0.928   │ OK       │
+│ radon-hal        │          │            file_smallness │ 0.851   │ OK       │
+│ radon-hal        │          │        functions_bug_free │ 0.913   │ OK       │
+│ radon-hal        │          │       functions_smallness │ 0.724   │ OK       │
+│ ruff-format      │    0.12s │                 formatted │ 1.000   │ OK       │
 │                  │          │                     Score │ 0.965   │          │
 └──────────────────┴──────────┴───────────────────────────┴─────────┴──────────┘
 ```

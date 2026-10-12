@@ -107,7 +107,7 @@ def callback(
         help="Show version and dependencies",
     ),
 ) -> None:
-    """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""
+    """Feed the results from 12 code quality tools to an LLM. Try: cq check . -o llm"""
     import sys
 
     if isinstance(sys.stdout, io.TextIOWrapper):
@@ -124,7 +124,7 @@ def check(
         OutputMode.TABLE,
         "--output",
         "-o",
-        help="Output mode: table (default), score, json, llm",
+        help="Output mode: table (default), score, json, raw, llm, llm-json",
     ),
     log_level: str = typer.Option(
         "CRITICAL",
@@ -172,7 +172,7 @@ def check(
         help="Issue selection order for -o llm/llm-json: severity (most severe first) or phase (first non-clean phase, in dependency order)",
     ),
 ):
-    """Feed the results from 11+ code quality tools to an LLM. Try: cq check . -o llm"""  # --help
+    """Feed the results from 12 code quality tools to an LLM. Try: cq check . -o llm"""  # --help
     path_obj = Path(path)
     if not path_obj.exists():
         raise typer.BadParameter(f"Path does not exist: {path}")

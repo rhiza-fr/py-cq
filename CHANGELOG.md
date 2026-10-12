@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.1] - 2026-10-12
+
+### Added
+
+- `ruff-format` tool (order 12): reports the fraction of files already formatted by `ruff format`. Ordered last and non-strict, so formatting never outranks real defects or blocks CI by default. Markdown files are ignored. Output from `ruff < 0.16` is parsed as well.
+
+### Fixed
+
+- Docs and help text: tool count is 12 everywhere, `cq config` usage shows `--path`, `-o` help lists `raw` and `llm-json`, and the README table output includes `ruff-format`.
+
 ## [0.3.0] - 2026-08-28
 
 ### Changed
