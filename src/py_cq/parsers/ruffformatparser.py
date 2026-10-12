@@ -1,22 +1,29 @@
 """Parses output from ruff format --check into a standardized ToolResult.
 
-The concise output format is one line per unformatted file::
+The output is one line per unformatted file. ruff >= 0.16 honours
+``--output-format concise``::
 
     <file>:<line>:<col>: unformatted: File would be reformatted
 
-followed by a summary line such as
+while older versions ignore it (it needs preview mode) and print::
+
+    Would reformat: <file>
+
+Either is followed by a summary line such as
 ``2 files would be reformatted, 30 files already formatted`` or
 ``32 files already formatted``.
 
-The score is the fraction of checked files that are already formatted."""
+The score is the fraction of checked files that are already formatted,
+taken from the summary so it stays correct if the per-file format changes."""
 
 import re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 from py_cq.parsers.common import extract_first_issue
 
-_FILE_RE = re.compile(r"^(.+):\d+:\d+: unformatted: ")
+_FILE_RE = re.compile(r"^(?:Would reformat: (.+)|(.+):\d+:\d+: unformatted: .*)$")
 _FORMATTED_RE = re.compile(r"(\d+) files? already formatted")
+_UNFORMATTED_RE = re.compile(r"(\d+) files? would be reformatted")
 
 
 class RuffFormatParser(AbstractParser):
@@ -31,10 +38,12 @@ class RuffFormatParser(AbstractParser):
         for line in stdout.splitlines():
             m = _FILE_RE.match(line)
             if m:
-                files[m.group(1).replace("\\", "/")] = [{}]
+                files[(m.group(1) or m.group(2)).replace("\\", "/")] = [{}]
         m = _FORMATTED_RE.search(stdout)
         formatted = int(m.group(1)) if m else 0
-        total = formatted + len(files)
+        m = _UNFORMATTED_RE.search(stdout)
+        unformatted = max(int(m.group(1)) if m else 0, len(files))
+        total = formatted + unformatted
         score = formatted / total if total else 1.0
         return ToolResult(raw=raw_result, metrics={"formatted": score}, details=files)
 

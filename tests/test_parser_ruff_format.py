@@ -23,6 +23,25 @@ def test_ruff_format_parse_unformatted():
     assert tr.details == {"src/pkg/a.py": [{}], "src/pkg/b.py": [{}]}
 
 
+def test_ruff_format_parse_ruff_015_output():
+    """ruff < 0.16 ignores --output-format for format and prints 'Would reformat:' lines."""
+    output = (
+        "Would reformat: D:\\proj\\src\\a.py\n"
+        "Would reformat: D:\\proj\\tests\\test_a.py\n"
+        "2 files would be reformatted, 6 files already formatted\n"
+    )
+    tr = RuffFormatParser().parse(raw(output, return_code=1))
+    assert tr.metrics["formatted"] == 0.75
+    assert tr.details == {"D:/proj/src/a.py": [{}], "D:/proj/tests/test_a.py": [{}]}
+
+
+def test_ruff_format_score_uses_summary_count():
+    """An unrecognised per-file line format still lowers the score via the summary."""
+    output = "something new\n2 files would be reformatted, 6 files already formatted\n"
+    tr = RuffFormatParser().parse(raw(output, return_code=1))
+    assert tr.metrics["formatted"] == 0.75
+
+
 def test_ruff_format_parse_clean():
     """All files formatted scores 1.0 with no details."""
     tr = RuffFormatParser().parse(raw("8 files already formatted\n"))
