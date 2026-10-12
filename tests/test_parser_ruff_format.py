@@ -1,7 +1,11 @@
 """Tests for RuffFormatParser."""
 
-from conftest import raw
+import json
 
+from conftest import raw
+from typer.testing import CliRunner
+
+from py_cq.cli import app
 from py_cq.localtypes import RawResult, ToolResult
 from py_cq.parsers.ruffformatparser import RuffFormatParser
 
@@ -59,3 +63,20 @@ def test_ruff_format_llm_message_no_details():
     """Missing details give a fallback message."""
     tr = ToolResult(metrics={"formatted": 0.5}, details={}, raw=RawResult())
     assert "no details" in RuffFormatParser().format_llm_message(tr).lower()
+
+
+def test_ruff_format_ignores_markdown(tmp_path):
+    """Python code blocks in Markdown are not counted, even though ruff formats them.
+
+    ruff's ``--exclude *.md`` does not reliably drop Markdown files, so the
+    built-in command overrides ``include`` instead; this guards that override.
+    """
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\n')
+    (tmp_path / "a.py").write_text("x = 1\n")
+    (tmp_path / "README.md").write_text("```python\nx  =  1   # aligned\n```\n")
+    result = CliRunner().invoke(
+        app, ["check", str(tmp_path), "--only", "ruff-format", "-o", "json"]
+    )
+    assert result.exit_code == 0, result.output
+    data = json.loads(result.output)
+    assert data[0]["metrics"]["formatted"] == 1.0

@@ -424,7 +424,7 @@ warning_threshold = 0.35
 error_threshold = 0.3
 
 [python.ruff-format]
-command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --exclude .claude{exclude}"
+command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --exclude .claude --config \"include=['*.py','*.pyi','*.ipynb']\"{exclude}"
 exclude_format = " --exclude {path}"
 parser = "RuffFormatParser"
 order = 12
