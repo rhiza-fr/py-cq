@@ -6,7 +6,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality?)](https://pypi.org/project/python-code-quality/)
 [![License](https://img.shields.io/github/license/rhiza-fr/py-cq)](LICENSE)
 
-Run 11+ code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
+Run 12+ code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
 
 This can dramatically reduce the amount of noise for LLMs (and humans) and remove the need for them to know about these tools.
 
@@ -52,6 +52,7 @@ When running '-o llm', we run sequentially and exit early at the first error.
 | 9 | radon cc | Cyclomatic complexity |
 | 10 | radon mi | Maintainability index |
 | 11 | radon hal | Halstead volume / bug estimate |
+| 12 | ruff format | Formatting (fraction of files already formatted) |
 
 Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults: <100 Mb, <5 days, No pickle risk.
 
@@ -310,7 +311,7 @@ warning = 0.9
 error = 0.7
 ```
 
-Tool IDs match the keys in `src/py_cq/config/config.toml`: `compile`, `ruff`, `ty`, `bandit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`.
+Tool IDs match the keys in `src/py_cq/config/config.toml`: `compile`, `ruff`, `ty`, `bandit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`, `ruff-format`.
 
 
 ### Default config
@@ -421,6 +422,15 @@ order = 11
 gate_strict = false
 warning_threshold = 0.35
 error_threshold = 0.3
+
+[python.ruff-format]
+command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --exclude .claude{exclude}"
+exclude_format = " --exclude {path}"
+parser = "RuffFormatParser"
+order = 12
+gate_strict = false
+warning_threshold = 0.9999
+error_threshold = 0.5
 ```
 
 ## Respect

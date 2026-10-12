@@ -26,6 +26,7 @@ _DISABLE_ALL = [
     "radon-hal",
     "vulture",
     "interrogate",
+    "ruff-format",
 ]
 
 

@@ -2,7 +2,7 @@
 
 These tests do NOT mock run_tools - they execute real subprocess commands and
 verify that results flow correctly through parser -> scorer -> CLI output.
-All 11 built-in tools are disabled so each test only runs its user-defined tool.
+All 12 built-in tools are disabled so each test only runs its user-defined tool.
 """
 
 from typer.testing import CliRunner
@@ -23,6 +23,7 @@ _DISABLE_ALL = [
     "radon-hal",
     "vulture",
     "interrogate",
+    "ruff-format",
 ]
 
 
