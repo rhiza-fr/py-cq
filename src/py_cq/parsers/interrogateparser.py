@@ -32,7 +32,10 @@ def _format_missing_docstring(file_str: str, line: int, code: str, message: str)
     )
 
     if code == "D100":
-        return base + "\n\nInsert a module-level docstring as the very first statement in the file."
+        return (
+            base
+            + "\n\nInsert a module-level docstring as the very first statement in the file."
+        )
 
     try:
         tree = get_source(file_str).tree
@@ -74,6 +77,7 @@ def _format_missing_docstring(file_str: str, line: int, code: str, message: str)
 
     return base + "\n\nInsert a docstring as the first statement in the body."
 
+
 _ROW_RE = re.compile(
     r"^\|\s+(.+?)\s+\|\s+(\d+)\s+\|\s+(\d+)\s+\|\s+\d+\s+\|\s+(\d+(?:\.\d+)?)%\s*\|"
 )
@@ -85,7 +89,9 @@ def _load_interrogate_cfg(context_path: str) -> dict:
     """Read [tool.interrogate] from the nearest pyproject.toml."""
     p = Path(context_path).resolve()
     for candidate in [p, *p.parents]:
-        pyproject = (candidate if candidate.is_dir() else candidate.parent) / "pyproject.toml"
+        pyproject = (
+            candidate if candidate.is_dir() else candidate.parent
+        ) / "pyproject.toml"
         if pyproject.exists():
             try:
                 data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
@@ -109,7 +115,9 @@ def _skip_node(name: str, cfg: dict) -> bool:
     return bool(is_semiprivate and cfg.get("ignore-semiprivate"))
 
 
-def _missing_docstrings(file_path: Path, cfg: dict | None = None) -> list[tuple[int, str, str]]:
+def _missing_docstrings(
+    file_path: Path, cfg: dict | None = None
+) -> list[tuple[int, str, str]]:
     """Return (line, kind, source_line) for each node missing a docstring.
 
     kind is 'module', 'def', or 'class'. source_line is the verbatim text of

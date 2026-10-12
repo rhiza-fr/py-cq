@@ -240,7 +240,9 @@ def test_ignore_semiprivate_filters_underscore_functions(tmp_path):
 def test_ignore_magic_filters_dunder_methods(tmp_path):
     """Test ignore magic"""
     f = tmp_path / "mod.py"
-    f.write_text('"""module."""\nclass Foo:\n    """Foo."""\n    def __str__(self):\n        return ""\n')
+    f.write_text(
+        '"""module."""\nclass Foo:\n    """Foo."""\n    def __str__(self):\n        return ""\n'
+    )
     (tmp_path / "pyproject.toml").write_text(
         "[tool.interrogate]\nignore-magic = true\n"
     )
@@ -272,4 +274,3 @@ def test_details_sorted_worst_coverage_first(tmp_path):
     r = InterrogateParser().parse(_raw(output, command=f'interrogate "{tmp_path}"'))
     keys = list(r.details.keys())
     assert keys.index("bad.py") < keys.index("good.py")
-

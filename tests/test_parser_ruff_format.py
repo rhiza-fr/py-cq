@@ -34,9 +34,7 @@ def test_ruff_format_parse_single_file_clean():
 
 def test_ruff_format_parse_all_unformatted():
     """No 'already formatted' count means every checked file needs formatting."""
-    output = (
-        "a.py:1:1: unformatted: File would be reformatted\n1 file would be reformatted\n"
-    )
+    output = "a.py:1:1: unformatted: File would be reformatted\n1 file would be reformatted\n"
     tr = RuffFormatParser().parse(raw(output, return_code=1))
     assert tr.metrics["formatted"] == 0.0
 

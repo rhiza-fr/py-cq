@@ -99,7 +99,9 @@ def test_run_tools_sorted_by_order():
     fake_raw_low = RawResult(tool_name="low", stdout="")
     fake_raw_high = RawResult(tool_name="high", stdout="")
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None):
+    def fake_run_tool(
+        config, path, excludes=None, *, precomputed_hash=None, project_tag=None
+    ):
         """Mock implementation of run_tool."""
         return fake_raw_low if config.name == "low" else fake_raw_high
 
@@ -162,7 +164,9 @@ def test_run_tools_early_exit_stops_on_error():
 
     called = []
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None):
+    def fake_run_tool(
+        config, path, excludes=None, *, precomputed_hash=None, project_tag=None
+    ):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -183,7 +187,9 @@ def test_run_tools_early_exit_continues_past_warning():
 
     called = []
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None):
+    def fake_run_tool(
+        config, path, excludes=None, *, precomputed_hash=None, project_tag=None
+    ):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -201,7 +207,9 @@ def test_run_tools_early_exit_exception_breaks_loop():
 
     call_count = [0]
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None):
+    def fake_run_tool(
+        config, path, excludes=None, *, precomputed_hash=None, project_tag=None
+    ):
         call_count[0] += 1
         if call_count[0] == 2:
             raise RuntimeError("parser exploded")
@@ -224,7 +232,9 @@ def test_run_tools_early_exit_false_runs_all_despite_error():
 
     called = []
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None):
+    def fake_run_tool(
+        config, path, excludes=None, *, precomputed_hash=None, project_tag=None
+    ):
         called.append(config.name)
         return RawResult(tool_name=config.name, stdout="")
 
@@ -258,7 +268,9 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
     mock_cache.get = MagicMock(return_value=None)
     with (
         patch("py_cq.execution_engine._cache", mock_cache),
-        patch("py_cq.execution_engine.subprocess.run", return_value=mock_result) as mock_sub,
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
     ):
         result = run_tool(cfg, str(tmp_path))
     mock_sub.assert_called_once()
@@ -435,7 +447,9 @@ def test_run_tools_parallel_returns_all_results_sorted():
     """Parallel execution returns all results sorted by .order."""
     configs = [_fake_config(f"t{i}", order=i) for i in range(4, 0, -1)]  # order 4,3,2,1
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None):
+    def fake_run_tool(
+        config, path, excludes=None, *, precomputed_hash=None, project_tag=None
+    ):
         return RawResult(tool_name=config.name, stdout="")
 
     with patch("py_cq.execution_engine.run_tool", side_effect=fake_run_tool):
@@ -467,12 +481,22 @@ def test_run_tools_cancels_dependent_when_dependency_fails():
     import threading
 
     pytest_cfg = _fake_config_with_score("pytest", order=5, score=0.0)  # below 0.5
-    cov_cfg = _coverage_like_config(_fake_config_with_score("coverage", 6, 1.0).parser_class)
+    cov_cfg = _coverage_like_config(
+        _fake_config_with_score("coverage", 6, 1.0).parser_class
+    )
 
     cov_cancelled = threading.Event()
     cov_ran_fully = threading.Event()
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None, cancel_event=None):
+    def fake_run_tool(
+        config,
+        path,
+        excludes=None,
+        *,
+        precomputed_hash=None,
+        project_tag=None,
+        cancel_event=None,
+    ):
         if config.name == "pytest":
             return RawResult(tool_name="pytest", stdout="")
         # coverage runs in parallel and waits to see if it gets cancelled
@@ -494,11 +518,21 @@ def test_run_tools_does_not_cancel_dependent_when_dependency_passes():
     import threading
 
     pytest_cfg = _fake_config_with_score("pytest", order=5, score=1.0)  # passes
-    cov_cfg = _coverage_like_config(_fake_config_with_score("coverage", 6, 1.0).parser_class)
+    cov_cfg = _coverage_like_config(
+        _fake_config_with_score("coverage", 6, 1.0).parser_class
+    )
 
     cov_ran_fully = threading.Event()
 
-    def fake_run_tool(config, path, excludes=None, *, precomputed_hash=None, project_tag=None, cancel_event=None):
+    def fake_run_tool(
+        config,
+        path,
+        excludes=None,
+        *,
+        precomputed_hash=None,
+        project_tag=None,
+        cancel_event=None,
+    ):
         if config.name == "pytest":
             return RawResult(tool_name="pytest", stdout="")
         if cancel_event is not None and cancel_event.wait(timeout=0.5):
@@ -520,7 +554,7 @@ def test_run_command_runs_normally_without_cancel_event():
 
     from py_cq.execution_engine import _run_command
 
-    cmd = f'{sys.executable} -c "print(\'hi\')"'
+    cmd = f"{sys.executable} -c \"print('hi')\""
     stdout, _stderr, rc, cancelled = _run_command(cmd, dict(os.environ), None)
     assert cancelled is False
     assert rc == 0

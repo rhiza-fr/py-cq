@@ -328,7 +328,9 @@ def run_tool(
         timestamp=timestamp,
         project_path=project_dir,
     )
-    _cache.set(cache_key, raw_result.to_dict(), expire=5 * 24 * 60 * 60, tag=project_tag)
+    _cache.set(
+        cache_key, raw_result.to_dict(), expire=5 * 24 * 60 * 60, tag=project_tag
+    )
     return raw_result
 
 
@@ -386,7 +388,9 @@ def run_tools(
     t_hash0 = time.perf_counter()
     root = project_root or str(Path(path).resolve())
     shared_hash = get_context_hash(root)
-    log.debug(f"context_hash: {(time.perf_counter() - t_hash0) * 1000:.1f}ms {shared_hash}")
+    log.debug(
+        f"context_hash: {(time.perf_counter() - t_hash0) * 1000:.1f}ms {shared_hash}"
+    )
 
     # Cache keys are content-based, so a changed project naturally produces new
     # keys; stale entries age out via TTL + size_limit (no blanket eviction).
@@ -398,7 +402,9 @@ def run_tools(
     if any(tc.cache_invariant == "ast" for tc in tool_configs):
         t_norm0 = time.perf_counter()
         norm_hash = get_context_hash(root, normalize=True)
-        log.debug(f"context_hash(ast): {(time.perf_counter() - t_norm0) * 1000:.1f}ms {norm_hash}")
+        log.debug(
+            f"context_hash(ast): {(time.perf_counter() - t_norm0) * 1000:.1f}ms {norm_hash}"
+        )
 
     def _hash_for(tool_config: ToolConfig) -> str:
         return norm_hash if tool_config.cache_invariant == "ast" else shared_hash
@@ -410,7 +416,14 @@ def run_tools(
         # Only pass cancel_event when present so patched run_tool stubs in tests
         # (which don't declare the kwarg) keep working for non-cancellable tools.
         extra = {"cancel_event": cancel_event} if cancel_event is not None else {}
-        raw_result = run_tool(tool_config, path, excludes, precomputed_hash=_hash_for(tool_config), project_tag=root, **extra)
+        raw_result = run_tool(
+            tool_config,
+            path,
+            excludes,
+            precomputed_hash=_hash_for(tool_config),
+            project_tag=root,
+            **extra,
+        )
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr
@@ -423,7 +436,9 @@ def run_tools(
             try:
                 prioritized.append(_run_and_parse(tool_config))
             except Exception as exc:  # noqa: BLE001 - a crashing tool must not abort the run
-                log.error(f"{tool_config.name} generated an exception: {exc} {exc.__traceback__}")
+                log.error(
+                    f"{tool_config.name} generated an exception: {exc} {exc.__traceback__}"
+                )
                 n_skipped = n_total - i - 1
                 if n_skipped:
                     remaining = ", ".join(tc.name for tc in sorted_configs[i + 1 :])
@@ -477,7 +492,10 @@ def run_tools(
                 _, dep_tr = dep_future.result()
             except Exception:  # noqa: BLE001 - a crashed dep cancels nothing
                 return
-            if dep_tr.metrics and min(dep_tr.metrics.values()) < dep_config.error_threshold:
+            if (
+                dep_tr.metrics
+                and min(dep_tr.metrics.values()) < dep_config.error_threshold
+            ):
                 log.debug(f"{name}: cancelling because {dep_config.name} failed")
                 ev.set()
 
@@ -485,8 +503,8 @@ def run_tools(
             if tc.name in cancel_events:
                 dep_config = configs_by_name[tc.skip_if]
                 name_to_future[tc.skip_if].add_done_callback(
-                    lambda fut, ev=cancel_events[tc.name], dc=dep_config, nm=tc.name: _cancel_on_dep_failure(
-                        fut, ev, dc, nm
+                    lambda fut, ev=cancel_events[tc.name], dc=dep_config, nm=tc.name: (
+                        _cancel_on_dep_failure(fut, ev, dc, nm)
                     )
                 )
         for future in as_completed(future_to_tool):

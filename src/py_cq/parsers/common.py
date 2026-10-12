@@ -47,9 +47,7 @@ def format_source_context(
     error_offset = line - context_start  # 0-based index of the error line in raw_lines
     collected = []
     for i, rline in enumerate(raw_lines):
-        if i > error_offset and (
-            rline.startswith(("def ", "async def ", "class "))
-        ):
+        if i > error_offset and (rline.startswith(("def ", "async def ", "class "))):
             break
         collected.append(f"{context_start + i}: {rline}")
     src = "\n".join(collected)
