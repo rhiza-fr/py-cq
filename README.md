@@ -390,7 +390,7 @@ error_threshold = 0.8
 cache_invariant = "ast"
 
 [python.interrogate]
-command = "{python} -m interrogate \"{context_path}\" -e .claude{exclude} -v --fail-under 0"
+command = "{python} -m interrogate \"{context_path}\" -e .claude -e \"{context_path}/tests\"{exclude} -v --fail-under 0"
 exclude_format = " -e {path}"
 parser = "InterrogateParser"
 order = 8
