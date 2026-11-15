@@ -10,9 +10,15 @@ import re
 import pytest
 from typer.testing import CliRunner
 
-from py_cq.cli import app
+from py_cq.cli import app, console
 
 runner = CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def _fixed_console_width(monkeypatch):
+    """Pin rich's width so output does not depend on the real terminal size."""
+    monkeypatch.setattr(console, "width", 120)
 
 _DISABLE_ALL = [
     "compile",
