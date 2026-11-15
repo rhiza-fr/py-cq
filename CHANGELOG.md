@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `ruff` and `ruff-format` no longer scan `.venv` when the target project is not a git repository. Both commands passed `--exclude`, which replaces ruff's default exclude list instead of adding to it, so virtualenv files were linted, dragged the score down and could be reported as the top defect. They now pass `--extend-exclude`, for the built-in `.claude` exclusion and for user excludes.
+
 ## [0.3.1] - 2026-10-12
 
 ### Added

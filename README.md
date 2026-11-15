@@ -329,8 +329,8 @@ error_threshold = 0.9999
 cache_invariant = "ast"
 
 [python.ruff]
-command = "{python} -m ruff check --output-format concise --no-cache \"{context_path}\" --exclude .claude{exclude}"
-exclude_format = " --exclude {path}"
+command = "{python} -m ruff check --output-format concise --no-cache \"{context_path}\" --extend-exclude .claude{exclude}"
+exclude_format = " --extend-exclude {path}"
 parser = "RuffParser"
 order = 2
 warning_threshold = 0.9999
@@ -425,8 +425,8 @@ warning_threshold = 0.35
 error_threshold = 0.3
 
 [python.ruff-format]
-command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --exclude .claude --config \"include=['*.py','*.pyi','*.ipynb']\"{exclude}"
-exclude_format = " --exclude {path}"
+command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --extend-exclude .claude --config \"include=['*.py','*.pyi','*.ipynb']\"{exclude}"
+exclude_format = " --extend-exclude {path}"
 parser = "RuffFormatParser"
 order = 12
 gate_strict = false

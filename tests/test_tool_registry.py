@@ -31,6 +31,15 @@ def test_all_extra_deps_are_strings():
             assert isinstance(dep, str), f"{name} extra_dep {dep!r} is not a string"
 
 
+def test_ruff_tools_extend_default_excludes():
+    """Ruff's ``--exclude`` replaces its default list, which un-excludes ``.venv``."""
+    for name in ("ruff", "ruff-format"):
+        tc = tool_registry[name]
+        assert " --exclude " not in tc.command, name
+        assert " --exclude " not in tc.exclude_format, name
+        assert "--extend-exclude .claude" in tc.command, name
+
+
 def test_load_tool_configs_idempotent():
     """Calling load_tool_configs() twice returns identical registries."""
     r1 = load_tool_configs()
