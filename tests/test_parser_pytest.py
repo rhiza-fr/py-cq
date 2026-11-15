@@ -433,3 +433,26 @@ def test_pytest_parse_class_based_tests():
     msg = parser.format_llm_message(tr)
     assert msg.startswith("`tests/test_m.py::TestHelp::test_bad` - test **FAILED**")
     assert "AssertionError: assert 'WORKSPACE' in 'usage'" in msg
+
+
+def test_extract_failure_elides_middle_of_long_lines():
+    """A huge repr in an E-line keeps its head and tail, not the whole string."""
+    from py_cq.parsers.pytestparser import _extract_failure
+
+    blob = "x" * 5000
+    stdout = (
+        "______________________________ test_help ______________________________\n"
+        "\n"
+        "    def test_help():\n"
+        '>       assert "WORKSPACE" in out\n'
+        f"E       AssertionError: assert 'WORKSPACE' in '{blob}'\n"
+        f"E        +  where '{blob}' = <Result okay>.output\n"
+        "\n"
+        "tests/test_m.py:9: AssertionError\n"
+        "=========================== short test summary info ============================\n"
+    )
+    text = _extract_failure(stdout, "test_help", max_lines=50)
+    assert len(text) < 1000
+    assert "AssertionError: assert 'WORKSPACE' in '" in text
+    assert "= <Result okay>.output" in text
+    assert "chars elided" in text

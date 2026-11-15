@@ -78,6 +78,23 @@ def _extract_collection_error(stdout: str) -> dict | None:
     return None
 
 
+_ELIDE_HEAD = 240
+_ELIDE_TAIL = 120
+
+
+def _elide(line: str) -> str:
+    """Shorten a long line to its head and tail.
+
+    pytest prints whole reprs in assertion lines (``assert 'X' in '<5 KB>'``)
+    and repeats them in ``+  where <repr> = <expr>`` lines. The head keeps the
+    assertion, the tail keeps the source expression.
+    """
+    cut = len(line) - _ELIDE_HEAD - _ELIDE_TAIL
+    if cut <= 40:
+        return line
+    return f"{line[:_ELIDE_HEAD]} ... [{cut} chars elided] ... {line[-_ELIDE_TAIL:]}"
+
+
 def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
     """Extract the failure section for test_name from pytest stdout."""
     lines = stdout.splitlines()
@@ -105,7 +122,7 @@ def _extract_failure(stdout: str, test_name: str, max_lines: int) -> str:
             for ln in section
             if ln.startswith(">") and ln.lstrip("> \t")
         ]
-        cleaned = [_re.sub(r"^E\s*", "", ln) for ln in e_lines]
+        cleaned = [_elide(_re.sub(r"^E\s*", "", ln)) for ln in e_lines]
         # Drop "At index N diff:" lines - always redundant with the first E-line.
         cleaned = [ln for ln in cleaned if not _re.match(r"At index \d+ diff:", ln)]
         parts = ([f"> {arrow_lines[-1]}"] if arrow_lines else []) + cleaned
