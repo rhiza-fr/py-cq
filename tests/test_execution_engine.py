@@ -382,6 +382,37 @@ def test_run_tool_target_env_uv_not_found(tmp_path):
     assert sys.executable in called_cmd
 
 
+@pytest.mark.parametrize("uv", [None, "uv"])
+def test_run_tool_test_target_omitted_for_run_dir(tmp_path, uv):
+    """{test_target} is empty for the run directory so pytest honours testpaths."""
+    from py_cq.execution_engine import run_tool
+
+    (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "m.py").write_text("x = 1\n")
+    cfg = ToolConfig(
+        name="check",
+        command="run [{test_target}]",
+        parser_class=MagicMock,
+        order=1,
+        run_in_target_env=True,
+    )
+    mock_result = MagicMock(stdout="ok", stderr="", returncode=0)
+    mock_cache = MagicMock()
+    mock_cache.get = MagicMock(return_value=None)
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch("py_cq.execution_engine.shutil.which", return_value=uv),
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
+    ):
+        run_tool(cfg, str(tmp_path))
+        assert mock_sub.call_args[0][0] == "run []"
+        run_tool(cfg, str(tmp_path / "pkg" / "m.py"))
+        assert mock_sub.call_args[0][0] != "run []"
+
+
 def test_run_tool_target_env_uv_found_directory(tmp_path):
     """When uv is found and path is a directory, python becomes uv run."""
     from py_cq.execution_engine import run_tool

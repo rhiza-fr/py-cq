@@ -296,6 +296,10 @@ def run_tool(
     scan_targets = _compute_scan_targets(
         context_path, tool_config.scan_exclude_names, excludes
     )
+    # pytest ignores the project's testpaths when given a path, so pass none
+    # when the target is the directory the tool runs in.
+    run_dir = Path(project_dir) if tool_config.run_in_target_env else tool_cwd
+    test_target = "" if resolved_context == run_dir.resolve() else f' "{path}"'
 
     command = tool_config.command.format(
         context_path=path,
@@ -307,6 +311,7 @@ def run_tool(
         python=python,
         exclude=exclude,
         pytest_serial=_PYTEST_SERIAL,
+        test_target=test_target,
     )
     if precomputed_hash is not None:
         context_hash = precomputed_hash

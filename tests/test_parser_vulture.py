@@ -23,6 +23,30 @@ def test_vulture_parse_violations():
     assert tr.details["src/foo.py"][0]["confidence"] == 80
 
 
+def test_vulture_drops_mock_and_framework_idioms():
+    """Mock setup attributes, patch params and pydantic model_config are not dead code."""
+    stdout = (
+        "tests/t.py:3: unused attribute 'return_value' (60% confidence)\n"
+        "tests/t.py:4: unused attribute 'side_effect' (60% confidence)\n"
+        "tests/t.py:5: unused attribute '__enter__' (60% confidence)\n"
+        "tests/t.py:6: unused attribute '__exit__' (60% confidence)\n"
+        "tests/t.py:7: unused variable 'mock_open' (100% confidence)\n"
+        "src/m.py:2: unused variable 'model_config' (60% confidence)\n"
+        "src/m.py:9: unused attribute 'body_width' (60% confidence)\n"
+    )
+    tr = VultureParser().parse(raw(stdout, return_code=1))
+    assert tr.details == {
+        "src/m.py": [
+            {
+                "line": 9,
+                "type": "unused attribute",
+                "name": "body_width",
+                "confidence": 60,
+            }
+        ]
+    }
+
+
 def test_vulture_parse_clean():
     """Test that clean vulture output is parsed correctly."""
     tr = VultureParser().parse(raw("", return_code=0))
@@ -127,3 +151,44 @@ def test_vulture_skips_typed_class_fields(tmp_path):
     )
     names = [i["name"] for i in tr.details["m.py"]]
     assert names == ["unannotated", "local", "module_level"]
+
+
+ENUM_EXIT_SRC = """\
+import enum
+from enum import StrEnum
+
+
+class Kind(StrEnum):
+    FIX = "FIX"
+
+
+class Color(enum.Enum):
+    RED = 1
+
+
+class Plain:
+    UNUSED = 1
+
+
+class Ctx:
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return None
+"""
+
+
+def test_vulture_skips_enum_members_and_exit_params(tmp_path):
+    """Enum members and __exit__ parameters are used without being named."""
+    (tmp_path / "m.py").write_text(ENUM_EXIT_SRC)
+    out = "\n".join(
+        f"m.py:{line}: unused variable '{name}' ({conf}% confidence)"
+        for line, name, conf in [
+            (6, "FIX", 60),
+            (10, "RED", 60),
+            (14, "UNUSED", 60),
+            (18, "exc_tb", 100),
+        ]
+    )
+    tr = VultureParser().parse(
+        RawResult(stdout=out, return_code=0, project_path=tmp_path.as_posix())
+    )
+    assert [i["name"] for i in tr.details["m.py"]] == ["UNUSED"]
