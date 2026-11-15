@@ -1,0 +1,103 @@
+# Linux CI for cq on the Gitea runner.
+#
+# Runs on python-test-image (Debian trixie, uv, Python 3.12-3.14 preinstalled).
+# The unit tests mock most subprocesses, so `linux-e2e` also runs the built
+# wheel against this repo for real: every tool must run under /bin/sh and
+# report a metric.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: python-test-image
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13', '3.14']
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: uv sync --frozen --all-extras
+      - run: uv run --frozen pytest
+
+  lint:
+    name: Lint and types
+    runs-on: python-test-image
+    env:
+      UV_PYTHON: '3.12'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lockfile matches pyproject.toml
+        run: uv lock --check
+      - run: uv sync --frozen --all-extras
+      - run: uv run --frozen ruff check src tests
+      - run: uv run --frozen ruff format --check src tests
+      - run: uv run --frozen ty check
+
+  linux-e2e:
+    name: cq end to end on Linux
+    runs-on: python-test-image
+    env:
+      UV_PYTHON: '3.12'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kingfisher
+        run: |
+          command -v kingfisher || uv tool install kingfisher-bin
+          kingfisher --version
+
+      - name: Build wheel
+        run: uv build --wheel
+
+      - name: Sync target project environment
+        run: uv sync --frozen --all-extras
+
+      - name: Every tool runs and reports a metric
+        run: |
+          wheel=$(ls dist/*.whl)
+          uvx --from "$wheel" cq check . --clear-cache -o json > cq.json
+          uv run --no-project python - <<'EOF'
+          import json
+          results = json.load(open("cq.json"))
+          for t in results:
+              print(f"{t['tool_name']:12} {t['metrics']}")
+          missing = [t["tool_name"] for t in results if not t["metrics"]]
+          assert len(results) == 14, f"expected 14 tools, got {len(results)}"
+          assert not missing, f"tools reported no metric: {missing}"
+          EOF
+
+      - name: Single-file mode
+        run: uvx --from "$(ls dist/*.whl)" cq check src/py_cq/cli.py -o score
+
+      - name: Kingfisher catches a planted secret
+        run: |
+          mkdir -p /tmp/kf
+          printf '[project]\nname = "kf"\nversion = "0"\n' > /tmp/kf/pyproject.toml
+          printf 'TOKEN = "ghp_%s"\n' 1a2B3c4D5e6F7g8H9i0JkLmNoPqRsTuVwXyZ > /tmp/kf/cfg.py
+          if uvx --from "$(ls dist/*.whl)" cq check /tmp/kf --only kingfisher -o llm > kf.md; then
+            echo "expected a failing exit code"; cat kf.md; exit 1
+          fi
+          cat kf.md
+          grep -q "cfg.py:1 - betterleaks.github-pat" kf.md
+          ! grep -q "1a2B3c4D5e6F7g8H9i0JkLmNoPqRsTuVwXyZ" kf.md
+
+  upgrade-test:
+    name: Dependency upgrade test
+    runs-on: python-test-image
+    continue-on-error: true  # report, do not block
+    env:
+      UV_PYTHON: '3.14'
+    steps:
+      - uses: actions/checkout@v4
+      - run: uv lock --upgrade
+      - run: uv sync --all-extras
+      - run: uv run pytest
