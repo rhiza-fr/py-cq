@@ -75,7 +75,7 @@ skip_if = "pytest"
 cache_invariant = "ast"
 
 [python.vulture]
-command = "{python} -m vulture \"{context_path}\" --min-confidence 60 --ignore-decorators \"@*.command,@*.callback,@*.route,@*.get,@*.post,@*.put,@*.delete,@*.patch,@*fixture,@*.task,@*hookimpl,@*validator,@*.errorhandler,@*.template_filter,@*.context_processor,@tool,@*.tool\" --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
+command = "{python} -m vulture \"{context_path}\" --min-confidence 60 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
 exclude_format = ",{path}"
 parser = "VultureParser"
 order = 9

@@ -23,6 +23,7 @@ score stored under the ``dead_code`` metric key.
 
 import ast
 import re
+from fnmatch import fnmatchcase
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 from py_cq.parsers.common import (
@@ -42,6 +43,32 @@ _IDIOM_NAMES = {
     "unused variable": {"model_config"},
 }
 
+# Decorators that register a function or class with a framework (CLI, web
+# routes, fixtures, hooks, validators, templates, LLM tools). Matched here
+# rather than passed as --ignore-decorators, because a CLI flag replaces the
+# project's own [tool.vulture] ignore_decorators instead of adding to it.
+_FRAMEWORK_DECORATORS = (
+    "@*.command",
+    "@*.callback",
+    "@*.route",
+    "@*.get",
+    "@*.post",
+    "@*.put",
+    "@*.delete",
+    "@*.patch",
+    "@*fixture",
+    "@*.task",
+    "@*hookimpl",
+    "@*validator",
+    "@*.errorhandler",
+    "@*.template_filter",
+    "@*.context_processor",
+    "@tool",
+    "@*.tool",
+)
+_DEFINITIONS = {"unused function", "unused method", "unused class", "unused property"}
+_AST_CHECKED = _DEFINITIONS | {"unused variable"}
+
 _CERTAIN = 80
 _KEEP_HINT = (
     "\n\nRemove it if nothing uses it. If it is public API or is used dynamically,"
@@ -59,20 +86,45 @@ def _is_enum(node: ast.ClassDef) -> bool:
     return False
 
 
-def _implicitly_used_lines(path: str) -> set[int]:
-    """Return lines of names used without being referenced by name.
+def _decorator_name(decorator: ast.expr) -> str:
+    """Return ``@a.b.c`` for a decorator, as vulture names it."""
+    if isinstance(decorator, ast.Call):
+        decorator = decorator.func
+    parts = []
+    while isinstance(decorator, ast.Attribute):
+        parts.append(decorator.attr)
+        decorator = decorator.value
+    if not isinstance(decorator, ast.Name):
+        return "@"
+    parts.append(decorator.id)
+    return "@" + ".".join(reversed(parts))
 
-    Typed class-body fields, enum members (looked up by value or iterated)
-    and ``__exit__``/``__aexit__`` parameters (fixed by the protocol).
+
+def _implicitly_used_lines(path: str) -> tuple[set[int], set[int]]:
+    """Return ``(variable_lines, definition_lines)`` used without being named.
+
+    Variables: typed class-body fields, enum members (looked up by value or
+    iterated) and ``__exit__``/``__aexit__`` parameters (fixed by the protocol).
+    Definitions: functions and classes registered by a framework decorator.
     """
     try:
         tree = get_source(path).tree
     except OSError:
-        return set()
+        return set(), set()
     if tree is None:
-        return set()
-    lines: set[int] = set()
+        return set(), set()
+    variables: set[int] = set()
+    definitions: set[int] = set()
     for node in ast.walk(tree):
+        if isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+        ) and any(
+            fnmatchcase(_decorator_name(d), pattern)
+            for d in node.decorator_list
+            for pattern in _FRAMEWORK_DECORATORS
+        ):
+            # vulture reports a decorated definition at its first decorator.
+            definitions.update({node.lineno, node.decorator_list[0].lineno})
         if isinstance(node, ast.ClassDef):
             enum = _is_enum(node)
             for stmt in node.body:
@@ -80,12 +132,12 @@ def _implicitly_used_lines(path: str) -> set[int]:
                     isinstance(stmt, ast.AnnAssign)
                     and isinstance(stmt.target, ast.Name)
                 ) or (enum and isinstance(stmt, ast.Assign)):
-                    lines.add(stmt.lineno)
+                    variables.add(stmt.lineno)
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and (
             node.name in ("__exit__", "__aexit__")
         ):
-            lines.update(arg.lineno for arg in node.args.args)
-    return lines
+            variables.update(arg.lineno for arg in node.args.args)
+    return variables, definitions
 
 
 class VultureParser(AbstractParser):
@@ -113,13 +165,18 @@ class VultureParser(AbstractParser):
                     }
                 )
         for path, issues in list(files.items()):
-            if not any(i["type"] == "unused variable" for i in issues):
+            if not any(i["type"] in _AST_CHECKED for i in issues):
                 continue
-            fields = _implicitly_used_lines(resolve_path(raw_result.project_path, path))
+            variables, definitions = _implicitly_used_lines(
+                resolve_path(raw_result.project_path, path)
+            )
             kept = [
                 i
                 for i in issues
-                if not (i["type"] == "unused variable" and i["line"] in fields)
+                if not (
+                    (i["type"] == "unused variable" and i["line"] in variables)
+                    or (i["type"] in _DEFINITIONS and i["line"] in definitions)
+                )
             ]
             if kept:
                 files[path] = kept

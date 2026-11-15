@@ -192,3 +192,38 @@ def test_vulture_skips_enum_members_and_exit_params(tmp_path):
         RawResult(stdout=out, return_code=0, project_path=tmp_path.as_posix())
     )
     assert [i["name"] for i in tr.details["m.py"]] == ["UNUSED"]
+
+
+DECORATED_SRC = """\
+import typer
+
+app = typer.Typer()
+
+
+@app.command()
+def run():
+    pass
+
+
+@tool
+def lookup():
+    pass
+
+
+@staticmethod
+def plain():
+    pass
+"""
+
+
+def test_vulture_skips_framework_decorated_definitions(tmp_path):
+    """Definitions registered by framework decorators are not dead code."""
+    (tmp_path / "m.py").write_text(DECORATED_SRC)
+    out = "\n".join(
+        f"m.py:{line}: unused function '{name}' (60% confidence)"
+        for line, name in [(6, "run"), (11, "lookup"), (16, "plain")]
+    )
+    tr = VultureParser().parse(
+        RawResult(stdout=out, return_code=0, project_path=tmp_path.as_posix())
+    )
+    assert [i["name"] for i in tr.details["m.py"]] == ["plain"]
