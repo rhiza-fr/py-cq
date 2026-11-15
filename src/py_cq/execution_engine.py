@@ -22,6 +22,7 @@ import sys
 import tempfile
 import threading
 import time
+import tomllib
 from collections.abc import Collection
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -127,6 +128,27 @@ def _build_exclude_str(
             )
         )
     return "".join(parts)
+
+
+def _project_excludes(project_root: Path, table: str) -> str:
+    """Return ``,pat1,pat2`` from ``[tool.<table>] exclude`` in the project's pyproject.
+
+    A tool's CLI exclude flag replaces the exclude list in its own config, so
+    cq appends the project's patterns to its defaults instead. Patterns
+    containing a double quote are dropped; the list is double-quoted in the
+    command template.
+    """
+    if not table:
+        return ""
+    try:
+        with (project_root / "pyproject.toml").open("rb") as f:
+            data = tomllib.load(f)
+    except (OSError, tomllib.TOMLDecodeError):
+        return ""
+    patterns = data.get("tool", {}).get(table, {}).get("exclude", [])
+    if not isinstance(patterns, list):
+        return ""
+    return "".join(f",{p}" for p in patterns if isinstance(p, str) and '"' not in p)
 
 
 def _terminate_process_tree(proc: "subprocess.Popen") -> None:
@@ -312,6 +334,7 @@ def run_tool(
         exclude=exclude,
         pytest_serial=_PYTEST_SERIAL,
         test_target=test_target,
+        project_excludes=_project_excludes(tool_cwd, tool_config.project_exclude_table),
     )
     if precomputed_hash is not None:
         context_hash = precomputed_hash

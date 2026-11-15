@@ -34,6 +34,7 @@ def load_tool_configs() -> dict[str, ToolConfig]:
             skip_for_file=tool_data.get("skip_for_file", False),
             skip_if=tool_data.get("skip_if", ""),
             cache_invariant=tool_data.get("cache_invariant", ""),
+            project_exclude_table=tool_data.get("project_exclude_table", ""),
         )
     return registry
 

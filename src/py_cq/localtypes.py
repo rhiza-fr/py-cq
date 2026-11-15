@@ -62,6 +62,9 @@ class ToolConfig:
     skip_for_file: bool = False  # If True, skip when context_path is a single file
     skip_if: str = ""  # Tool name; if that tool's score is below its error_threshold, skip this tool
     cache_invariant: str = ""  # "ast": key the cache on the docstring-stripped AST, ignoring docstrings/comments/format
+    project_exclude_table: str = (
+        ""  # [tool.<name>] whose `exclude` list fills {project_excludes}
+    )
 
 
 @dataclass

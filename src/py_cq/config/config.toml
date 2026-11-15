@@ -75,8 +75,9 @@ skip_if = "pytest"
 cache_invariant = "ast"
 
 [python.vulture]
-command = "{python} -m vulture \"{context_path}\" --min-confidence 60 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
+command = "{python} -m vulture \"{context_path}\" --min-confidence 60 --exclude \".venv,dist,.*_cache,docs,.git,.claude{exclude}{project_excludes}\""
 exclude_format = ",{path}"
+project_exclude_table = "vulture"
 parser = "VultureParser"
 order = 9
 warning_threshold = 0.9999

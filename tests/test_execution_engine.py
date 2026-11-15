@@ -936,3 +936,33 @@ def test_absolutize_detail_paths_resolves_relative_file_keys(tmp_path):
         "tests/test_m.py::test_a": "PASSED",
         "missing.py": [2],
     }
+
+
+def test_run_tool_appends_project_tool_excludes(tmp_path):
+    """[tool.<table>] exclude patterns are appended, since a CLI flag replaces them."""
+    from py_cq.execution_engine import run_tool
+
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "x"\n\n[tool.vulture]\nexclude = ["*/gen/*", "build", \'bad"q\']\n'
+    )
+    cfg = ToolConfig(
+        name="vulture",
+        command='scan --exclude ".venv{project_excludes}"',
+        parser_class=MagicMock,
+        order=1,
+        project_exclude_table="vulture",
+    )
+    mock_result = MagicMock(stdout="", stderr="", returncode=0)
+    mock_cache = MagicMock()
+    mock_cache.get = MagicMock(return_value=None)
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch(
+            "py_cq.execution_engine.subprocess.run", return_value=mock_result
+        ) as mock_sub,
+    ):
+        run_tool(cfg, str(tmp_path))
+        assert mock_sub.call_args[0][0] == 'scan --exclude ".venv,*/gen/*,build"'
+        cfg.project_exclude_table = ""
+        run_tool(cfg, str(tmp_path))
+        assert mock_sub.call_args[0][0] == 'scan --exclude ".venv"'
