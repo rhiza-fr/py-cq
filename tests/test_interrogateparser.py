@@ -144,6 +144,19 @@ def test_skip_empty_init_default(tmp_path):
     assert r.metrics["doc_coverage"] == 1.0  # empty init skipped entirely
 
 
+def test_skip_empty_init_comment_only(tmp_path):
+    """An __init__.py holding only comments counts as empty."""
+    (tmp_path / "__init__.py").write_text("# makes this a package\n\n# more\n")
+    output = (
+        _TABLE_HEADER
+        + "| __init__.py  |      1 |     1 |      0 |      0% |\n"
+        + "|--------------|--------|-------|--------|---------|\n"
+        + "| TOTAL        |      1 |     1 |      0 |    0.0% |\n"
+    )
+    r = InterrogateParser().parse(_raw(output, command=f'interrogate "{tmp_path}"'))
+    assert r.metrics["doc_coverage"] == 1.0
+
+
 def test_skip_empty_init_disabled(tmp_path):
     """Test skip empty"""
     (tmp_path / "__init__.py").write_text("")

@@ -159,13 +159,16 @@ def _missing_docstrings(
 
 
 def _is_file_empty(path: Path | None) -> bool:
-    """Check if the file is empty."""
+    """Check if the file is empty or holds only comments."""
     if path is None:
         return False
     try:
-        return not path.read_text(encoding="utf-8").strip()
+        text = path.read_text(encoding="utf-8")
     except OSError:
         return False
+    return all(
+        not ln.strip() or ln.lstrip().startswith("#") for ln in text.splitlines()
+    )
 
 
 def _resolve(context_path: str, rel_file: str) -> Path | None:
