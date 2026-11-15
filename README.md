@@ -6,7 +6,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality?)](https://pypi.org/project/python-code-quality/)
 [![License](https://img.shields.io/github/license/rhiza-fr/py-cq)](LICENSE)
 
-Run 13 code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
+Run 14 code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
 
 This can dramatically reduce the amount of noise for LLMs (and humans) and remove the need for them to know about these tools.
 
@@ -45,15 +45,18 @@ When running '-o llm', we run sequentially and exit early at the first error.
 | 2 | ruff | Lint / style |
 | 3 | ty | Type errors |
 | 4 | bandit | Security vulnerabilities |
-| 5 | uv audit | Known vulnerabilities in locked dependencies |
-| 6 | pytest | Test pass rate |
-| 7 | coverage | Test coverage |
-| 8 | vulture | Dead code |
-| 9 | interrogate | Docstring coverage |
-| 10 | radon cc | Cyclomatic complexity |
-| 11 | radon mi | Maintainability index |
-| 12 | radon hal | Halstead volume / bug estimate |
-| 13 | ruff format | Formatting (fraction of files already formatted) |
+| 5 | kingfisher | Hardcoded secrets (API keys, tokens, private keys) |
+| 6 | uv audit | Known vulnerabilities in locked dependencies |
+| 7 | pytest | Test pass rate |
+| 8 | coverage | Test coverage |
+| 9 | vulture | Dead code |
+| 10 | interrogate | Docstring coverage |
+| 11 | radon cc | Cyclomatic complexity |
+| 12 | radon mi | Maintainability index |
+| 13 | radon hal | Halstead volume / bug estimate |
+| 14 | ruff format | Formatting (fraction of files already formatted) |
+
+`kingfisher` scans the working tree for hardcoded secrets with [Kingfisher](https://github.com/mongodb/kingfisher) (502 rules, Rust). It is not a Python dependency of cq: install it once with `uv tool install kingfisher-bin` (about 41 MB). When it is not on the `PATH` the tool is skipped with a warning. cq runs it offline (`--no-validate --no-update-check`) and with `--redact`, so secrets are never sent to provider APIs and never stored in the cache; the LLM message gives the file, line and rule but no source excerpt. Silence a test fixture or false positive with a `kingfisher:ignore` comment on that line.
 
 `uv audit` checks the versions pinned in `uv.lock` against the OSV advisory database. It needs `uv` on the `PATH`, a `uv.lock` and network access; when any is missing the tool is skipped with a warning instead of failing. Only advisories that have a fix version are reported, since those are the ones an upgrade resolves. Results are cached like every other tool, so an advisory published after a run shows up when the project changes or the cache entry expires.
 
@@ -318,7 +321,7 @@ warning = 0.9
 error = 0.7
 ```
 
-Tool IDs match the keys in `src/py_cq/config/config.toml`: `compile`, `ruff`, `ty`, `bandit`, `uv-audit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`, `ruff-format`.
+Tool IDs match the keys in `src/py_cq/config/config.toml`: `compile`, `ruff`, `ty`, `bandit`, `kingfisher`, `uv-audit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`, `ruff-format`.
 
 
 ### Default config
@@ -361,10 +364,18 @@ order = 4
 warning_threshold = 0.9999
 error_threshold = 0.8
 
+[python.kingfisher]
+command = "kingfisher scan \"{context_path}\" --no-validate --no-update-check --git-history none --no-extract-archives --redact -q -f json --exclude .venv --exclude .git --exclude .hypothesis --exclude dist --exclude \"*_cache\" --exclude __pycache__ --exclude .claude{exclude}"
+exclude_format = " --exclude {path}"
+parser = "KingfisherParser"
+order = 5
+warning_threshold = 0.9999
+error_threshold = 0.9999
+
 [python.uv-audit]
 command = "uv audit --project \"{abs_context_path}\" --frozen --output-format json"
 parser = "UvAuditParser"
-order = 5
+order = 6
 warning_threshold = 0.9999
 error_threshold = 0.8
 skip_for_file = true
@@ -373,7 +384,7 @@ skip_for_file = true
 command = "{python} -m pytest -vv \"{context_path}\" --ignore .claude{exclude}"
 exclude_format = " --ignore {path}"
 parser = "PytestParser"
-order = 6
+order = 7
 warning_threshold = 1.0
 error_threshold = 1.0
 run_in_target_env = true
@@ -385,7 +396,7 @@ cache_invariant = "ast"
 command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py,*/py_cq/runners/* \"{pytest_serial}\" \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py,*/py_cq/runners/*"
 exclude_format = " --ignore {path}"
 parser = "CoverageParser"
-order = 7
+order = 8
 warning_threshold = 0.9
 error_threshold = 0.5
 run_in_target_env = true
@@ -398,7 +409,7 @@ cache_invariant = "ast"
 command = "{python} -m vulture \"{context_path}\" --min-confidence 60 --ignore-decorators \"@*.command,@*.callback,@*.route,@*.get,@*.post,@*.put,@*.delete,@*.patch,@*fixture,@*.task,@*hookimpl,@*validator,@*.errorhandler\" --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
 exclude_format = ",{path}"
 parser = "VultureParser"
-order = 8
+order = 9
 warning_threshold = 0.9999
 error_threshold = 0.8
 cache_invariant = "ast"
@@ -407,7 +418,7 @@ cache_invariant = "ast"
 command = "{python} -m interrogate \"{context_path}\" -e .claude -e \"{context_path}/tests\"{exclude} -v --fail-under 0"
 exclude_format = " -e {path}"
 parser = "InterrogateParser"
-order = 9
+order = 10
 warning_threshold = 0.8
 error_threshold = 0.5
 
@@ -417,21 +428,21 @@ skip_empty_init = true
 [python.radon-cc]
 command = "{python} -m radon cc --json --exclude '.claude/**' \"{context_path}\""
 parser = "ComplexityParser"
-order = 10
+order = 11
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-mi]
 command = "{python} -m radon mi -s --json --exclude '.claude/**' \"{context_path}\""
 parser = "MaintainabilityParser"
-order = 11
+order = 12
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-hal]
 command = "{python} -m radon hal -f --json --exclude '.claude/**' \"{context_path}\""
 parser = "HalsteadParser"
-order = 12
+order = 13
 warning_threshold = 0.35
 error_threshold = 0.3
 
@@ -439,7 +450,7 @@ error_threshold = 0.3
 command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --extend-exclude .claude --config \"include=['*.py','*.pyi','*.ipynb']\"{exclude}"
 exclude_format = " --extend-exclude {path}"
 parser = "RuffFormatParser"
-order = 13
+order = 14
 warning_threshold = 0.9999
 error_threshold = 0.5
 ```

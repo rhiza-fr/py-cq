@@ -25,6 +25,7 @@ _DISABLE_ALL = [
     "ruff",
     "ty",
     "bandit",
+    "kingfisher",
     "uv-audit",
     "pytest",
     "coverage",
