@@ -18,12 +18,20 @@ def test_halstead_invalid_json_returns_perfect_score():
 
 
 def test_parse_with_error_key():
-    """Files with an 'error' key should set all min scores to 0."""
-    data = {"src/bad.py": {"error": "syntax error"}}
-    tr = HalsteadParser().parse(raw(stdout=json.dumps(data)))
-    assert tr.metrics["file_bug_free"] == 0.0
-    assert tr.metrics["functions_bug_free"] == 0.0
-    assert tr.details["src/bad.py"]["error"] == "syntax error"
+    """A file radon cannot parse is recorded but not scored.
+
+    compile and ruff report the syntax error; scoring it 0 here would
+    describe it as high bug density.
+    """
+    data = {
+        "src/bad.py": {"error": "invalid syntax (<unknown>, line 2)"},
+        "src/ok.py": {"total": {"bugs": 0.0}, "functions": {}},
+    }
+    parser = HalsteadParser()
+    tr = parser.parse(raw(stdout=json.dumps(data)))
+    assert tr.metrics == {"file_bug_free": 1.0, "functions_bug_free": 1.0}
+    assert tr.details["src/bad.py"]["error"] == "invalid syntax (<unknown>, line 2)"
+    assert "bug density" not in parser.format_llm_message(tr)
 
 
 def test_parse_file_with_total_and_functions():

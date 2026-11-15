@@ -31,8 +31,8 @@ class HalsteadParser(AbstractParser):
         The method reads ``raw_result.stdout``-a JSON string containing
         per-file and per-function Halstead metrics. For each file it
         populates a ``ToolResult`` detail entry with a bug-free score.
-        If a file contains an ``error`` key, the associated metrics are
-        set to zero and the error message is stored. File-level and
+        If a file contains an ``error`` key (radon could not parse it), the
+        error message is stored and the file does not affect the metrics. File-level and
         function-level thresholds are applied via :meth:`bug_free_score`.
 
         After processing all entries, aggregate metrics
@@ -74,9 +74,9 @@ class HalsteadParser(AbstractParser):
                     "functions": {},
                 }
             if "error" in values:
-                tr.details[file_name]["error"] = values["error"]
-                min_file_nb = 0.0
-                min_function_nb = 0.0
+                # Unparseable file: compile and ruff report it. Record it
+                # without a score so it is not described as bug density.
+                tr.details[file_name] = {"error": values["error"], "functions": {}}
                 continue
             if "total" in values:
                 nb = self.bug_free_score(values.get("total", {}), MAX_FILE_BUGS)
