@@ -67,6 +67,7 @@ class KingfisherParser(AbstractParser):
             f"{file}:{line} - {issue.get('code', '')}: "
             f"[{issue.get('confidence', '')} confidence] {issue.get('message', '')}\n\n"
             "Move the secret out of the source (environment variable or an untracked "
-            "file) and rotate it if it was ever committed. If it is a test fixture or "
-            "a false positive, add a `kingfisher:ignore` comment on that line."
+            "file) and rotate it if it was ever committed. Only if it is an intentional "
+            "test fixture or a false positive, add a `kingfisher:ignore` comment on "
+            "that line."
         )
