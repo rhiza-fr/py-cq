@@ -38,6 +38,9 @@ _cache = Cache(
     Path.home() / ".cache" / "cq", size_limit=100 * 1024 * 1024, disk=JSONDisk
 )
 
+# Script that runs pytest in one process under coverage; see its docstring.
+_PYTEST_SERIAL = str(Path(__file__).parent / "runners" / "pytest_serial.py")
+
 
 def _find_project_root(path: Path) -> Path | None:
     """Walk up from path to find the nearest directory containing pyproject.toml."""
@@ -271,6 +274,7 @@ def run_tool(
         scan_targets=scan_targets,
         python=python,
         exclude=exclude,
+        pytest_serial=_PYTEST_SERIAL,
     )
     if precomputed_hash is not None:
         context_hash = precomputed_hash

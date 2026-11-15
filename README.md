@@ -382,7 +382,7 @@ skip_for_file = true
 cache_invariant = "ast"
 
 [python.coverage]
-command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
+command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py,*/py_cq/runners/* \"{pytest_serial}\" \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py,*/py_cq/runners/*"
 exclude_format = " --ignore {path}"
 parser = "CoverageParser"
 order = 7
