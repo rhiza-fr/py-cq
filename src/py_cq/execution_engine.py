@@ -332,6 +332,10 @@ def run_tool(
         timestamp=timestamp,
         project_path=project_dir,
     )
+    if return_code != 0 and not stdout.strip():
+        # Failed without a report: the tool is missing from PATH or offline.
+        # Caching this would hide real results until the files change.
+        return raw_result
     _cache.set(
         cache_key, raw_result.to_dict(), expire=5 * 24 * 60 * 60, tag=project_tag
     )

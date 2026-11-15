@@ -3,6 +3,8 @@
 import sys
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from py_cq.execution_engine import (
     _build_exclude_str,
     _dep_in_venv,
@@ -276,6 +278,39 @@ def test_run_tool_cache_miss_calls_subprocess(tmp_path):
     mock_sub.assert_called_once()
     assert result.tool_name == "echo"
     assert result.stdout == "hello"
+
+
+@pytest.mark.parametrize(
+    ("stdout", "returncode", "cached"),
+    [
+        ("", 1, False),  # command not found, or offline: retry next run
+        ("  \n", 127, False),
+        ("", 0, True),  # a clean tool may print nothing
+        ("report", 1, True),  # a failing tool with output is a real result
+    ],
+)
+def test_run_tool_does_not_cache_failed_run_without_output(
+    tmp_path, stdout, returncode, cached
+):
+    """A run that failed without output (tool missing) is not cached."""
+    from py_cq.execution_engine import run_tool
+
+    cfg = ToolConfig(
+        name="missing",
+        command="missing {context_path}",
+        parser_class=MagicMock,
+        order=1,
+    )
+    mock_result = MagicMock(stdout=stdout, stderr="not found", returncode=returncode)
+    mock_cache = MagicMock()
+    mock_cache.get = MagicMock(return_value=None)
+    with (
+        patch("py_cq.execution_engine._cache", mock_cache),
+        patch("py_cq.execution_engine.subprocess.run", return_value=mock_result),
+    ):
+        result = run_tool(cfg, str(tmp_path))
+    assert result.return_code == returncode
+    assert mock_cache.set.called is cached
 
 
 def test_run_tool_cache_hit_skips_subprocess(tmp_path):

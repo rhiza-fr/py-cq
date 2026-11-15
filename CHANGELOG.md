@@ -25,6 +25,7 @@
 - `interrogate` no longer counts tests in docstring coverage. cq's own `-e .claude` replaced any exclude set in the project's `pyproject.toml`, and relative excludes resolved against cq's working directory, so tests could not be left out. The exclude is now anchored to the target path, matching `bandit` and `coverage`.
 - `ruff` and `ruff-format` no longer scan `.venv` when the target project is not a git repository. Both commands passed `--exclude`, which replaces ruff's default exclude list instead of adding to it, so virtualenv files were linted, dragged the score down and could be reported as the top defect. They now pass `--extend-exclude`, for the built-in `.claude` exclusion and for user excludes.
 - README no longer claims the cache carries "no pickle risk". cq stores results as JSON and never writes pickles, but `diskcache` will still unpickle an entry that someone with write access to `~/.cache/cq` plants there (CVE-2025-69872, no fixed release yet).
+- A tool run that fails with no output (tool not on `PATH`, or offline) is no longer cached. Before, installing `kingfisher` or reconnecting for `uv-audit` had no effect for up to 5 days, until the project's files changed or the cache was cleared.
 
 ## [0.3.1] - 2026-10-12
 
