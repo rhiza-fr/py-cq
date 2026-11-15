@@ -1,5 +1,6 @@
 """Format the most important code quality defect as a markdown prompt for LLM consumption."""
 
+import os
 import sys
 from pathlib import Path
 from typing import cast
@@ -117,6 +118,20 @@ def _select_top_issue(
     return None
 
 
+def _strip_project_root(text: str, project_path: str) -> str:
+    """Make absolute paths under *project_path* in *text* relative to it.
+
+    Tools run from the project root and detail keys are absolutized for
+    reading source; the LLM works from the project root, so show them relative.
+    """
+    if not project_path:
+        return text
+    root = Path(project_path)
+    for prefix in {f"{root.as_posix()}/", f"{root}{os.sep}"}:
+        text = text.replace(prefix, "")
+    return text
+
+
 def _build_message(
     slices, parser, context_lines: int, limit: int, hint: bool, cq_invocation
 ) -> str:
@@ -126,7 +141,12 @@ def _build_message(
     ]
     n = len(parts)
     close = "Please fix only this issue." if n == 1 else f"Please fix these {n} issues."
-    body = "\n\n---\n\n".join(parts) + f"\n\n{close}"
+    body = (
+        _strip_project_root(
+            "\n\n---\n\n".join(parts), slices[0].raw.project_path if slices else ""
+        )
+        + f"\n\n{close}"
+    )
     if hint:
         if cq_invocation is None:
             cq_invocation = "cq " + " ".join(sys.argv[1:])

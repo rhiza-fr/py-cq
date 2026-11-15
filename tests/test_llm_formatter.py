@@ -479,6 +479,30 @@ def test_format_for_llm_defect_footer_hint():
     )
 
 
+def test_format_for_llm_paths_relative_to_project(tmp_path):
+    """Absolute paths under the project root are shown relative to it."""
+
+    class EchoParser(AbstractParser):
+        """Echoes the detail key in posix and native form."""
+
+        def parse(self, raw_result):
+            return ToolResult()
+
+        def format_llm_message(self, tr, *, context_lines=15, limit=1):
+            file = next(iter(tr.details))
+            return f"{file}:3 - X\n{file.replace('/', chr(92))}"
+
+    cfg = ToolConfig(name="tool", command="", parser_class=EchoParser, order=1)
+    abs_file = (tmp_path / "src" / "a.py").as_posix()
+    tr = ToolResult(
+        metrics={"score": 0.3},
+        details={abs_file: [{"line": 3}]},
+        raw=RawResult(tool_name="tool", project_path=str(tmp_path)),
+    )
+    result = format_for_llm({"tool": cfg}, make_combined([tr]), cq_invocation=CQ)
+    assert result.startswith("src/a.py:3 - X\nsrc\\a.py")
+
+
 def test_format_for_llm_context_lines_forwarded():
     """context_lines is forwarded to parser.format_llm_message."""
     received: dict = {}
