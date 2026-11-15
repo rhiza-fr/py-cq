@@ -168,8 +168,9 @@ class PytestParser(AbstractParser):
             passed_tests = 0
             for line in lines:
                 # tests/test_common.py::test_name[param] PASSED    [ 8%]
+                # tests/test_common.py::TestClass::test_name FAILED  [ 9%]
                 tests_match = _re.search(
-                    r"(.*\.py)::([\w\[\].,+\- ]+) (PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)",
+                    r"(\S+\.py)::(.+?) (PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS)\b",
                     line,
                 )
                 if tests_match:
@@ -213,7 +214,9 @@ class PytestParser(AbstractParser):
                 if status != "FAILED":
                     continue
                 header = f"`{file}::{test_name}` - test **FAILED**"
-                bare_name = test_name.split("[")[0]
+                bare_name = test_name.split("[")[0].split("::")[-1]
+                # pytest titles a class test's failure section "Class.test".
+                section_name = test_name.replace("::", ".")
                 tdir = _target_dir(tr.raw.command)
                 resolved = (
                     (_Path(tdir) / file).as_posix()
@@ -223,9 +226,9 @@ class PytestParser(AbstractParser):
                 body = find_function_source(
                     resolved, bare_name, max_lines=context_lines
                 )
-                failure = _extract_failure(tr.raw.stdout, test_name, max_lines=50)
+                failure = _extract_failure(tr.raw.stdout, section_name, max_lines=50)
                 callee = ""
-                call_line = _last_call_line_for_test(tr.raw.stdout, test_name)
+                call_line = _last_call_line_for_test(tr.raw.stdout, section_name)
                 if call_line:
                     func_name = extract_callee_name(call_line)
                     if func_name and func_name != bare_name:

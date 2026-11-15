@@ -400,3 +400,36 @@ def test_realistic_collection_error_details_populated():
     # The _COLLECTION_FILE_RE / _COLLECTION_ERROR_RE patterns should have matched
     assert "ImportError" in msg
     assert "conftest.py" in msg or "line 7" in msg
+
+
+PYTEST_CLASS_OUTPUT = """\
+tests/test_m.py::TestHelp::test_ok PASSED    [ 33%]
+tests/test_m.py::TestHelp::test_bad FAILED    [ 66%]
+tests/test_m.py::test_plain[a b] PASSED    [100%]
+
+=================================== FAILURES ===================================
+______________________________ TestHelp.test_bad ______________________________
+
+    def test_bad(self):
+>       assert "WORKSPACE" in out
+E       AssertionError: assert 'WORKSPACE' in 'usage'
+
+tests/test_m.py:9: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_m.py::TestHelp::test_bad - AssertionError: assert 'WORKSPACE' in 'usage'
+"""
+
+
+def test_pytest_parse_class_based_tests():
+    """Tests inside classes are counted and their failure section is found."""
+    parser = PytestParser()
+    tr = parser.parse(raw(PYTEST_CLASS_OUTPUT, return_code=1))
+    assert tr.metrics["tests"] == pytest.approx(2 / 3)
+    assert tr.details["tests/test_m.py"] == {
+        "TestHelp::test_ok": "PASSED",
+        "TestHelp::test_bad": "FAILED",
+        "test_plain[a b]": "PASSED",
+    }
+    msg = parser.format_llm_message(tr)
+    assert msg.startswith("`tests/test_m.py::TestHelp::test_bad` - test **FAILED**")
+    assert "AssertionError: assert 'WORKSPACE' in 'usage'" in msg
