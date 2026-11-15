@@ -1,5 +1,5 @@
 [python.compile]
-command = "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x .*venv|\\.claude"
+command = "{python} -m compileall -r 10 -j 8 \"{context_path}\" -x \".*venv|\\.claude\""
 parser = "CompileParser"
 order = 1
 warning_threshold = 0.9999

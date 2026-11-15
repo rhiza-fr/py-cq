@@ -13,6 +13,7 @@ The cache is keyed on ``(path, size, mtime)`` so a content change (which bumps
 import ast
 import hashlib
 import os
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -106,7 +107,10 @@ class SourceFile:
         if not self._parsed:
             self._parsed = True
             try:
-                self._tree = ast.parse(self.text)
+                # The target's invalid escapes etc. are not cq's to report.
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", SyntaxWarning)
+                    self._tree = ast.parse(self.text)
             except (SyntaxError, ValueError):
                 self._tree = None
         return self._tree

@@ -210,3 +210,15 @@ def test_compile_non_integer_line_number_does_not_crash():
     assert "failed_files" in tr.details
     info = next(iter(tr.details["failed_files"].values()))
     assert "line" not in info  # line key absent because int() raised ValueError
+
+
+def test_compile_failed_run_without_results_scores_zero():
+    """A non-zero exit with no parseable failures is a broken run, not a pass."""
+    rr = raw("", return_code=255)
+    rr.stderr = "'.claude' is not recognized as an internal or external command"
+    parser = CompileParser()
+    tr = parser.parse(rr)
+    assert tr.metrics["compile"] == 0.0
+    msg = parser.format_llm_message(tr)
+    assert "exited with code 255" in msg
+    assert "is not recognized" in msg

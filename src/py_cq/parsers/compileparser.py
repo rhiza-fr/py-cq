@@ -110,6 +110,9 @@ class CompileParser(AbstractParser):
                     current_error = None
         failure_ratio = len(failed_files) / compilations if compilations > 0 else 0.0
         score = score_logistic_variant(failure_ratio, scale_factor=0.25)
+        if raw_result.return_code != 0 and not failed_files:
+            # compileall itself did not run (bad command, crash): not a pass.
+            score = 0.0
         raw_result.stdout = "\n".join(
             [
                 line.replace("\\\\", "/")
@@ -127,8 +130,16 @@ class CompileParser(AbstractParser):
     ) -> str:
         """Return the first compilation failure as a defect description."""
         failed = tr.details.get("failed_files", {})
-        if not failed:
+        if not failed and tr.raw.return_code == 0:
             return "Compilation failed (no details available)"
+        if not failed:
+            output = (tr.raw.stderr or tr.raw.stdout or "").strip()
+            tail = "\n".join(output.splitlines()[-20:])
+            detail = f"\n\n```\n{tail}\n```" if tail else ""
+            return (
+                f"compileall exited with code {tr.raw.return_code} without"
+                f" reporting a file error.{detail}"
+            )
         file, info = next(iter(failed.items()))
         line = info.get("line", "?")
         typ = info.get("type", "Error")
