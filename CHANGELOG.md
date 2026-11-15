@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-15
+
 ### Added
 
 - Tool count is now 14: `kingfisher` and `uv-audit` take orders 5 and 6, and `pytest` through `ruff-format` move down two places (7 to 14).
