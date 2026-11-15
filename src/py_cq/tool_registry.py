@@ -32,7 +32,6 @@ def load_tool_configs() -> dict[str, ToolConfig]:
             exclude_format=tool_data.get("exclude_format", ""),
             scan_exclude_names=tool_data.get("scan_exclude_names", []),
             skip_for_file=tool_data.get("skip_for_file", False),
-            gate_strict=tool_data.get("gate_strict", True),
             skip_if=tool_data.get("skip_if", ""),
             cache_invariant=tool_data.get("cache_invariant", ""),
         )

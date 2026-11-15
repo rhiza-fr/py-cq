@@ -2,9 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+
+- `uv-audit` tool (order 5, after `bandit`): runs `uv audit` against `uv.lock` and reports known vulnerabilities in locked dependencies under the `dependencies` metric. Only advisories with a fix version count, and the same vulnerability listed by several advisory databases counts once. The LLM message names the package, the fixed versions and the `uv lock --upgrade-package` command. It is skipped with a warning when `uv`, `uv.lock` or the network is unavailable, and when checking a single file. `uv audit` is still experimental in uv, so its output format may change. Tool count is now 13, and `pytest` through `ruff-format` move up one place in the order (6 to 13).
+  - **`cq check` now makes a network request by default**: `uv audit` queries the OSV advisory database. Turn it off with `--skip uv-audit` or `disable = ["uv-audit"]` under `[tool.cq]`.
+  - **It can fail the gate with no source change.** One or two fixable vulnerabilities are a warning; three or more fall below the `0.8` error threshold and `cq check` exits `1`.
+  - Results are cached like every other tool (up to 5 days), so a newly published advisory can take that long to appear on an unchanged project.
+
+### Changed
+
+- **`vulture` now reports unused functions, classes, methods and variables.** It ran at `--min-confidence 80`, which only reports unused imports and unreachable code, so dead functions were never found. It now runs at `--min-confidence 60`. **Expect new `dead_code` findings on the first run after upgrading.** Vulture cannot see dynamic use at this level, so common framework decorators (typer/click commands, web routes, pytest fixtures, validators, hook implementations) are ignored, and the LLM message for a finding below 80% confidence says how to keep a symbol through `ignore_names` under `[tool.vulture]` instead of deleting it.
+
+### Removed
+
+- `gate_strict` tool config field. Nothing ever read it, so `gate_strict = false` on the radon tools and `ruff-format` had no effect. Those tools stay out of the way of CI through their low `error_threshold` values, as before. A `gate_strict` key in a user-defined tool is ignored.
+
 ### Fixed
 
+- `interrogate` no longer counts tests in docstring coverage. cq's own `-e .claude` replaced any exclude set in the project's `pyproject.toml`, and relative excludes resolved against cq's working directory, so tests could not be left out. The exclude is now anchored to the target path, matching `bandit` and `coverage`.
 - `ruff` and `ruff-format` no longer scan `.venv` when the target project is not a git repository. Both commands passed `--exclude`, which replaces ruff's default exclude list instead of adding to it, so virtualenv files were linted, dragged the score down and could be reported as the top defect. They now pass `--extend-exclude`, for the built-in `.claude` exclusion and for user excludes.
+- README no longer claims the cache carries "no pickle risk". cq stores results as JSON and never writes pickles, but `diskcache` will still unpickle an entry that someone with write access to `~/.cache/cq` plants there (CVE-2025-69872, no fixed release yet).
 
 ## [0.3.1] - 2026-10-12
 

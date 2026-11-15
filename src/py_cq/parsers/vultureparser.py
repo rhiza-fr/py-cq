@@ -1,9 +1,14 @@
 """Parses output from vulture dead-code detector into a standardized ToolResult.
 
-Vulture is invoked with ``--min-confidence 80``, producing one text line
+Vulture is invoked with ``--min-confidence 60``, producing one text line
 per unused symbol::
 
-    src/foo.py:10: unused function 'bar' (80% confidence)
+    src/foo.py:10: unused function 'bar' (60% confidence)
+
+60% is the confidence vulture gives unused functions, classes, methods and
+variables, so anything higher only reports unused imports and unreachable
+code. At that level vulture cannot see dynamic use, so the LLM message for a
+finding below 80% says how to keep the symbol instead of deleting it.
 
 The parser counts violations and converts the count into a logistic-variant
 score stored under the ``dead_code`` metric key.
@@ -19,6 +24,13 @@ from py_cq.parsers.common import (
 )
 
 _LINE_RE = re.compile(r"^(.+):(\d+): (unused \S+) '(.+)' \((\d+)% confidence\)$")
+
+_CERTAIN = 80
+_KEEP_HINT = (
+    "\n\nRemove it if nothing uses it. If it is public API or is used dynamically,"
+    ' keep it and add `"{name}"` to `ignore_names` under `[tool.vulture]` in'
+    " `pyproject.toml`."
+)
 
 
 class VultureParser(AbstractParser):
@@ -55,4 +67,7 @@ class VultureParser(AbstractParser):
         kind = issue.get("type", "unused")
         name = issue.get("name", "")
         confidence = issue.get("confidence", "?")
-        return f"{file}:{line} - **{kind}** `{name}` ({confidence}% confidence){format_source_context(file, line, count=context_lines)}"
+        message = f"{file}:{line} - **{kind}** `{name}` ({confidence}% confidence){format_source_context(file, line, count=context_lines)}"
+        if isinstance(confidence, int) and confidence < _CERTAIN:
+            message += _KEEP_HINT.format(name=name)
+        return message

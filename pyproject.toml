@@ -1,7 +1,7 @@
 [project]
 name = "python-code-quality"
 version = "0.3.1"
-description = "Python Code Quality Analysis Tool - feed the results from 12 CQ tools straight into an LLM. Minimal tokens."
+description = "Python Code Quality Analysis Tool - feed the results from 13 CQ tools straight into an LLM. Minimal tokens."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
@@ -64,6 +64,10 @@ rules = {unresolved-import = "ignore"}
 
 [tool.cq]
 exclude = ["demo"]
+
+[tool.vulture]
+# Public API, enum members and positional test constants that nothing references by name.
+ignore_names = ["check", "check_llm_json", "PHASE", "COL_*"]
 
 [dependency-groups]
 dev = [

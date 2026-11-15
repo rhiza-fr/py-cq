@@ -19,6 +19,7 @@ _DISABLE_ALL = [
     "ruff",
     "ty",
     "bandit",
+    "uv-audit",
     "pytest",
     "coverage",
     "radon-cc",

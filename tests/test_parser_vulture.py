@@ -57,6 +57,23 @@ def test_vulture_format_llm_with_issue():
     assert "src/foo.py:10" in msg
     assert "bar" in msg
     assert "80%" in msg
+    assert "ignore_names" not in msg
+
+
+def test_vulture_format_llm_low_confidence_says_how_to_keep():
+    """Below 80% vulture cannot rule out dynamic use, so the message offers an ignore."""
+    tr = ToolResult(
+        metrics={"dead_code": 0.5},
+        details={
+            "src/foo.py": [
+                {"line": 10, "type": "unused function", "name": "bar", "confidence": 60}
+            ]
+        },
+        raw=RawResult(),
+    )
+    msg = VultureParser().format_llm_message(tr)
+    assert "60%" in msg
+    assert '`"bar"` to `ignore_names` under `[tool.vulture]`' in msg
 
 
 def test_vulture_parse_ignores_non_matching_lines():

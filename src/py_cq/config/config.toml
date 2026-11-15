@@ -33,11 +33,19 @@ order = 4
 warning_threshold = 0.9999
 error_threshold = 0.8
 
+[python.uv-audit]
+command = "uv audit --project \"{abs_context_path}\" --frozen --output-format json"
+parser = "UvAuditParser"
+order = 5
+warning_threshold = 0.9999
+error_threshold = 0.8
+skip_for_file = true
+
 [python.pytest]
 command = "{python} -m pytest -vv \"{context_path}\" --ignore .claude{exclude}"
 exclude_format = " --ignore {path}"
 parser = "PytestParser"
-order = 5
+order = 6
 warning_threshold = 1.0
 error_threshold = 1.0
 run_in_target_env = true
@@ -49,7 +57,7 @@ cache_invariant = "ast"
 command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
 exclude_format = " --ignore {path}"
 parser = "CoverageParser"
-order = 6
+order = 7
 warning_threshold = 0.9
 error_threshold = 0.5
 run_in_target_env = true
@@ -59,10 +67,10 @@ skip_if = "pytest"
 cache_invariant = "ast"
 
 [python.vulture]
-command = "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
+command = "{python} -m vulture \"{context_path}\" --min-confidence 60 --ignore-decorators \"@*.command,@*.callback,@*.route,@*.get,@*.post,@*.put,@*.delete,@*.patch,@*fixture,@*.task,@*hookimpl,@*validator,@*.errorhandler\" --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
 exclude_format = ",{path}"
 parser = "VultureParser"
-order = 7
+order = 8
 warning_threshold = 0.9999
 error_threshold = 0.8
 cache_invariant = "ast"
@@ -71,7 +79,7 @@ cache_invariant = "ast"
 command = "{python} -m interrogate \"{context_path}\" -e .claude -e \"{context_path}/tests\"{exclude} -v --fail-under 0"
 exclude_format = " -e {path}"
 parser = "InterrogateParser"
-order = 8
+order = 9
 warning_threshold = 0.8
 error_threshold = 0.5
 
@@ -81,24 +89,21 @@ skip_empty_init = true
 [python.radon-cc]
 command = "{python} -m radon cc --json --exclude '.claude/**' \"{context_path}\""
 parser = "ComplexityParser"
-order = 9
-gate_strict = false
+order = 10
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-mi]
 command = "{python} -m radon mi -s --json --exclude '.claude/**' \"{context_path}\""
 parser = "MaintainabilityParser"
-order = 10
-gate_strict = false
+order = 11
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-hal]
 command = "{python} -m radon hal -f --json --exclude '.claude/**' \"{context_path}\""
 parser = "HalsteadParser"
-order = 11
-gate_strict = false
+order = 12
 warning_threshold = 0.35
 error_threshold = 0.3
 
@@ -106,7 +111,6 @@ error_threshold = 0.3
 command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --extend-exclude .claude --config \"include=['*.py','*.pyi','*.ipynb']\"{exclude}"
 exclude_format = " --extend-exclude {path}"
 parser = "RuffFormatParser"
-order = 12
-gate_strict = false
+order = 13
 warning_threshold = 0.9999
 error_threshold = 0.5

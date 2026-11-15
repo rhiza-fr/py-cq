@@ -11,8 +11,8 @@ cq check -o llm   # returns the single most critical defect as markdown
 ```
 
 The LLM fixes it, the user re-runs, and repeats until all tools pass. CQ runs
-12 static analysis tools in execution order (compile → lint → types → security →
-tests → coverage → dead code → docstrings → complexity → formatting) and aggregates results
+13 static analysis tools in execution order (compile → lint → types → security →
+dependencies → tests → coverage → dead code → docstrings → complexity → formatting) and aggregates results
 into a single score.
 
 ## CLI Usage

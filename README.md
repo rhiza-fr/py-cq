@@ -6,7 +6,7 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality?)](https://pypi.org/project/python-code-quality/)
 [![License](https://img.shields.io/github/license/rhiza-fr/py-cq)](LICENSE)
 
-Run 12 code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
+Run 13 code quality tools, aggregate results into one score, and surface the single most critical defect as a focused markdown prompt — ready to pipe to any LLM.
 
 This can dramatically reduce the amount of noise for LLMs (and humans) and remove the need for them to know about these tools.
 
@@ -45,16 +45,21 @@ When running '-o llm', we run sequentially and exit early at the first error.
 | 2 | ruff | Lint / style |
 | 3 | ty | Type errors |
 | 4 | bandit | Security vulnerabilities |
-| 5 | pytest | Test pass rate |
-| 6 | coverage | Test coverage |
-| 7 | vulture | Dead code |
-| 8 | interrogate | Docstring coverage |
-| 9 | radon cc | Cyclomatic complexity |
-| 10 | radon mi | Maintainability index |
-| 11 | radon hal | Halstead volume / bug estimate |
-| 12 | ruff format | Formatting (fraction of files already formatted) |
+| 5 | uv audit | Known vulnerabilities in locked dependencies |
+| 6 | pytest | Test pass rate |
+| 7 | coverage | Test coverage |
+| 8 | vulture | Dead code |
+| 9 | interrogate | Docstring coverage |
+| 10 | radon cc | Cyclomatic complexity |
+| 11 | radon mi | Maintainability index |
+| 12 | radon hal | Halstead volume / bug estimate |
+| 13 | ruff format | Formatting (fraction of files already formatted) |
 
-Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults: <100 Mb, <5 days, No pickle risk.
+`uv audit` checks the versions pinned in `uv.lock` against the OSV advisory database. It needs `uv` on the `PATH`, a `uv.lock` and network access; when any is missing the tool is skipped with a warning instead of failing. Only advisories that have a fix version are reported, since those are the ones an upgrade resolves. Results are cached like every other tool, so an advisory published after a run shows up when the project changes or the cache entry expires.
+
+`vulture` runs at `--min-confidence 60`, the level at which it reports unused functions, classes, methods and variables. It cannot see dynamic use, so common framework decorators (`@app.command`, `@app.route`, `@pytest.fixture`, validators and similar) are ignored. For anything else that is used but never referenced by name, such as public API, add it to `ignore_names` under `[tool.vulture]` in your `pyproject.toml`.
+
+Diskcache is used to cache tool output for lightning fast re-runs. Sane defaults: <100 Mb, <5 days, stored as JSON (cq never writes pickles).
 
 
 ## Usage
@@ -220,6 +225,7 @@ Then invoke it with `/cq-fix` in Claude Code. The `$(...)` embeds the live `cq` 
 │ ruff             │    0.17s │                      lint │ 1.000   │ OK       │
 │ ty               │    0.33s │                type_check │ 1.000   │ OK       │
 │ bandit           │    0.56s │                  security │ 1.000   │ OK       │
+│ uv-audit         │    0.41s │              dependencies │ 1.000   │ OK       │
 │ pytest           │    0.91s │                     tests │ 1.000   │ OK       │
 │ coverage         │    1.26s │                  coverage │ 0.910   │ OK       │
 │ vulture          │    0.32s │                 dead_code │ 1.000   │ OK       │
@@ -312,7 +318,7 @@ warning = 0.9
 error = 0.7
 ```
 
-Tool IDs match the keys in `src/py_cq/config/config.toml`: `compile`, `ruff`, `ty`, `bandit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`, `ruff-format`.
+Tool IDs match the keys in `src/py_cq/config/config.toml`: `compile`, `ruff`, `ty`, `bandit`, `uv-audit`, `pytest`, `coverage`, `radon-cc`, `radon-mi`, `radon-hal`, `vulture`, `interrogate`, `ruff-format`.
 
 
 ### Default config
@@ -355,11 +361,19 @@ order = 4
 warning_threshold = 0.9999
 error_threshold = 0.8
 
+[python.uv-audit]
+command = "uv audit --project \"{abs_context_path}\" --frozen --output-format json"
+parser = "UvAuditParser"
+order = 5
+warning_threshold = 0.9999
+error_threshold = 0.8
+skip_for_file = true
+
 [python.pytest]
 command = "{python} -m pytest -vv \"{context_path}\" --ignore .claude{exclude}"
 exclude_format = " --ignore {path}"
 parser = "PytestParser"
-order = 5
+order = 6
 warning_threshold = 1.0
 error_threshold = 1.0
 run_in_target_env = true
@@ -371,7 +385,7 @@ cache_invariant = "ast"
 command = "{python} -m coverage run --omit=*/tests/*,*/test_*.py -m pytest \"{context_path}\" --ignore .claude{exclude} && {python} -m coverage report --show-missing --omit=*/tests/*,*/test_*.py"
 exclude_format = " --ignore {path}"
 parser = "CoverageParser"
-order = 6
+order = 7
 warning_threshold = 0.9
 error_threshold = 0.5
 run_in_target_env = true
@@ -381,10 +395,10 @@ skip_if = "pytest"
 cache_invariant = "ast"
 
 [python.vulture]
-command = "{python} -m vulture \"{context_path}\" --min-confidence 80 --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
+command = "{python} -m vulture \"{context_path}\" --min-confidence 60 --ignore-decorators \"@*.command,@*.callback,@*.route,@*.get,@*.post,@*.put,@*.delete,@*.patch,@*fixture,@*.task,@*hookimpl,@*validator,@*.errorhandler\" --exclude .venv,dist,.*_cache,docs,.git,.claude{exclude}"
 exclude_format = ",{path}"
 parser = "VultureParser"
-order = 7
+order = 8
 warning_threshold = 0.9999
 error_threshold = 0.8
 cache_invariant = "ast"
@@ -393,7 +407,7 @@ cache_invariant = "ast"
 command = "{python} -m interrogate \"{context_path}\" -e .claude -e \"{context_path}/tests\"{exclude} -v --fail-under 0"
 exclude_format = " -e {path}"
 parser = "InterrogateParser"
-order = 8
+order = 9
 warning_threshold = 0.8
 error_threshold = 0.5
 
@@ -403,24 +417,21 @@ skip_empty_init = true
 [python.radon-cc]
 command = "{python} -m radon cc --json --exclude '.claude/**' \"{context_path}\""
 parser = "ComplexityParser"
-order = 9
-gate_strict = false
+order = 10
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-mi]
 command = "{python} -m radon mi -s --json --exclude '.claude/**' \"{context_path}\""
 parser = "MaintainabilityParser"
-order = 10
-gate_strict = false
+order = 11
 warning_threshold = 0.6
 error_threshold = 0.4
 
 [python.radon-hal]
 command = "{python} -m radon hal -f --json --exclude '.claude/**' \"{context_path}\""
 parser = "HalsteadParser"
-order = 11
-gate_strict = false
+order = 12
 warning_threshold = 0.35
 error_threshold = 0.3
 
@@ -428,8 +439,7 @@ error_threshold = 0.3
 command = "{python} -m ruff format --check --output-format concise --no-cache \"{context_path}\" --extend-exclude .claude --config \"include=['*.py','*.pyi','*.ipynb']\"{exclude}"
 exclude_format = " --extend-exclude {path}"
 parser = "RuffFormatParser"
-order = 12
-gate_strict = false
+order = 13
 warning_threshold = 0.9999
 error_threshold = 0.5
 ```
