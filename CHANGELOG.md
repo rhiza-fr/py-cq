@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+### Removed
+
+- `radon-hal` metrics `file_smallness` and `functions_smallness`. Radon estimates bugs as volume / 3000, and the bug and volume limits had the same ratio (1 bug or 3000 volume per file, 0.2 bugs or 600 volume per function), so each was always equal to its `*_bug_free` partner. `file_bug_free` and `functions_bug_free` remain. The overall score does not change, since it averages each tool's metrics before averaging tools.
+
+### Fixed
+
+- Tools now run with the target project's root as their working directory. Before, they ran from wherever `cq` was started, so a tool that reads its configuration from the current directory used the wrong one. Running `cq check ../other` from another project made ruff take its Python target version from that other project's `requires-python`, which hid syntax errors that only exist on the target's older Python versions, and vulture ignored the target's `[tool.vulture]` settings. Cached results now include the working directory, so results from older runs are not reused.
+- `vulture` no longer reports typed fields in a class body (`name: type` or `name: type = value`) as unused variables. Pydantic models, dataclasses, TypedDicts, NamedTuples and attrs classes read these fields through the class, never by name, so at `--min-confidence 60` every field of every model was reported. Untyped class attributes and typed variables outside a class body are still reported.
+- `ruff` syntax errors (`invalid-syntax`) are reported. The parser only recognised rule codes such as `F401`, so syntax errors were dropped from both the score and the LLM output. They are now counted and come first in the LLM output, since other findings in a file that does not parse are unreliable.
+
 ## [0.4.0] - 2026-11-15
 
 ### Added

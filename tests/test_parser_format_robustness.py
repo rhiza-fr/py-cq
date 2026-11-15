@@ -185,13 +185,12 @@ def test_interrogate_format_never_raises(details, metrics):
     assert isinstance(InterrogateParser().format_llm_message(tr), str)
 
 
-# --- HalsteadParser: {file: {bug_free, smallness, bugs, volume, functions: {fn: {...}}}} ---
+# --- HalsteadParser: {file: {bug_free, bugs, volume, functions: {fn: {...}}}} ---
 
 _halstead_fn = st.fixed_dictionaries(
     {},
     optional={
         "bug_free": _safe_float,
-        "smallness": _safe_float,
         "bugs": _safe_float,
         "volume": st.floats(min_value=0.0, max_value=2000.0, allow_nan=False),
     },
@@ -200,7 +199,6 @@ _halstead_file = st.fixed_dictionaries(
     {},
     optional={
         "bug_free": _safe_float,
-        "smallness": _safe_float,
         "bugs": _safe_float,
         "volume": st.floats(
             min_value=0.0, allow_nan=False, allow_infinity=False, max_value=5000.0
@@ -215,9 +213,7 @@ _halstead_metrics = st.fixed_dictionaries(
     {},
     optional={
         "file_bug_free": _safe_float,
-        "file_smallness": _safe_float,
         "functions_bug_free": _safe_float,
-        "functions_smallness": _safe_float,
     },
 )
 

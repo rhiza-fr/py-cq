@@ -10,18 +10,26 @@ variables, so anything higher only reports unused imports and unreachable
 code. At that level vulture cannot see dynamic use, so the LLM message for a
 finding below 80% says how to keep the symbol instead of deleting it.
 
+Typed fields in a class body (``name: type`` or ``name: type = value``) are
+dropped: pydantic models, dataclasses, TypedDicts, NamedTuples and attrs
+classes read them through the class, never by name, so vulture always
+reports them as unused variables.
+
 The parser counts violations and converts the count into a logistic-variant
 score stored under the ``dead_code`` metric key.
 """
 
+import ast
 import re
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 from py_cq.parsers.common import (
     extract_first_issue,
     format_source_context,
+    resolve_path,
     score_logistic_variant,
 )
+from py_cq.source_file import get_source
 
 _LINE_RE = re.compile(r"^(.+):(\d+): (unused \S+) '(.+)' \((\d+)% confidence\)$")
 
@@ -31,6 +39,23 @@ _KEEP_HINT = (
     ' keep it and add `"{name}"` to `ignore_names` under `[tool.vulture]` in'
     " `pyproject.toml`."
 )
+
+
+def _class_field_lines(path: str) -> set[int]:
+    """Return line numbers of typed field declarations directly in a class body."""
+    try:
+        tree = get_source(path).tree
+    except OSError:
+        return set()
+    if tree is None:
+        return set()
+    return {
+        stmt.lineno
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ClassDef)
+        for stmt in node.body
+        if isinstance(stmt, ast.AnnAssign) and isinstance(stmt.target, ast.Name)
+    }
 
 
 class VultureParser(AbstractParser):
@@ -51,6 +76,19 @@ class VultureParser(AbstractParser):
                         "confidence": int(m.group(5)),
                     }
                 )
+        for path, issues in list(files.items()):
+            if not any(i["type"] == "unused variable" for i in issues):
+                continue
+            fields = _class_field_lines(resolve_path(raw_result.project_path, path))
+            kept = [
+                i
+                for i in issues
+                if not (i["type"] == "unused variable" and i["line"] in fields)
+            ]
+            if kept:
+                files[path] = kept
+            else:
+                del files[path]
         count = sum(len(v) for v in files.values())
         score = score_logistic_variant(count, scale_factor=15)
         return ToolResult(raw=raw_result, metrics={"dead_code": score}, details=files)

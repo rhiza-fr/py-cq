@@ -236,9 +236,7 @@ Then invoke it with `/cq-fix` in Claude Code. The `$(...)` embeds the live `cq` 
 │ radon-cc         │    0.32s │                simplicity │ 0.982   │ OK       │
 │ radon-mi         │    0.38s │           maintainability │ 0.869   │ OK       │
 │ radon-hal        │    0.30s │             file_bug_free │ 0.928   │ OK       │
-│ radon-hal        │          │            file_smallness │ 0.851   │ OK       │
 │ radon-hal        │          │        functions_bug_free │ 0.913   │ OK       │
-│ radon-hal        │          │       functions_smallness │ 0.724   │ OK       │
 │ ruff-format      │    0.12s │                 formatted │ 1.000   │ OK       │
 │                  │          │                     Score │ 0.965   │          │
 └──────────────────┴──────────┴───────────────────────────┴─────────┴──────────┘

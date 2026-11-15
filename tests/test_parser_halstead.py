@@ -13,9 +13,7 @@ def test_halstead_invalid_json_returns_perfect_score():
     tr = HalsteadParser().parse(raw("not-valid-json{{{"))
     assert tr.metrics == {
         "file_bug_free": 1.0,
-        "file_smallness": 1.0,
         "functions_bug_free": 1.0,
-        "functions_smallness": 1.0,
     }
 
 
@@ -24,9 +22,7 @@ def test_parse_with_error_key():
     data = {"src/bad.py": {"error": "syntax error"}}
     tr = HalsteadParser().parse(raw(stdout=json.dumps(data)))
     assert tr.metrics["file_bug_free"] == 0.0
-    assert tr.metrics["file_smallness"] == 0.0
     assert tr.metrics["functions_bug_free"] == 0.0
-    assert tr.metrics["functions_smallness"] == 0.0
     assert tr.details["src/bad.py"]["error"] == "syntax error"
 
 
@@ -38,8 +34,7 @@ def test_parse_file_with_total_and_functions():
         }
     }
     tr = HalsteadParser().parse(raw(stdout=json.dumps(data)))
-    assert "file_bug_free" in tr.metrics
-    assert "functions_bug_free" in tr.metrics
+    assert set(tr.metrics) == {"file_bug_free", "functions_bug_free"}
     assert tr.details["src/foo.py"]["bugs"] == 0.05
     assert tr.details["src/foo.py"]["volume"] == 100.0
     assert "helper" in tr.details["src/foo.py"]["functions"]
@@ -52,7 +47,7 @@ def test_parse_backslash_path_normalized():
     assert "./src/foo.py" in tr.details
 
 
-# --- format_llm_message: functions_smallness ---
+# --- format_llm_message ---
 
 
 def _tr_with_metrics(metrics, details):
@@ -63,31 +58,26 @@ def _tr_with_metrics(metrics, details):
     )
 
 
-def test_format_llm_message_functions_smallness():
-    """functions_smallness as worst metric should find the worst function by smallness."""
+def test_format_llm_message_functions_bug_free():
+    """functions_bug_free as worst metric should find the worst function by bug_free."""
     tr = _tr_with_metrics(
         metrics={
             "file_bug_free": 0.9,
-            "file_smallness": 0.9,
-            "functions_bug_free": 0.9,
-            "functions_smallness": 0.2,  # worst metric
+            "functions_bug_free": 0.2,  # worst metric
         },
         details={
             "src/foo.py": {
                 "bug_free": 0.9,
-                "smallness": 0.9,
                 "bugs": 0.01,
                 "volume": 100,
                 "functions": {
                     "big_fn": {
-                        "bug_free": 0.9,
-                        "smallness": 0.2,
-                        "bugs": 0.01,
+                        "bug_free": 0.2,
+                        "bugs": 0.183,
                         "volume": 550,
                     },
                     "small_fn": {
                         "bug_free": 0.9,
-                        "smallness": 0.95,
                         "bugs": 0.001,
                         "volume": 20,
                     },
@@ -99,7 +89,7 @@ def test_format_llm_message_functions_smallness():
     assert "src/foo.py" in msg
     assert "big_fn" in msg
     assert "550" in msg
-    assert "split" in msg.lower() or "large" in msg.lower()
+    assert "bug density" in msg
 
 
 def test_format_llm_message_worst_bugs_is_none():
@@ -107,14 +97,11 @@ def test_format_llm_message_worst_bugs_is_none():
     tr = _tr_with_metrics(
         metrics={
             "file_bug_free": 0.3,
-            "file_smallness": 0.9,
             "functions_bug_free": 0.9,
-            "functions_smallness": 0.9,
         },
         details={
             "src/foo.py": {
                 "bug_free": 0.3,
-                "smallness": 0.9,
                 # no 'bugs' or 'volume' keys
                 "functions": {},
             }
@@ -129,14 +116,11 @@ def test_format_llm_message_worst_volume_is_none():
     tr = _tr_with_metrics(
         metrics={
             "file_bug_free": 0.9,
-            "file_smallness": 0.2,
             "functions_bug_free": 0.9,
-            "functions_smallness": 0.9,
         },
         details={
             "src/foo.py": {
                 "bug_free": 0.9,
-                "smallness": 0.2,
                 # no 'bugs' or 'volume' keys
                 "functions": {},
             }
@@ -151,35 +135,29 @@ def test_parse_total_only_no_functions():
     data = {"src/foo.py": {"total": {"bugs": 0.5, "volume": 300.0}, "functions": {}}}
     tr = HalsteadParser().parse(raw(stdout=json.dumps(data)))
     assert tr.metrics["functions_bug_free"] == 1.0
-    assert tr.metrics["functions_smallness"] == 1.0
     assert "src/foo.py" in tr.details
 
 
-def test_format_llm_message_tie_in_function_smallness():
-    """Two functions with identical smallness scores should not raise."""
+def test_format_llm_message_tie_in_function_bug_free():
+    """Two functions with identical bug_free scores should not raise."""
     tr = _tr_with_metrics(
         metrics={
             "file_bug_free": 0.9,
-            "file_smallness": 0.9,
             "functions_bug_free": 0.9,
-            "functions_smallness": 0.3,
         },
         details={
             "src/foo.py": {
                 "bug_free": 0.9,
-                "smallness": 0.9,
                 "bugs": 0.01,
                 "volume": 100,
                 "functions": {
                     "fn_a": {
                         "bug_free": 0.9,
-                        "smallness": 0.3,
                         "bugs": 0.01,
                         "volume": 400,
                     },
                     "fn_b": {
                         "bug_free": 0.9,
-                        "smallness": 0.3,
                         "bugs": 0.01,
                         "volume": 400,
                     },
@@ -203,24 +181,14 @@ def test_parse_duplicate_file_key():
     assert tr.details["src/foo.py"]["volume"] == 200.0
 
 
-def test_extract_bugs_and_volume_zero_values():
-    """extract_bugs_and_volume with bugs=0, volume=0 returns scores in [0, 1]."""
-    parser = HalsteadParser()
-    no_bugs_score, smallness_score = parser.extract_bugs_and_volume(
-        {"bugs": 0, "volume": 0}, max_bugs=1.0, max_volume=1000.0
-    )
-    assert 0.0 <= no_bugs_score <= 1.0
-    assert 0.0 <= smallness_score <= 1.0
+def test_bug_free_score_zero_bugs():
+    """bug_free_score with bugs=0 returns a score in [0, 1]."""
+    assert 0.0 <= HalsteadParser().bug_free_score({"bugs": 0}, max_bugs=1.0) <= 1.0
 
 
-def test_extract_bugs_and_volume_max_values():
-    """extract_bugs_and_volume with bugs=max, volume=max returns scores in [0, 1]."""
-    parser = HalsteadParser()
-    no_bugs_score, smallness_score = parser.extract_bugs_and_volume(
-        {"bugs": 1.0, "volume": 1000.0}, max_bugs=1.0, max_volume=1000.0
-    )
-    assert 0.0 <= no_bugs_score <= 1.0
-    assert 0.0 <= smallness_score <= 1.0
+def test_bug_free_score_max_bugs():
+    """bug_free_score with bugs=max returns a score in [0, 1]."""
+    assert 0.0 <= HalsteadParser().bug_free_score({"bugs": 1.0}, max_bugs=1.0) <= 1.0
 
 
 def test_parse_json_array_returns_perfect_score():
@@ -228,9 +196,7 @@ def test_parse_json_array_returns_perfect_score():
     tr = HalsteadParser().parse(raw(stdout="[]"))
     assert tr.metrics == {
         "file_bug_free": 1.0,
-        "file_smallness": 1.0,
         "functions_bug_free": 1.0,
-        "functions_smallness": 1.0,
     }
 
 
@@ -239,21 +205,17 @@ def test_format_llm_message_second_file_not_worse():
     tr = _tr_with_metrics(
         metrics={
             "file_bug_free": 0.3,
-            "file_smallness": 0.9,
             "functions_bug_free": 0.9,
-            "functions_smallness": 0.9,
         },
         details={
             "src/bad.py": {
                 "bug_free": 0.3,
-                "smallness": 0.9,
                 "bugs": 0.1,
                 "volume": 500,
                 "functions": {},
             },
             "src/good.py": {
                 "bug_free": 0.8,
-                "smallness": 0.9,
                 "bugs": 0.01,
                 "volume": 50,
                 "functions": {},

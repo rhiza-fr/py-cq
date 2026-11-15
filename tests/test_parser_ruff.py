@@ -238,3 +238,22 @@ def test_ruff_hint_F821_not_found(tmp_path):
     )
     msg = RuffParser().format_llm_message(tr)
     assert "not imported or defined" in msg
+
+
+SYNTAX_OUTPUT = """\
+src/a.py:3:1: BLE001 Do not catch blind exception: `Exception`
+src/b.py:5:1: F401 `os` imported but unused
+src/b.py:220:73: invalid-syntax: Cannot use an escape sequence (backslash) in f-strings on Python 3.10 (syntax was added in Python 3.12)
+Found 3 errors.
+"""
+
+
+def test_ruff_parse_invalid_syntax_is_reported_first():
+    """invalid-syntax lines are parsed and ranked ahead of rule violations."""
+    tr = RuffParser().parse(raw(SYNTAX_OUTPUT, return_code=1))
+    assert next(iter(tr.details)) == "src/b.py"
+    first = tr.details["src/b.py"][0]
+    assert first["code"] == "invalid-syntax"
+    assert first["line"] == 220
+    assert first["message"].startswith("Cannot use an escape sequence")
+    assert sum(len(v) for v in tr.details.values()) == 3

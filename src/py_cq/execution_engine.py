@@ -51,6 +51,28 @@ def _find_project_root(path: Path) -> Path | None:
     return None
 
 
+def _absolutize_detail_paths(tr: ToolResult, project_path: str) -> None:
+    """Make relative file keys in ``tr.details`` absolute against *project_path*.
+
+    Tools run from the project root and print paths relative to it, while
+    parsers read source files relative to cq's own working directory.
+    """
+    if not project_path or not isinstance(tr.details, dict):
+        return
+    root = Path(project_path)
+    tr.details = {
+        (
+            (root / key).as_posix()
+            if isinstance(key, str)
+            and key
+            and not Path(key).is_absolute()
+            and (root / key).is_file()
+            else key
+        ): value
+        for key, value in tr.details.items()
+    }
+
+
 def _dep_in_venv(dep: str, project_root: Path) -> bool:
     """Return True if `dep` is installed in the project's .venv."""
     venv = project_root / ".venv"
@@ -129,9 +151,12 @@ def _terminate_process_tree(proc: "subprocess.Popen") -> None:
 
 
 def _run_command(
-    command: str, run_env: dict, cancel_event: threading.Event | None
+    command: str,
+    run_env: dict,
+    cancel_event: threading.Event | None,
+    cwd: Path | None = None,
 ) -> tuple[str, str, int, bool]:
-    """Run *command* in a shell and return ``(stdout, stderr, returncode, cancelled)``.
+    """Run *command* in a shell from *cwd* and return ``(stdout, stderr, returncode, cancelled)``.
 
     When *cancel_event* fires mid-run the process tree is terminated and
     ``cancelled`` is True (captured output is discarded). With no event this is
@@ -146,6 +171,7 @@ def _run_command(
             encoding="utf-8",
             errors="replace",
             env=run_env,
+            cwd=cwd,
             check=False,
         )  # nosec
         return result.stdout, result.stderr, result.returncode, False
@@ -164,6 +190,7 @@ def _run_command(
         encoding="utf-8",
         errors="replace",
         env=run_env,
+        cwd=cwd,
         **popen_kwargs,
     )  # nosec
     # Poll so a cancel signal can terminate a still-running command.
@@ -208,7 +235,16 @@ def run_tool(
         >>> result.return_code
         0"""
     python = sys.executable
+    # Run from the target's project root so tools read its config (ruff's
+    # target-version from requires-python, [tool.vulture], ...) rather than
+    # whatever pyproject.toml sits in the caller's directory.
+    resolved_context = Path(context_path).resolve()
+    tool_cwd = _find_project_root(resolved_context) or (
+        resolved_context if resolved_context.is_dir() else resolved_context.parent
+    )
     path = str(Path(context_path))
+    if not Path(path).is_absolute() and tool_cwd != Path.cwd():
+        path = str(resolved_context)
     run_env = None
     project_dir = ""
     if tool_config.run_in_target_env:
@@ -249,11 +285,7 @@ def run_tool(
     abs_context_path_posix = Path(context_path).resolve().as_posix()
     native_sep = os.sep
     if not project_dir:
-        project_dir = (
-            Path(abs_context_path).as_posix()
-            if Path(abs_context_path).is_dir()
-            else Path(abs_context_path).parent.as_posix()
-        )
+        project_dir = tool_cwd.as_posix()
     input_path_posix = Path(context_path).as_posix().rstrip("/")
     exclude = _build_exclude_str(
         tool_config.exclude_format,
@@ -282,7 +314,7 @@ def run_tool(
         context_hash = get_context_hash(context_path, normalize=True)
     else:
         context_hash = get_context_hash(context_path)
-    cache_key = f"{command}:{context_hash}"
+    cache_key = f"{tool_cwd}|{command}:{context_hash}"
 
     t_cache0 = time.perf_counter()
     cached = _cache.get(cache_key)
@@ -306,7 +338,7 @@ def run_tool(
     t_sub0 = time.perf_counter()
     try:
         stdout, stderr, return_code, cancelled = _run_command(
-            command, run_env, cancel_event
+            command, run_env, cancel_event, tool_cwd
         )
     finally:
         Path(coverage_tmp).unlink(missing_ok=True)
@@ -433,6 +465,7 @@ def run_tools(
             **extra,
         )
         tr = tool_config.parser_class(tool_config.parser_config).parse(raw_result)
+        _absolutize_detail_paths(tr, raw_result.project_path)
         tr.duration_s = time.perf_counter() - t0
         return tool_config.order, tr
 

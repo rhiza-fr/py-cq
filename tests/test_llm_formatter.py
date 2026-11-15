@@ -378,19 +378,16 @@ def test_halstead_format_llm_message_function_bugs():
         {
             "src/foo.py": {
                 "bug_free": 0.9,
-                "smallness": 0.9,
                 "bugs": 0.05,
                 "volume": 100,
                 "functions": {
                     "big_fn": {
                         "bug_free": 0.3,
-                        "smallness": 0.8,
                         "bugs": 0.45,
                         "volume": 200,
                     },
                     "small_fn": {
                         "bug_free": 0.95,
-                        "smallness": 0.95,
                         "bugs": 0.01,
                         "volume": 20,
                     },
@@ -400,9 +397,7 @@ def test_halstead_format_llm_message_function_bugs():
     )
     tr.metrics = {
         "functions_bug_free": 0.3,
-        "functions_smallness": 0.8,
         "file_bug_free": 0.9,
-        "file_smallness": 0.9,
     }
     msg = HalsteadParser().format_llm_message(tr)
     assert "src/foo.py" in msg
@@ -418,7 +413,6 @@ def test_halstead_format_llm_message_file_volume():
         {
             "src/large.py": {
                 "bug_free": 0.8,
-                "smallness": 0.2,
                 "bugs": 0.1,
                 "volume": 1900,
                 "functions": {},
@@ -427,9 +421,7 @@ def test_halstead_format_llm_message_file_volume():
     )
     tr.metrics = {
         "file_bug_free": 0.8,
-        "file_smallness": 0.2,
         "functions_bug_free": 1.0,
-        "functions_smallness": 1.0,
     }
     msg = HalsteadParser().format_llm_message(tr)
     assert "src/large.py" in msg

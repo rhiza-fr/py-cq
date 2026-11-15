@@ -90,3 +90,40 @@ def test_vulture_parse_ignores_non_matching_lines():
             {"line": 10, "type": "unused function", "name": "bar", "confidence": 80}
         ]
     }
+
+
+MODELS_SRC = """\
+from pydantic import BaseModel
+
+
+class Reply(BaseModel):
+    how_hot: str = "warm"
+    unannotated = 1
+
+
+def f():
+    local: int = 2
+    return 0
+
+
+module_level: int = 3
+"""
+
+
+def test_vulture_skips_typed_class_fields(tmp_path):
+    """Typed fields in a class body (pydantic, dataclass, TypedDict) are not dead code."""
+    (tmp_path / "m.py").write_text(MODELS_SRC)
+    out = "\n".join(
+        f"m.py:{line}: unused variable '{name}' (60% confidence)"
+        for line, name in [
+            (5, "how_hot"),
+            (6, "unannotated"),
+            (10, "local"),
+            (14, "module_level"),
+        ]
+    )
+    tr = VultureParser().parse(
+        RawResult(stdout=out, return_code=0, project_path=tmp_path.as_posix())
+    )
+    names = [i["name"] for i in tr.details["m.py"]]
+    assert names == ["unannotated", "local", "module_level"]

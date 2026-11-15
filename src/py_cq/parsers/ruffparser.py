@@ -7,6 +7,7 @@ This module defines :class:`RuffParser`, an implementation of
 The concise output format is one violation per line::
 
     <file>:<line>:<col>: <CODE> <message>
+    <file>:<line>:<col>: invalid-syntax: <message>
 
 followed by a summary line ``Found N error.`` or ``All checks passed!``."""
 
@@ -24,7 +25,8 @@ from py_cq.parsers.common import (
     score_logistic_variant,
 )
 
-_DIAG_RE = re.compile(r"^(.+):(\d+):(\d+): ([A-Z]{1,5}\d+) (.+)$")
+_DIAG_RE = re.compile(r"^(.+):(\d+):(\d+): ([A-Z]{1,5}\d+|invalid-syntax):? (.+)$")
+_SYNTAX_CODE = "invalid-syntax"
 _VARNAME_RE = re.compile(r"[`'](\w+)[`']")
 
 
@@ -181,6 +183,12 @@ class RuffParser(AbstractParser):
                         "message": m.group(5),
                     }
                 )
+        # Syntax errors first: nothing else in the file is reliable until they are fixed.
+        for issues in files.values():
+            issues.sort(key=lambda i: i["code"] != _SYNTAX_CODE)
+        files = dict(
+            sorted(files.items(), key=lambda kv: kv[1][0]["code"] != _SYNTAX_CODE)
+        )
         score = score_logistic_variant(
             sum(len(v) for v in files.values()), scale_factor=20
         )

@@ -219,7 +219,7 @@ def test_halstead_bug_defect_snapshot():
     cfg = ToolConfig(name="radon-hal", command="", parser_class=HalsteadParser, order=9)
     tr = ToolResult(
         metrics={"bug_free": 0.3},
-        details={"src/heavy.py": {"bug_free": 0.3, "bugs": 2.5, "smallness": 0.8}},
+        details={"src/heavy.py": {"bug_free": 0.3, "bugs": 2.5}},
         raw=RawResult(tool_name="radon-hal"),
     )
     result = format_for_llm(

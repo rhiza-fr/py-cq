@@ -62,9 +62,9 @@ def _single_issue_slices(
             )
             cov_val = d.get("coverage", 0)
             coverage = float(cov_val) if isinstance(cov_val, (int, float, str)) else 0.0
-            sm_val = d.get("smallness", 1.0)
-            smallness = float(sm_val) if isinstance(sm_val, (int, float)) else 1.0
-            return (-failures, coverage, smallness)
+            bf_val = d.get("bug_free", 1.0)
+            bug_free = float(bf_val) if isinstance(bf_val, (int, float)) else 1.0
+            return (-failures, coverage, bug_free)
 
         items = sorted(tr.details.items(), key=lambda x: _dict_sort_key(x[1]))
         for file, data in items:

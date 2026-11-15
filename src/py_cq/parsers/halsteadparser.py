@@ -2,8 +2,12 @@
 
 This module implements :class:`HalsteadParser`, an ``AbstractParser`` that
 converts the JSON output from Halstead metric tools into a
-``ToolResult``.  It extracts bug estimates and program volume, applies
-maximum thresholds, and aggregates file- and function-level metrics."""
+``ToolResult``.  It scores the estimated bug count against a maximum, and
+aggregates file- and function-level metrics.
+
+Radon estimates bugs as ``volume / 3000``, so a bug score and a volume score
+with the same ratio of limits are the same number. Only the bug score is
+reported."""
 
 from py_cq.localtypes import AbstractParser, RawResult, ToolResult
 from py_cq.parsers.common import _relative_path, parse_json_dict, score_logistic_variant
@@ -16,8 +20,7 @@ class HalsteadParser(AbstractParser):
     Halstead-based JSON.  The `parse` method consumes a `RawResult`,
     extracts per-file and per-function metrics, applies the configured
     maximum bug and volume thresholds, and aggregates the results.
-    The helper `extract_bugs_and_volume` performs the core calculation of
-    bug-free and smallness scores.
+    The helper `bug_free_score` performs the core calculation.
 
     The parser also records the tool's return code and any errors in the
     result details."""
@@ -27,15 +30,13 @@ class HalsteadParser(AbstractParser):
 
         The method reads ``raw_result.stdout``-a JSON string containing
         per-file and per-function Halstead metrics. For each file it
-        populates a ``ToolResult`` detail entry with bug-free and
-        smallness scores. If a file contains an ``error`` key, the
-        associated metrics are set to zero and the error message is
-        stored. File-level and function-level thresholds are applied
-        when computing metrics via :meth:`extract_bugs_and_volume`.
+        populates a ``ToolResult`` detail entry with a bug-free score.
+        If a file contains an ``error`` key, the associated metrics are
+        set to zero and the error message is stored. File-level and
+        function-level thresholds are applied via :meth:`bug_free_score`.
 
         After processing all entries, aggregate metrics
-        (``file_bug_free``, ``file_smallness``,
-        ``functions_bug_free``, ``functions_smallness``) are calculated
+        (``file_bug_free``, ``functions_bug_free``) are calculated
         from the minimum values observed. The tool's return code is also
         recorded in the ``ToolResult`` details.
 
@@ -59,65 +60,43 @@ class HalsteadParser(AbstractParser):
         tr = ToolResult(raw=raw_result)
         data = parse_json_dict(raw_result.stdout)
         if data is None:
-            tr.metrics = {
-                "file_bug_free": 1.0,
-                "file_smallness": 1.0,
-                "functions_bug_free": 1.0,
-                "functions_smallness": 1.0,
-            }
+            tr.metrics = {"file_bug_free": 1.0, "functions_bug_free": 1.0}
             return tr
-        MAX_FILE_BUGS = 1
-        MAX_FILE_VOLUME = 3000
-        MAX_FUNCTION_BUGS = 0.2
-        MAX_FUNCTION_VOLUME = 600
+        MAX_FILE_BUGS = 1  # volume 3000
+        MAX_FUNCTION_BUGS = 0.2  # volume 600
         min_file_nb = 1.0
-        min_file_sm = 1.0
         min_function_nb = 1.0
-        min_function_sm = 1.0
         for file, values in data.items():
             file_name = file.replace("\\", "/")
             if file_name not in tr.details:
                 tr.details[file_name] = {
                     "bug_free": 0.0,
-                    "smallness": 0.0,
                     "functions": {},
                 }
             if "error" in values:
                 tr.details[file_name]["error"] = values["error"]
                 min_file_nb = 0.0
-                min_file_sm = 0.0
                 min_function_nb = 0.0
-                min_function_sm = 0.0
                 continue
             if "total" in values:
-                nb, sm = self.extract_bugs_and_volume(
-                    values.get("total", {}), MAX_FILE_BUGS, MAX_FILE_VOLUME
-                )
+                nb = self.bug_free_score(values.get("total", {}), MAX_FILE_BUGS)
                 min_file_nb = min(nb, min_file_nb)
-                min_file_sm = min(sm, min_file_sm)
                 tr.details[file_name]["bug_free"] = nb
-                tr.details[file_name]["smallness"] = sm
                 tr.details[file_name]["bugs"] = values["total"].get("bugs", 0)
                 tr.details[file_name]["volume"] = values["total"].get("volume", 0)
             if "functions" in values:
                 for function, function_values in values["functions"].items():
-                    nb, sm = self.extract_bugs_and_volume(
-                        function_values, MAX_FUNCTION_BUGS, MAX_FUNCTION_VOLUME
-                    )
+                    nb = self.bug_free_score(function_values, MAX_FUNCTION_BUGS)
                     min_function_nb = min(nb, min_function_nb)
-                    min_function_sm = min(sm, min_function_sm)
                     tr.details[file_name]["functions"][function] = {
                         "bug_free": nb,
-                        "smallness": sm,
                         "bugs": function_values.get("bugs", 0),
                         "volume": function_values.get("volume", 0),
                         "difficulty": function_values.get("difficulty", 0),
                     }
         tr.metrics = {
             "file_bug_free": min_file_nb,
-            "file_smallness": min_file_sm,
             "functions_bug_free": min_function_nb,
-            "functions_smallness": min_function_sm,
         }
         return tr
 
@@ -130,7 +109,6 @@ class HalsteadParser(AbstractParser):
 
         metric_name, score = min(tr.metrics.items(), key=lambda x: x[1])
         is_function_metric = metric_name.startswith("functions_")
-        is_bug_metric = "bug_free" in metric_name
 
         worst_file = None
         worst_function = None
@@ -142,7 +120,7 @@ class HalsteadParser(AbstractParser):
         for file_name, file_data in tr.details.items():
             if is_function_metric:
                 for func_name, func_data in file_data.get("functions", {}).items():
-                    s = func_data.get("bug_free" if is_bug_metric else "smallness", 1.0)
+                    s = func_data.get("bug_free", 1.0)
                     if s < worst_score:
                         worst_score = s
                         worst_file = file_name
@@ -151,7 +129,7 @@ class HalsteadParser(AbstractParser):
                         worst_volume = func_data.get("volume")
                         worst_difficulty = func_data.get("difficulty")
             else:
-                s = file_data.get("bug_free" if is_bug_metric else "smallness", 1.0)
+                s = file_data.get("bug_free", 1.0)
                 if s < worst_score:
                     worst_score = s
                     worst_file = file_name
@@ -163,41 +141,24 @@ class HalsteadParser(AbstractParser):
 
         path = _relative_path(worst_file)
         location = f"{path} - function `{worst_function}`" if worst_function else path
-        if is_bug_metric:
-            parts = []
-            if worst_bugs is not None:
-                parts.append(f"bugs: {worst_bugs:.3f}")
-            if worst_volume is not None:
-                parts.append(f"volume: {worst_volume:.0f}")
-            if worst_difficulty is not None:
-                parts.append(f"difficulty: {worst_difficulty:.1f}")
-            detail = f" ({', '.join(parts)})" if parts else ""
-            if (
-                worst_difficulty is not None
-                and worst_volume is not None
-                and worst_difficulty > worst_volume / 50
-            ):
-                advice = "Simplify branching logic, reduce nesting, or consolidate repeated operator patterns."
-            else:
-                advice = (
-                    "Extract helper functions to reduce the function's size and scope."
-                )
-            return f"{location} has high estimated bug density{detail}\n\n{advice}"
+        parts = []
+        if worst_bugs is not None:
+            parts.append(f"bugs: {worst_bugs:.3f}")
+        if worst_volume is not None:
+            parts.append(f"volume: {worst_volume:.0f}")
+        if worst_difficulty is not None:
+            parts.append(f"difficulty: {worst_difficulty:.1f}")
+        detail = f" ({', '.join(parts)})" if parts else ""
+        if (
+            worst_difficulty is not None
+            and worst_volume is not None
+            and worst_difficulty > worst_volume / 50
+        ):
+            advice = "Simplify branching logic, reduce nesting, or consolidate repeated operator patterns."
         else:
-            detail = (
-                f" (volume: {worst_volume:.0f})" if worst_volume is not None else ""
-            )
-            return (
-                f"{location} is too large{detail}\n\n"
-                f"Split into smaller functions or modules."
-            )
+            advice = "Extract helper functions to reduce the function's size and scope."
+        return f"{location} has high estimated bug density{detail}\n\n{advice}"
 
-    def extract_bugs_and_volume(
-        self, values: dict, max_bugs: float, max_volume: float
-    ) -> tuple[float, float]:
-        """Calculates bug-free and smallness scores from Halstead metrics using logistic scoring."""
-        no_bugs_score = score_logistic_variant(values.get("bugs", max_bugs), max_bugs)
-        smallness_score = score_logistic_variant(
-            values.get("volume", max_volume), max_volume
-        )
-        return (no_bugs_score, smallness_score)
+    def bug_free_score(self, values: dict, max_bugs: float) -> float:
+        """Score a Halstead entry's estimated bug count against *max_bugs* with logistic scoring."""
+        return score_logistic_variant(values.get("bugs", max_bugs), max_bugs)

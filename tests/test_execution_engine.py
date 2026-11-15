@@ -338,7 +338,7 @@ def test_run_tool_cache_hit_skips_subprocess(tmp_path):
         python=sys.executable,
         exclude="",
     )
-    cache_key = f"{command}:{get_context_hash(str(tmp_path))}"
+    cache_key = f"{tmp_path}|{command}:{get_context_hash(str(tmp_path))}"
     fake_cache = {cache_key: cached.to_dict()}
 
     with (
@@ -807,3 +807,101 @@ def test_run_tool_cache_invalidated_on_content_change(tmp_path):
         run_tool(cfg, str(py_file))
     # Two subprocess calls prove both were cache misses
     assert mock_sub.call_count == 2
+
+
+# --- run_tool working directory ---
+
+_PRINT_CWD = (
+    '"{python}" -c "import os, sys; print(os.getcwd()); '
+    'print(os.path.abspath(sys.argv[1]))" "{context_path}"'
+)
+
+
+def _cwd_config():
+    return ToolConfig(
+        name="cwd",
+        command=_PRINT_CWD.replace("{python}", sys.executable),
+        parser_class=MagicMock,
+        order=1,
+        warning_threshold=0.7,
+        error_threshold=0.5,
+    )
+
+
+def _no_cache():
+    cache = MagicMock()
+    cache.get = MagicMock(return_value=None)
+    return patch("py_cq.execution_engine._cache", cache)
+
+
+def test_run_tool_runs_in_project_root_given_relative_path(tmp_path, monkeypatch):
+    """Tools run from the target project root, so they read its config (not the caller's)."""
+    from py_cq.execution_engine import run_tool
+
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    (proj / "pyproject.toml").write_text("[project]\nname = 'p'\n")
+    other = tmp_path / "other"
+    other.mkdir()
+    monkeypatch.chdir(other)
+    with _no_cache():
+        result = run_tool(_cwd_config(), "../proj")
+    cwd, target = result.stdout.splitlines()
+    assert cwd == str(proj)
+    assert target == str(proj)
+
+
+def test_run_tool_file_target_runs_in_its_project_root(tmp_path, monkeypatch):
+    """A single-file target runs from the nearest pyproject.toml above it."""
+    from py_cq.execution_engine import run_tool
+
+    (tmp_path / "pyproject.toml").write_text("[project]\nname = 'p'\n")
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "m.py").write_text("x = 1\n")
+    monkeypatch.chdir(src)
+    with _no_cache():
+        result = run_tool(_cwd_config(), "m.py")
+    cwd, target = result.stdout.splitlines()
+    assert cwd == str(tmp_path)
+    assert target == str(src / "m.py")
+
+
+def test_run_tool_cache_key_includes_working_directory(tmp_path):
+    """Results depend on the working directory, so it is part of the cache key."""
+    from py_cq.execution_engine import run_tool
+
+    (tmp_path / "pyproject.toml").write_text("[project]\nname = 'p'\n")
+    cache = MagicMock()
+    cache.get = MagicMock(return_value=None)
+    with (
+        patch("py_cq.execution_engine._cache", cache),
+        patch(
+            "py_cq.execution_engine.subprocess.run",
+            return_value=MagicMock(stdout="x", stderr="", returncode=0),
+        ),
+    ):
+        run_tool(_cwd_config(), str(tmp_path))
+    assert cache.get.call_args[0][0].startswith(f"{tmp_path}|")
+
+
+def test_absolutize_detail_paths_resolves_relative_file_keys(tmp_path):
+    """Relative file keys printed by a tool run in the project root become absolute."""
+    from py_cq.execution_engine import _absolutize_detail_paths
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "m.py").write_text("x = 1\n")
+    tr = ToolResult(
+        raw=RawResult(),
+        details={
+            "src/m.py": [1],
+            "tests/test_m.py::test_a": "PASSED",
+            "missing.py": [2],
+        },
+    )
+    _absolutize_detail_paths(tr, tmp_path.as_posix())
+    assert tr.details == {
+        f"{tmp_path.as_posix()}/src/m.py": [1],
+        "tests/test_m.py::test_a": "PASSED",
+        "missing.py": [2],
+    }
