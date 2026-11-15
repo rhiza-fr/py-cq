@@ -20,6 +20,7 @@ def _fixed_console_width(monkeypatch):
     """Pin rich's width so output does not depend on the real terminal size."""
     monkeypatch.setattr(console, "width", 120)
 
+
 _DISABLE_ALL = [
     "compile",
     "ruff",
