@@ -66,6 +66,18 @@ def test_format_source_context_stops_at_next_def(tmp_path):
     assert "test_two" not in result
 
 
+def test_format_source_context_decorator_line_shows_decorated_def(tmp_path):
+    """An issue reported on a decorator line shows the function it decorates."""
+    f = tmp_path / "foo.py"
+    f.write_text(
+        "x = 1\n\n\n@tool\n@other(arg=1)\ndef delegate():\n    return 1\n\n\ndef next_one():\n    pass\n"
+    )
+    result = format_source_context(str(f), 4, context=0, count=15)
+    assert "def delegate" in result
+    assert "return 1" in result
+    assert "next_one" not in result
+
+
 def test_format_source_context_includes_def_containing_error(tmp_path):
     """Test that format_source_context includes the definition containing the error."""
     f = tmp_path / "foo.py"

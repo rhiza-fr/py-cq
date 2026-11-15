@@ -177,8 +177,10 @@ class PytestParser(AbstractParser):
                     test_name = tests_match.group(2).strip()
                     test_status = tests_match.group(3)
                     tests_found.setdefault(test_file, {})[test_name] = test_status
+                    if test_status in ("SKIPPED", "XFAIL"):
+                        continue
                     num_tests += 1
-                    if test_status == "PASSED":
+                    if test_status in ("PASSED", "XPASS"):
                         passed_tests += 1
             if num_tests == 0:
                 # No individual test lines found (e.g. non-verbose output);

@@ -30,6 +30,19 @@ def test_pytest_parse_all_pass():
     assert tr.metrics["tests"] == 1.0
 
 
+def test_pytest_parse_skipped_and_xfail_not_failures():
+    """SKIPPED and XFAIL are expected outcomes and must not lower the pass rate."""
+    stdout = (
+        "tests/test_foo.py::test_one PASSED    [ 25%]\n"
+        "tests/test_foo.py::test_two SKIPPED    [ 50%]\n"
+        "tests/test_foo.py::test_three XFAIL    [ 75%]\n"
+        "tests/test_foo.py::test_four XPASS    [100%]\n"
+    )
+    tr = PytestParser().parse(raw(stdout, return_code=0))
+    assert tr.metrics["tests"] == 1.0
+    assert tr.details["tests/test_foo.py"]["test_two"] == "SKIPPED"
+
+
 def test_pytest_parse_no_tests():
     tr = PytestParser().parse(raw(PYTEST_NO_TESTS))
     assert tr.metrics == {"tests": 0.0}

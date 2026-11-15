@@ -46,9 +46,15 @@ def format_source_context(
         return ""
     error_offset = line - context_start  # 0-based index of the error line in raw_lines
     collected = []
+    # An issue on a decorator line belongs to the def it decorates.
+    in_decorators = raw_lines[error_offset].startswith("@")
     for i, rline in enumerate(raw_lines):
         if i > error_offset and (rline.startswith(("def ", "async def ", "class "))):
-            break
+            if not in_decorators:
+                break
+            in_decorators = False
+        elif i > error_offset and in_decorators and not rline.startswith("@"):
+            in_decorators = False
         collected.append(f"{context_start + i}: {rline}")
     src = "\n".join(collected)
     return f"\n```python\n{src}\n```"
