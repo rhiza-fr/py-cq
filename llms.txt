@@ -1,0 +1,25 @@
+# cq (python-code-quality)
+
+> CLI that runs 14 Python code quality tools (compileall, ruff, ty, bandit, kingfisher, uv audit, pytest, coverage, vulture, interrogate, radon cc/mi/hal, ruff format), combines them into one score, and prints the single most important defect as a markdown prompt for an LLM. It never edits files.
+
+Install: `uv tool install python-code-quality` (requires Python 3.12+ and uv).
+
+Core loop for an agent:
+
+1. Run `cq check . -o llm` in the project root.
+2. Fix only the issue it prints.
+3. Repeat until `cq check . -o score` exits 0.
+
+Useful commands:
+
+- `cq check . -o llm --limit 3`: show up to 3 issues
+- `cq check . -o llm -s src/foo.py:42:E501`: silence one issue
+- `cq check . -o llm-json`: top issue as JSON with a fingerprint `id`
+- `cq is-fixed <id>`: check whether that issue is gone, re-running one tool on one file
+- `cq config`: effective tools and thresholds; override them under `[tool.cq]` in pyproject.toml
+
+## Docs
+
+- [README](https://github.com/rhiza-fr/py-cq/blob/main/README.md): usage, configuration, Claude Code stop hook, GitHub Action, pre-commit
+- [CHANGELOG](https://github.com/rhiza-fr/py-cq/blob/main/CHANGELOG.md)
+- [Default tool config](https://github.com/rhiza-fr/py-cq/blob/main/src/py_cq/config/config.toml)

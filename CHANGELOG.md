@@ -2,6 +2,12 @@
 
 ## [0.4.2] - 2026-11-16
 
+### Added
+
+- GitHub Action (`action.yml`): `uses: rhiza-fr/py-cq@v0.4.2` runs cq as a CI gate. The job summary shows the score table and, on failure, up to `limit` issues (default 3) from the first failing tool. It installs `uv` when missing, installs Kingfisher by default, and works on Gitea Actions.
+- pre-commit hook (`.pre-commit-hooks.yaml`), id `cq`: runs `cq check . -o llm` and blocks the commit when the gate fails.
+- `llms.txt` describing the agent fix loop.
+
 ### Fixed
 
 - The relative-path test in `test_llm_formatter.py` built the native path with a hardcoded backslash, which is only a separator on Windows, so CI failed on Linux. It now uses `os.sep`.

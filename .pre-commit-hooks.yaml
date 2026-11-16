@@ -1,0 +1,7 @@
+- id: cq
+  name: cq
+  description: Run 14 Python code quality tools and show the top issue to fix.
+  entry: cq check . -o llm
+  language: python
+  pass_filenames: false
+  types: [python]

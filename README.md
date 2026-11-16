@@ -6,9 +6,11 @@
 [![Python versions](https://img.shields.io/pypi/pyversions/python-code-quality?)](https://pypi.org/project/python-code-quality/)
 [![License](https://img.shields.io/github/license/rhiza-fr/py-cq)](LICENSE)
 
-`cq` runs 14 code quality tools on a Python project, combines their results into one score, and shows the single most important defect as a short markdown prompt you can hand to an LLM.
+Coding agents say "done" while tests fail, types are broken or a secret sits in the code. `cq` checks for them.
 
-Fix that one issue, run `cq` again, and repeat until everything passes. Neither you nor the LLM has to know how to run or read the individual tools.
+`cq` runs 14 code quality tools on a Python project, combines their results into one score, and shows the single most important defect as a short markdown prompt you can hand to an LLM. Fix that one issue, run `cq` again, and repeat until everything passes. Neither you nor the LLM has to know how to run or read the individual tools.
+
+Use it by hand, as a [Claude Code stop hook](#claude-code-integration) that keeps the agent working until the check passes, as a [pre-commit hook](#pre-commit), or as a [CI gate](#github-action).
 
 `cq` never edits your files. You may want to run `ruff check --fix` and `ruff format` first so the easy fixes are already done.
 
@@ -196,6 +198,42 @@ Then run `/cq-fix` in Claude Code. The `` !`...` `` line runs `cq` when the comm
 **Hook or slash command:**
 - **Stop hook**: automatic, runs every time Claude stops, best for unattended loops
 - **Slash command**: manual `/cq-fix`, gives you explicit control over when to check
+
+## GitHub Action
+
+Add `cq` as a quality gate to a workflow:
+
+```yaml
+- uses: actions/checkout@v4
+- uses: rhiza-fr/py-cq@v0.4.2
+```
+
+The step fails when any tool falls below its error threshold. The job summary shows the score table and, on failure, up to 3 issues from the first failing tool, with the code around each one.
+
+Inputs, all optional:
+
+| Input | Default | Meaning |
+|-------|---------|---------|
+| `path` | `.` | Project directory or file to check |
+| `limit` | `3` | Number of issues to show on failure |
+| `args` | | Extra `cq check` arguments, for example `--skip coverage` |
+| `package` | `python-code-quality` | What `uv tool install` installs, for example `python-code-quality==0.4.2` |
+| `kingfisher` | `true` | Install Kingfisher so the secret scan runs |
+
+The action installs `uv` if the runner does not have it. It also works on Gitea Actions, which does not display the job summary; the table and issues are printed to the log as well.
+
+## pre-commit
+
+Add to your `.pre-commit-config.yaml`:
+
+```yaml
+- repo: https://github.com/rhiza-fr/py-cq
+  rev: v0.4.2
+  hooks:
+    - id: cq
+```
+
+The hook runs `cq check . -o llm` on the whole project when Python files change and blocks the commit if the gate fails, printing the top issue. It runs your tests, so it suits projects with a fast suite; cached results keep re-runs quick.
 
 ## Fingerprint-based verification
 

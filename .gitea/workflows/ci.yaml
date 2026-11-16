@@ -90,6 +90,36 @@ jobs:
           grep -q "cfg.py:1 - betterleaks.github-pat" kf.md
           ! grep -q "1a2B3c4D5e6F7g8H9i0JkLmNoPqRsTuVwXyZ" kf.md
 
+  action:
+    name: action.yml passes and fails correctly
+    runs-on: python-test-image
+    env:
+      UV_PYTHON: '3.12'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Passes on this repo
+        uses: ./
+        with:
+          package: .
+
+      - name: Make a project with an undefined name and no tests
+        run: |
+          mkdir -p /tmp/bad/src
+          printf '[project]\nname = "bad"\nversion = "0"\nrequires-python = ">=3.12"\n' > /tmp/bad/pyproject.toml
+          printf '"""Bad."""\n\n\ndef total(prices):\n    """Sum."""\n    return sum(prices) + discount\n' > /tmp/bad/src/bad.py
+
+      - name: Fails on the broken project
+        id: bad
+        continue-on-error: true
+        uses: ./
+        with:
+          path: /tmp/bad
+          package: .
+
+      - name: The broken project failed the gate
+        run: test "${{ steps.bad.outcome }}" = failure
+
   upgrade-test:
     name: Dependency upgrade test
     runs-on: python-test-image

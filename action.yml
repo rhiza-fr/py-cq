@@ -1,0 +1,85 @@
+name: 'cq: Python code quality gate'
+description: 'Run 14 Python code quality tools as one gate. On failure, the job summary shows the score table and the top issues to fix.'
+author: 'rhiza-fr'
+branding:
+  icon: 'check-circle'
+  color: 'green'
+
+inputs:
+  path:
+    description: 'Project directory (or single file) to check.'
+    default: '.'
+  limit:
+    description: 'Number of issues to show when the gate fails.'
+    default: '3'
+  args:
+    description: 'Extra arguments for `cq check`, for example `--skip coverage`.'
+    default: ''
+  package:
+    description: 'What `uv tool install` installs: a version pin such as `python-code-quality==0.4.2`, or a path.'
+    default: 'python-code-quality'
+  kingfisher:
+    description: 'Install Kingfisher so the secret scan runs (about 41 MB). Set to `false` to skip it.'
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install uv
+      shell: bash
+      run: |
+        if ! command -v uv > /dev/null; then
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        fi
+
+    - name: Install cq
+      shell: bash
+      env:
+        PACKAGE: ${{ inputs.package }}
+        KINGFISHER: ${{ inputs.kingfisher }}
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        uv tool install --force "$PACKAGE"
+        if [ "$KINGFISHER" = "true" ] && ! command -v kingfisher > /dev/null; then
+          uv tool install kingfisher-bin
+        fi
+        uv tool dir --bin >> "$GITHUB_PATH"
+
+    - name: Run cq
+      shell: bash
+      env:
+        CQ_PATH: ${{ inputs.path }}
+        CQ_LIMIT: ${{ inputs.limit }}
+        CQ_ARGS: ${{ inputs.args }}
+        COLUMNS: '100'
+      run: |
+        # The table run executes every tool and sets the exit code. On failure
+        # the -o llm run reads the same results from cq's cache.
+        table="${RUNNER_TEMP:-/tmp}/cq-table.txt"
+        issues="${RUNNER_TEMP:-/tmp}/cq-issues.md"
+        summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
+        set +e
+        cq check "$CQ_PATH" $CQ_ARGS > "$table"
+        status=$?
+        set -e
+        cat "$table"
+        {
+          echo '## cq'
+          echo '```'
+          cat "$table"
+          echo '```'
+        } >> "$summary"
+        if [ "$status" -ne 0 ]; then
+          cq check "$CQ_PATH" -o llm --limit "$CQ_LIMIT" $CQ_ARGS > "$issues" || true
+          echo
+          cat "$issues"
+          {
+            echo '### Top issues'
+            echo
+            cat "$issues"
+            echo
+            echo 'Run `cq check . -o llm` locally to work through them one at a time.'
+          } >> "$summary"
+        fi
+        exit "$status"
