@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.2] - 2026-11-16
+
+### Fixed
+
+- The relative-path test in `test_llm_formatter.py` built the native path with a hardcoded backslash, which is only a separator on Windows, so CI failed on Linux. It now uses `os.sep`.
+- `cq --help` and `cq check --help` say 14 tools, not 13.
+- README: the Claude Code stop hook example now exits `2` and writes the fix prompt to stderr, which is what makes Claude receive it and keep working. The old example always exited `0`, so Claude never saw the prompt. The slash command example uses the `` !`cq check . -o llm` `` syntax, since `$(...)` is not expanded.
+
+### Changed
+
+- README restructured for first-time users: requirements (Python 3.12+, `uv`), a quick start with sample `-o llm` output, the `--limit`, `--silence` and `--order` flags, and `cq config` in place of a stale copy of the default `config.toml`.
+
 ## [0.4.1] - 2026-11-16
 
 ### Removed
