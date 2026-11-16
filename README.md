@@ -174,7 +174,7 @@ Add a stop hook to your project's `.claude/settings.json`. Each time Claude fini
         "hooks": [
           {
             "type": "command",
-            "command": "cq check . -o score > /dev/null || { cq check . -o llm >&2; exit 2; }"
+            "command": "cq check \"$CLAUDE_PROJECT_DIR\" -o score > /dev/null || { cq check \"$CLAUDE_PROJECT_DIR\" -o llm >&2; exit 2; }"
           }
         ]
       }
@@ -183,7 +183,7 @@ Add a stop hook to your project's `.claude/settings.json`. Each time Claude fini
 }
 ```
 
-Exit code `2` is what makes Claude Code block the stop and pass the hook's stderr (the fix prompt) to Claude. When the check passes, the hook exits `0` silently and Claude stops as normal. Claude keeps looping as long as the check fails, so use thresholds your project can actually meet.
+`$CLAUDE_PROJECT_DIR` points at the project root even when Claude has changed into a subdirectory, where `.` would fail with `Directory must contain pyproject.toml`. Exit code `2` is what makes Claude Code block the stop and pass the hook's stderr (the fix prompt) to Claude. When the check passes, the hook exits `0` silently and Claude stops as normal. Claude keeps looping as long as the check fails, so use thresholds your project can actually meet.
 
 > **Note:** Use project-level `.claude/settings.json`, not global settings. This hook only makes sense in Python projects.
 

@@ -47,7 +47,7 @@ cq check . -o llm | claude -p "fix this"
 ```json
 {
   "hooks": {
-    "Stop": [{"matcher": "", "hooks": [{"type": "command", "command": "cq check . -o score > /dev/null || { cq check . -o llm >&2; exit 2; }"}]}]
+    "Stop": [{"matcher": "", "hooks": [{"type": "command", "command": "cq check \"$CLAUDE_PROJECT_DIR\" -o score > /dev/null || { cq check \"$CLAUDE_PROJECT_DIR\" -o llm >&2; exit 2; }"}]}]
   }
 }
 ```
