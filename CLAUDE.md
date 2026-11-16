@@ -43,18 +43,21 @@ cq check . -o score         # print score, exit 1 on errors
 cq check . -o llm | claude -p "fix this"
 ```
 
-**Stop hook** (`.claude/settings.json`) — auto-checks after each session:
+**Stop hook** (`.claude/settings.json`), runs each time Claude stops; exit 2 sends the stderr prompt back to Claude:
 ```json
 {
   "hooks": {
-    "Stop": [{"matcher": "", "hooks": [{"type": "command", "command": "cq check . -o score && echo 'CQ: all clear' || cq check . -o llm"}]}]
+    "Stop": [{"matcher": "", "hooks": [{"type": "command", "command": "cq check . -o score > /dev/null || { cq check . -o llm >&2; exit 2; }"}]}]
   }
 }
 ```
 
-**Slash command** (`.claude/commands/cq-fix.md`) — manual invocation via `/cq-fix`:
+**Slash command** (`.claude/commands/cq-fix.md`), manual invocation via `/cq-fix`:
 ```markdown
-$(cq check . -o llm)
+---
+allowed-tools: Bash(cq check:*)
+---
+!`cq check . -o llm`
 ```
 
 ## Dev Commands
