@@ -1,6 +1,6 @@
 [project]
 name = "python-code-quality"
-version = "0.4.0"
+version = "0.4.1"
 description = "Python Code Quality Analysis Tool - feed the results from 14 CQ tools straight into an LLM. Minimal tokens."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -60,7 +60,7 @@ addopts = "-m 'not slow'"
 
 [[tool.ty.overrides]]
 include = ["demo/**"]
-rules = {unresolved-import = "ignore"}
+rules = {import-not-found = "ignore"}
 
 [tool.cq]
 exclude = ["demo"]
