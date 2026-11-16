@@ -1,5 +1,7 @@
 """Tests for llm_formatter pipeline and each parser's format_llm_message."""
 
+import os
+
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -490,7 +492,7 @@ def test_format_for_llm_paths_relative_to_project(tmp_path):
 
         def format_llm_message(self, tr, *, context_lines=15, limit=1):
             file = next(iter(tr.details))
-            return f"{file}:3 - X\n{file.replace('/', chr(92))}"
+            return f"{file}:3 - X\n{file.replace('/', os.sep)}"
 
     cfg = ToolConfig(name="tool", command="", parser_class=EchoParser, order=1)
     abs_file = (tmp_path / "src" / "a.py").as_posix()
@@ -500,7 +502,7 @@ def test_format_for_llm_paths_relative_to_project(tmp_path):
         raw=RawResult(tool_name="tool", project_path=str(tmp_path)),
     )
     result = format_for_llm({"tool": cfg}, make_combined([tr]), cq_invocation=CQ)
-    assert result.startswith("src/a.py:3 - X\nsrc\\a.py")
+    assert result.startswith(f"src/a.py:3 - X\nsrc{os.sep}a.py")
 
 
 def test_format_for_llm_context_lines_forwarded():
