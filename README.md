@@ -295,25 +295,25 @@ while True:
 ```
 
 ```
-┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━┓
-┃ Tool             ┃     Time ┃                    Metric ┃ Score   ┃ Status   ┃
-┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━┩
-│ compile          │    0.42s │                   compile │ 1.000   │ OK       │
-│ ruff             │    0.17s │                      lint │ 1.000   │ OK       │
-│ ty               │    0.33s │                type_check │ 1.000   │ OK       │
-│ bandit           │    0.56s │                  security │ 1.000   │ OK       │
-│ kingfisher       │    0.02s │                   secrets │ 1.000   │ OK       │
-│ uv-audit         │    0.41s │              dependencies │ 1.000   │ OK       │
-│ pytest           │    0.91s │                     tests │ 1.000   │ OK       │
-│ coverage         │    1.26s │                  coverage │ 0.910   │ OK       │
-│ vulture          │    0.32s │                 dead_code │ 1.000   │ OK       │
-│ interrogate      │    0.36s │              doc_coverage │ 1.000   │ OK       │
-│ radon-cc         │    0.32s │                simplicity │ 0.982   │ OK       │
-│ radon-mi         │    0.38s │           maintainability │ 0.869   │ OK       │
-│ radon-hal        │    0.30s │             file_bug_free │ 0.928   │ OK       │
-│ radon-hal        │          │        functions_bug_free │ 0.913   │ OK       │
-│ ruff-format      │    0.12s │                 formatted │ 1.000   │ OK       │
-│            Total │    1.26s │                     Score │ 0.965   │          │
+┌──────────────────┬──────────┬───────────────────────────┬─────────┬──────────┐
+│ Tool             │     Time │                    Metric │ Score   │ Status   │
+├──────────────────┼──────────┼───────────────────────────┼─────────┼──────────┤
+│ compile          │    0.54s │                   compile │ 1.000   │ OK       │
+│ ruff             │    0.14s │                      lint │ 1.000   │ OK       │
+│ ty               │    0.28s │                type_check │ 1.000   │ OK       │
+│ bandit           │    0.66s │                  security │ 1.000   │ OK       │
+│ kingfisher       │    0.01s │                   secrets │ 1.000   │ OK       │
+│ uv-audit         │    0.01s │              dependencies │ 1.000   │ OK       │
+│ pytest           │    8.23s │                     tests │ 1.000   │ OK       │
+│ coverage         │    8.68s │                  coverage │ 0.930   │ OK       │
+│ vulture          │    0.55s │                 dead_code │ 1.000   │ OK       │
+│ interrogate      │    0.47s │              doc_coverage │ 0.891   │ OK       │
+│ radon-cc         │    0.44s │                simplicity │ 0.979   │ OK       │
+│ radon-mi         │    0.67s │           maintainability │ 0.784   │ OK       │
+│ radon-hal        │    0.45s │             file_bug_free │ 0.568   │ OK       │
+│ radon-hal        │          │        functions_bug_free │ 0.601   │ OK       │
+│ ruff-format      │    0.13s │                 formatted │ 1.000   │ OK       │
+│            Total │    8.83s │                     Score │ 0.941   │          │
 └──────────────────┴──────────┴───────────────────────────┴─────────┴──────────┘
 ```
 
@@ -323,7 +323,7 @@ while True:
 > cq check . -o score
 ```
 ```
-0.9662730667181059
+0.9405469171269684
 ```
 
 The score is designed to approach but never quite reach 1.0.
