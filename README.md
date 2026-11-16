@@ -61,13 +61,6 @@ shop.py:6 - F821: Undefined name `discount`
 
 `discount` is not imported or defined anywhere else in this file.
 
-Enclosing function:
-```python
-4: def total(prices: list[float]) -> float:
-5:     """Return the sum of prices."""
-6:     return sum(prices) + discount
-```
-
 Please fix only this issue.
 ````
 

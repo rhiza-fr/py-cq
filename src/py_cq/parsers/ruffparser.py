@@ -125,7 +125,11 @@ def _format_F821(file: str, line: int, message: str) -> str:
         base += f"\n\nOther references to `{name}` in this file:\n{ref_lines}"
     else:
         base += f"\n\n`{name}` is not imported or defined anywhere else in this file."
-    if enclosing and enclosing not in base:
+    shown = set(base.splitlines())
+    func_lines = [
+        ln for ln in enclosing.splitlines() if ln and not ln.startswith("```")
+    ]
+    if func_lines and not all(ln in shown for ln in func_lines):
         base += f"\n\nEnclosing function:{enclosing}"
     return base
 

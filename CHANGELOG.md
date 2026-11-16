@@ -6,6 +6,7 @@
 
 - The relative-path test in `test_llm_formatter.py` built the native path with a hardcoded backslash, which is only a separator on Windows, so CI failed on Linux. It now uses `os.sep`.
 - `cq --help` and `cq check --help` say 14 tools, not 13.
+- `ruff` F821 (undefined name) messages no longer repeat the enclosing function when the source context already shows all of it. The check compared the two code blocks as whole strings, and the context window almost always covers extra lines, so the function was shown twice.
 - README: the Claude Code stop hook example now exits `2` and writes the fix prompt to stderr, which is what makes Claude receive it and keep working. The old example always exited `0`, so Claude never saw the prompt. The slash command example uses the `` !`cq check . -o llm` `` syntax, since `$(...)` is not expanded.
 
 ### Changed

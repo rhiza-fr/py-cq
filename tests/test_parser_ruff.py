@@ -240,6 +240,50 @@ def test_ruff_hint_F821_not_found(tmp_path):
     assert "not imported or defined" in msg
 
 
+def _f821_message(src, line: int, name: str) -> str:
+    tr = ToolResult(
+        metrics={"lint": 0.5},
+        details={
+            str(src): [
+                {"line": line, "code": "F821", "message": f"Undefined name `{name}`"}
+            ]
+        },
+        raw=RawResult(),
+    )
+    return RuffParser().format_llm_message(tr)
+
+
+def test_ruff_hint_F821_omits_enclosing_function_already_in_context(tmp_path):
+    """A function fully shown in the source context is not repeated."""
+    src = tmp_path / "shop.py"
+    src.write_text(
+        '"""Shop helpers."""\n'
+        "\n"
+        "\n"
+        "def total(prices):\n"
+        '    """Return the sum of prices."""\n'
+        "    return sum(prices) + discount\n"
+        "\n"
+        "\n"
+        "def label(name):\n"
+        '    """Return a display label."""\n'
+        "    return name.title()\n"
+    )
+    msg = _f821_message(src, 6, "discount")
+    assert "Enclosing function" not in msg
+    assert msg.count("return sum(prices) + discount") == 1
+
+
+def test_ruff_hint_F821_shows_enclosing_function_beyond_context(tmp_path):
+    """A function longer than the source context is shown in full."""
+    body = "".join(f"    x{i} = {i}\n" for i in range(40))
+    src = tmp_path / "long.py"
+    src.write_text("def long_func():\n" + body + "    return missing\n")
+    msg = _f821_message(src, 42, "missing")
+    assert "Enclosing function" in msg
+    assert "1: def long_func():" in msg
+
+
 SYNTAX_OUTPUT = """\
 src/a.py:3:1: BLE001 Do not catch blind exception: `Exception`
 src/b.py:5:1: F401 `os` imported but unused
