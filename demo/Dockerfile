@@ -20,6 +20,9 @@ ENV PATH="/root/.local/bin:$PATH"
 # Pre-install cq (so the demo runs fast — we fake the install output)
 RUN uv tool install python-code-quality
 
+# Secret scanner used by the kingfisher tool (skipped with a warning when absent)
+RUN uv tool install kingfisher-bin
+
 # Copy project and pre-warm all tool environments + cq diskcache
 COPY dummy-project/ /root/demo-project/
 RUN cd /root/demo-project && cq check . || true
